@@ -15062,7 +15062,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       style += `--fill-ease:linear(${stops.join(",")});`;
     }
     const pass = (cutoff) => accuracy >= cutoff ? (DELAY + TRAVEL * timeAt(cutoff / accuracy)).toFixed(3) + "s" : "0s";
-    return style + `--pass-safe:${pass(SURVIVAL_PASS)};--pass-great:${pass(80)};`;
+    return style + `--pass-safe:${pass(SURVIVAL_PASS)};`;
   }
   // How safe was that guess? A bar from 0 to 100 % with the line you have to clear and a pin where you landed.
   function svGaugeHtml(acc) {
@@ -15071,14 +15071,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const margin = gap === "0"
       ? (safe ? "Right at the safe cutoff" : "Just short of safety")
       : `${gap} point${gap === "1" ? "" : "s"} ${safe ? "above the safe cutoff" : "short of safety"}`;
-    const zone = accuracy >= 80 ? "great" : safe ? "safe" : "lost";
+    const zone = accuracy >= 90 ? "great" : safe ? "safe" : "lost";
     return `<div class="sv-meter${prefersReducedMotion() ? "" : " revealing"}" data-zone="${zone}" role="meter" aria-label="Survival accuracy" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${accuracy}" aria-valuetext="${svAccuracyLabel(accuracy)} accurate. ${SURVIVAL_PASS}% needed to stay safe." style="--accuracy:${accuracy}%;--safe-cutoff:${SURVIVAL_PASS}%;${svMeterTiming(accuracy)}">
       <div class="sv-meter-track" aria-hidden="true">
         <span class="sv-meter-wall"></span><span class="sv-meter-wash"></span><span class="sv-meter-fill"></span><span class="sv-meter-glow"><i></i></span>
-        <span class="sv-meter-shine"><i></i></span><span class="sv-meter-flags"><span class="sv-meter-flag sv-flag-safe"></span><span class="sv-meter-flag sv-flag-great"></span></span>
+        <span class="sv-meter-shine"><i></i></span><span class="sv-meter-flags"><span class="sv-meter-flag sv-flag-safe"><i class="pole"></i><i class="cl" style="--i:0"></i><i class="cl" style="--i:1"></i><i class="cl" style="--i:2"></i><i class="cl" style="--i:3"></i><i class="cl" style="--i:4"></i><i class="cl" style="--i:5"></i><i class="cl" style="--i:6"></i><i class="cl" style="--i:7"></i></span></span>
         <span class="sv-meter-marker"><span class="sv-meter-ring"></span><span class="sv-meter-pin"></span><span class="sv-meter-sparks"><i></i><i></i><i></i><i></i><i></i></span></span>
       </div>
-      <div class="sv-meter-zones" aria-hidden="true"><span>Lose a life</span><span>Safe ${SURVIVAL_PASS}%</span><span>Great 80%</span></div>
+      <div class="sv-meter-zones" aria-hidden="true"><span>Lose a life</span><span>Safe ${SURVIVAL_PASS}%</span></div>
     </div><p class="sv-meter-gap">${margin}</p>`;
   }
   function svAccuracyLabel(accuracy) {

@@ -38,7 +38,7 @@ button.sv-battle:focus-visible { outline:2px solid #37679f; outline-offset:2px; 
 .sv-answer-side b { font-size:19px; font-weight:850; font-variant-numeric:tabular-nums; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .sv-answer-accuracy, .sv-meter-gap { color:var(--outcome); }
 .sv-meter {
-  --safe-cutoff:60%; --great-cutoff:80%; --flourish:#a83e32; --ember:#ff8a6b;
+  --safe-cutoff:60%; --solid-green:90%; --flourish:#a83e32; --ember:#ff8a6b;
   --meter-delay:.3s; --meter-travel:1.5s; --meter-land:calc(var(--meter-delay) + var(--meter-travel));
   --meter-ease:cubic-bezier(.24,.65,.32,1);
   margin-top:46px;
@@ -52,9 +52,9 @@ button.sv-battle:focus-visible { outline:2px solid #37679f; outline-offset:2px; 
   -webkit-mask:url("../icons/survival-wall.webp") center/100% 100% no-repeat; mask:url("../icons/survival-wall.webp") center/100% 100% no-repeat;
   mix-blend-mode:multiply;
 }
-.sv-meter-wash { filter:brightness(.94) saturate(.8); background:linear-gradient(to right,#f3cfc3 0 var(--safe-cutoff),#f6e6b0 var(--safe-cutoff) var(--great-cutoff),#cfe5bd var(--great-cutoff) 100%); }
+.sv-meter-wash { filter:brightness(.94) saturate(.8); background:linear-gradient(to right,#f3cfc3 0 var(--safe-cutoff),#f6e6b0 var(--safe-cutoff),#e4e6a4 calc((var(--safe-cutoff) + var(--solid-green)) / 2),#cfe5bd var(--solid-green) 100%); }
 .sv-meter-fill {
-  background:linear-gradient(to right,#ec6a58 0 var(--safe-cutoff),#f2c230 var(--safe-cutoff) var(--great-cutoff),#5dbb62 var(--great-cutoff) 100%);
+  background:linear-gradient(to right,#ec6a58 0 var(--safe-cutoff),#f2c230 var(--safe-cutoff),#bccb3a calc((var(--safe-cutoff) + var(--solid-green)) / 2),#5dbb62 var(--solid-green) 100%);
   clip-path:inset(0 calc(100% - var(--accuracy)) 0 0);
 }
 .sv-meter-glow {
@@ -73,10 +73,13 @@ button.sv-battle:focus-visible { outline:2px solid #37679f; outline-offset:2px; 
   position:absolute; bottom:34%; height:175%; aspect-ratio:203/380; background:center/100% 100% no-repeat;
   transform:translateX(-14%); transform-origin:14% 100%;
 }
-.sv-flag-safe { left:var(--safe-cutoff); background-image:url("../icons/survival-flag-gold.webp"); }
-.sv-flag-great { left:var(--great-cutoff); background-image:url("../icons/survival-flag-green.webp"); }
+.sv-flag-safe { left:var(--safe-cutoff); }
+/* One flag at the safe line. The pole is still; the cloth is cut into strips that bob up and down a little out of step (a rolling ripple), so it flaps without being squished. */
+.sv-meter-flag > i { position:absolute; inset:0; background:url("../icons/survival-flag-green.webp") center/100% 100% no-repeat; }
+.sv-meter-flag > .pole { clip-path:inset(0 79.2% 0 0); }
+.sv-meter-flag > .cl { clip-path:inset(0 calc(100% - 19.8% - (var(--i) + 1) * 10.3%) 0 calc(19.8% + var(--i) * 10.3%)); }
 .sv-meter .sv-meter-flag { filter:grayscale(.85) brightness(.88); }
-.sv-meter[data-zone="safe"] .sv-flag-safe, .sv-meter[data-zone="great"] .sv-meter-flag { filter:none; translate:0 0; }
+.sv-meter:not([data-zone="lost"]) .sv-flag-safe { filter:none; translate:0 0; }
 .sv-meter-marker { position:absolute; z-index:2; inset-block:0; left:clamp(4px,var(--accuracy),calc(100% - 4px)); width:0; }
 .sv-meter-pin {
   position:absolute; left:0; top:56%; width:34px; aspect-ratio:1; transform:translate(-50%,-50%); border-radius:50%;
@@ -106,7 +109,11 @@ button.sv-battle:focus-visible { outline:2px solid #37679f; outline-offset:2px; 
 .sv-meter.revealing .sv-meter-shine i { animation:svShineSweep .9s var(--meter-land) ease-in-out both; }
 .sv-meter.revealing .sv-meter-pin { animation:svMeterLand .38s var(--meter-land) ease-out both; }
 .sv-meter:not([data-zone="lost"]).revealing .sv-flag-safe { animation:svFlagRise .6s var(--pass-safe) ease-out both; }
-.sv-meter[data-zone="great"].revealing .sv-flag-great { animation:svFlagRise .6s var(--pass-great) ease-out both; }
+.sv-meter:not([data-zone="lost"]) .sv-flag-safe > .cl { animation:svFlagWave 1.7s ease-in-out infinite; animation-delay:calc(var(--pass-safe,0s) + .5s - var(--i) * .13s); }
+.sv-meter:not([data-zone="lost"]):not(.revealing) .sv-flag-safe > .cl { animation-delay:calc(var(--i) * -.13s); }
+@keyframes svFlagWave { 0%,100% { transform:translateY(calc(var(--i) * -.65%)); } 50% { transform:translateY(calc(var(--i) * .65%)); } }
+@media (prefers-reduced-motion:reduce) { .sv-meter-flag > .cl { animation:none !important; } }
+html[data-motion=reduce] .sv-meter-flag > .cl { animation:none !important; }
 .sv-meter.revealing .sv-meter-ring { animation:svMeterRing .45s var(--meter-land) ease-out both; }
 .sv-meter.revealing .sv-meter-sparks i { animation:svMeterSparks .49s var(--meter-land) ease-out both; }
 @keyframes svMeterFill { from{clip-path:inset(0 100% 0 0)} to{clip-path:inset(0 calc(100% - var(--accuracy)) 0 0)} }
@@ -138,7 +145,7 @@ button.sv-battle:focus-visible { outline:2px solid #37679f; outline-offset:2px; 
   32% { opacity:1; }
   100% { opacity:0; transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) rotate(var(--angle)) scale(.4); }
 }
-.sv-meter-zones { display:grid; grid-template-columns:3fr 1fr 1fr; margin-top:6px; font-size:11px; font-weight:800; }
+.sv-meter-zones { display:grid; grid-template-columns:3fr 2fr; margin-top:6px; font-size:11px; font-weight:800; }
 .sv-meter-gap { margin:6px 0 0; font-size:13px; font-weight:800; }
 
 html[data-motion=reduce] :is(.sv-battle,.sv-meter) * { animation:none!important; }
