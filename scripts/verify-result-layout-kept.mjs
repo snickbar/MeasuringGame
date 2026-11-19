@@ -16,3 +16,7 @@ const clears = (pu.match(/removeProperty\('--sc-pu'\)/g) || []).length;
 if (!sets || publishes < sets || clears < 2) { console.error('FAIL: powerup-ui.mjs must publish --sc-pu whenever it pads the sidebar and clear it whenever it clears the padding'); process.exit(1); }
 if (!/\.score-col\{margin-top:calc\(-1 \* var\(--sc-pu,0px\)\)/.test(css)) { console.error('FAIL: play-layout.css must pull .score-col up by --sc-pu'); process.exit(1); }
 console.log('ok: score column reaches up behind the power-up tray');
+
+// The second-chance ("answers") phase is also a party screen: without the layout the score column starts flat under the board.
+if (!/phase === "answers"\) && data\.settings\?\.mode !== "teamworlds"\) focusedPlayLayout\?\.keepParty\(hudEl\)/.test(html)) { console.error('FAIL: applyPhase must keep the party layout in the second-chance (answers) phase too'); process.exit(1); }
+console.log('ok: second-chance phase keeps the party layout');

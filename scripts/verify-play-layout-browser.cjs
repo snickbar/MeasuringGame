@@ -80,6 +80,7 @@ window.__layoutSummaryPhase=async mode=>{await window.__layoutAudit(mode);stopAn
 window.__layoutHsRefresh=()=>{roomState.players.me.layoutTick=(roomState.players.me.layoutTick||0)+1;renderHighStakes(roomState);};
 window.__layoutBluffRefresh=()=>{roomState.players.me.layoutTick=(roomState.players.me.layoutTick||0)+1;bluffUI.refresh();};
 window.__layoutBoard=id=>{roomState.board=id;applyBoard(id);getPlayLayout().measure();};
+window.__layoutPh=async ph=>{if(ph==='answers'){const ids=Object.keys(currentPlayers);roomState={...roomState,phase:'answers',answersEndsAt:Date.now()+60000,answers:ids.map((id,i)=>({playerId:id,value:10+i*7.3+(i%3)})),picks:{}};}else roomState={...roomState,phase:ph};applyPhase(roomState);if(ph==='answers')renderAnswersScreen(roomState);};
 window.__layoutRv=async n=>{
  await window.__layoutAudit('quick');
  const base=Object.keys(currentPlayers);for(let i=base.length;i<n;i++)currentPlayers['x'+i]={...currentPlayers[base[i%base.length]],name:'P'+i};
@@ -185,6 +186,9 @@ if(process.env.PLAY_LAYOUT_WALLS){const bad=[];const run=async tag=>{const rows=
  for(const mode of modes){await evaluate('window.__layoutAudit('+JSON.stringify(mode)+')');await new Promise(r=>setTimeout(r,2200));await run(mode);
   const top=await evaluate(`(()=>{const c=document.querySelector('#hud.active[data-play-layout=party] .score-col'),p=document.querySelector('#hud.active .question-prompt');if(!c||!p)return null;return {col:Math.round(c.getBoundingClientRect().top),board:Math.round(p.getBoundingClientRect().bottom)}})()`);
   if(top&&top.col>top.board-20)bad.push(mode+' '+width+'x'+height+': score column starts under the board ('+JSON.stringify(top)+') - flat edge, it must reach up behind the board')}
+ for(const m of ['quick:many','teamvteam:many','party']){await evaluate('window.__layoutAudit("'+m+'")');await new Promise(r=>setTimeout(r,500));await evaluate('window.__layoutPh("answers")');await new Promise(r=>setTimeout(r,900));await run('answers-'+m);
+  const top=await evaluate(`(()=>{const c=document.querySelector('#hud.active .score-col'),p=document.querySelector('#hud.active .question-prompt');if(!c||!p)return null;return {lay:document.getElementById('hud').dataset.playLayout,col:Math.round(c.getBoundingClientRect().top),board:Math.round(p.getBoundingClientRect().bottom)}})()`);
+  if(!top||top.lay!=='party'||top.col>top.board-20)bad.push('answers-'+m+' '+width+'x'+height+': second-chance phase lost the score-column layout ('+JSON.stringify(top)+')')}
  for(const n of [4,10]){await evaluate('window.__layoutAudit("quick")');await evaluate('window.__layoutRv('+n+')');await new Promise(r=>setTimeout(r,500));await run('reveal'+n);await evaluate('window.__layoutAudit("quick")');await evaluate('window.__layoutSm('+n+')');await new Promise(r=>setTimeout(r,500));await run('summary'+n)}
  const uniq=[...new Set(bad)];if(uniq.length){console.error('Invisible walls found:\n'+uniq.join('\n'));process.exitCode=1}else console.log('No invisible walls at '+width+'x'+height);continue;}
     if(process.env.PLAY_LAYOUT_RESULTS){
