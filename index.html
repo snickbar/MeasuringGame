@@ -4455,6 +4455,7 @@ if (location.protocol === "file:") {
 <link rel="stylesheet" href="anim/monthly-extras.css" />
 <link rel="stylesheet" href="anim/party-finale.css" />
 <link rel="stylesheet" href="anim/play-layout.css">
+<link rel="stylesheet" href="anim/quick-robot.css">
 </head>
 <body>
 
@@ -5447,6 +5448,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { mountHighLowReveal, HL_REVEAL_STEP_MS } from "./anim/high-low-reveal.mjs";
   import { HL_MESSAGE_BOTTLE, HL_EMPTY_BOTTLE, highLowBottlePieces } from "./anim/high-low-bottles.mjs";
   import { createPlayLayout, fitRevealStage } from "./anim/play-layout.mjs";
+  import { createQuickRobot } from "./anim/quick-robot.mjs";
   import { installHomeScene } from "./anim/home-scene.mjs";
   import { bufferedGuess, quickEligible } from "./anim/powerups.mjs";
   import { createPowerupController } from "./anim/powerup-ui.mjs";
@@ -22140,10 +22142,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
   }
 
+  // Quick Game: once your own paper has flipped, the robot stands on your Player card and reacts to your accuracy.
+  const quickRobot = createQuickRobot({ hud: hudEl, cardFor: () => scoreColEl.querySelector(`.score-card[data-id="${currentPlayerId}"]`), reduceMotion: prefersReducedMotion });
+  function syncQuickRobot(order, revealIndex) {
+    const quick = !!roomState.settings?.solo && (roomState.settings.mode || "party") === "party"; // Quick Game is a solo party-style room
+    const mine = quick ? order.findIndex((e) => e.playerId === currentPlayerId) : -1;
+    if (mine >= 0 && revealIndex > mine) quickRobot.show(`${roomState.gameId}:${roomState.round}`, Number(order[mine].accuracyPercent) || 0);
+    else quickRobot.hide();
+  }
+
   function renderRevealChoreography(data) {
     const order = data.revealOrder || [];
     const revealIndex = data.revealIndex || 0;
     const lastRoundPoints = data.lastRoundPoints || {};
+    syncQuickRobot(order, revealIndex);
 
     if (order.length === 0) {
       revealListEl.innerHTML = "<li>No one answered in time.</li>";
@@ -24205,6 +24217,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if(data.phase==='waiting')finalRendered=false;
     requestAnimationFrame(fitScoreNames);
     const phase = data.phase;
+    if (phase !== "reveal") quickRobot.hide(); // the robot only stands on your card while the round result is showing
     // The game actually starting (or anything else moving the phase off
     // "waiting") while someone's mid-edit cancels the edit outright rather
     // than leaving the name/avatar screen stuck showing on top of the HUD
