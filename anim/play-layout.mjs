@@ -89,7 +89,7 @@ export function createPlayLayout(doc = document) {
   const remeasure = () => { if (watchFrame) return; watchFrame = win.requestAnimationFrame(() => { watchFrame = 0; measure(); }); };
   // The board can still be changing size when the reveal opens (scene art loads, text refits, answer line appears), so also re-measure when it resizes and shortly after the screen opens.
   const boardResize = new win.ResizeObserver(remeasure);
-  { const hudEl = doc.getElementById('hud'); hudEl?.querySelectorAll('.hud-timer-row, .question-prompt, #q-stage').forEach(el => boardResize.observe(el)); }
+  { const hudEl = doc.getElementById('hud'); hudEl?.querySelectorAll('.hud-timer-row, .question-prompt, #q-stage, .score-sidebar').forEach(el => boardResize.observe(el)); }
   const lateMeasure = () => { for (const ms of [250, 700, 1500]) win.setTimeout(remeasure, ms); };
   const watch = new win.MutationObserver(muts => { if (muts.some(m => m.type === 'attributes' && m.target.id && /view$/.test(m.target.id))) lateMeasure(); remeasure(); });
   for (const id of ['reveal-view', 'summary-view']) { const el = doc.getElementById(id); if (el) watch.observe(el, {attributes: true, attributeFilter: ['class']}); }
