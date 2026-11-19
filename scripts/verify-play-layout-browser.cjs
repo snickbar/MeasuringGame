@@ -100,6 +100,7 @@ const robotSnap=()=>{const el=document.querySelector('.qr-robot'),card=scoreColE
   rect:{l:Math.round(r.left),t:Math.round(r.top),r:Math.round(r.right),b:Math.round(r.bottom)},card:c&&{l:Math.round(c.left),t:Math.round(c.top),r:Math.round(c.right)},hud:{l:Math.round(hud.left),r:Math.round(hud.right)},boardTop:Math.round(board.top),boardBottom:Math.round(board.bottom)};};
 const robotWait=ms=>new Promise(r=>setTimeout(r,ms));
 window.__layoutRobotHide=()=>quickRobot.hide();
+window.__layoutWbResult=()=>{Object.assign(wb,{phase:'result',ok:true,picked:wb.pair.bigger.id,score:1,prevStreak:0});renderWhichBigger();};
 window.__layoutRobotIdle=async()=>{quickRobot.hide();quickRobot.stand('idle:'+Math.random());await robotWait(1300);return robotSnap();};
 window.__layoutRobot=async acc=>{quickRobot.hide();const key='test:'+Math.random();quickRobot.stand(key);await robotWait(700);
  const idle=robotSnap();quickRobot.react(key,acc);await robotWait(1500);
@@ -200,6 +201,19 @@ server.listen(0,'127.0.0.1',()=>{
     await call('Page.enable',{},sessionId);await call('Page.addScriptToEvaluateOnNewDocument',{source:'localStorage.clear()'},sessionId);
     await call('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:true},sessionId);await call('Page.navigate',{url:'http://127.0.0.1:'+server.address().port+'/test'},sessionId);
     for(let i=0;i<250;i++){if(await evaluate('window.__layoutReady?.()'))break;await new Promise(r=>setTimeout(r,30));}
+    if(process.env.PLAY_LAYOUT_SURVEY){ // review pictures of each mode's result screens (where a mascot could stand); writes PNGs and stops
+     const dir=process.env.PLAY_LAYOUT_SURVEY;fs.mkdirSync(dir,{recursive:true});
+     const shot=async name=>{await new Promise(r=>setTimeout(r,700));const sh=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(dir,name+'-'+width+'x'+height+'.png'),Buffer.from(sh.data,'base64'));};
+     await evaluate('window.__layoutRv(4)');await shot('quick-papers');
+     await evaluate('window.__layoutSummaryPhase("quick")');await shot('quick-summary');
+     await evaluate('window.__layoutAudit("teamvteam")');await evaluate('window.__layoutPh("reveal")');await shot('teamvteam-reveal');
+     await evaluate('window.__layoutSummaryPhase("teamvteam")');await shot('teamvteam-summary');
+     await evaluate('window.__layoutAudit("highlow")');await evaluate('window.__layoutPh("reveal")');await shot('highlow-reveal');
+     await evaluate('window.__layoutSummaryPhase("highlow")');await shot('highlow-summary');
+     await evaluate('window.__layoutAudit("survival")');await evaluate('window.__layoutSvRes({})');await shot('survival-result');
+     await evaluate('window.__layoutAudit("whichbigger")');await evaluate('window.__layoutWbResult()');await shot('whichbigger-result');
+     process.exit(0);
+    }
     if(!process.env.PLAY_LAYOUT_NAV_ONLY){
     const baselines={};
 if(process.env.PLAY_LAYOUT_WALLS){const bad=[];const run=async tag=>{const rows=JSON.parse(await evaluate(WALLS));rows.forEach(x=>bad.push(tag+' '+width+'x'+height+': '+x))};
