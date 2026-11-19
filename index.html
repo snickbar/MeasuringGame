@@ -3177,12 +3177,12 @@ if (location.protocol === "file:") {
   .qbs[data-board="sand"] { color: #a8702c; font-weight: 700; text-shadow: 0 1px 0 rgba(255,238,200,.9); }
   .qbs[data-board="splitflap"] { color: #f1e9c9; font-weight: 700; text-transform: uppercase; }
   /* Team Worlds / High-Low question screen: board on top, keypad on the left, the two player cards stacked in the right gutter. */
-  #hud #question-view.tw-mode.active { display: grid; grid-template-columns: minmax(0, 1fr) 130px; grid-template-rows: auto minmax(auto, .7fr) minmax(auto, 1fr) auto auto auto auto auto; column-gap: 8px; align-content: stretch; height: 100%; }
+  #hud #question-view.tw-mode.active { display: grid; grid-template-columns: minmax(0, 1fr) 130px; grid-template-rows: auto minmax(auto, 1fr) minmax(auto, .7fr) auto auto auto auto auto; column-gap: 8px; align-content: stretch; height: 100%; }
   #hud #question-view.tw-mode > * { grid-column: 1 / -1; }
-  /* rows, top to bottom: progress, the two objects (takes any spare height, so everything else sits down against the Lock button), board, answer box + keypad with the two player cards beside them, role hint, status */
+  /* rows, top to bottom: progress, board, the two objects (takes any spare height, so everything else sits down against the Lock button), answer box + keypad with the two player cards beside them, role hint, status */
   #hud #question-view.tw-mode > #tw-question-progress { grid-row: 1; }
-  #hud #question-view.tw-mode > #tw-question-pics { grid-row: 2; align-self: stretch; align-items: stretch; }
-  #hud #question-view.tw-mode > #tw-question-prompt { grid-row: 3; align-self: center; } /* spare height goes to the board row, the board sits centred in it */
+  #hud #question-view.tw-mode > #tw-question-pics { grid-row: 3; align-self: stretch; align-items: stretch; }
+  #hud #question-view.tw-mode > #tw-question-prompt { grid-row: 2; align-self: center; } /* spare height goes to the board row, the board sits centred in it */
   #hud #question-view.tw-mode > #hl-gap-chip { grid-column: 1; grid-row: 4; justify-self: start; width: 192px; box-sizing: border-box; margin: 2px 0 0; }
   #hud #question-view.tw-mode > #hl-gap-chip[hidden] { display: none; }
   #hud #question-view.tw-mode > #tw-guess-display { grid-column: 1; grid-row: 5; justify-self: start; width: 192px; margin: 4px 0; font-size: 26px; } /* as wide as the keypad, right above it */
@@ -12437,10 +12437,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const i = daily.guesses.length, q = daily.questions[i];
       const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
       el.innerHTML = `<div class="pin-top"><h2 class="dc-title">${roundTitle} ${i + 1} of 3</h2>${scoredRoundDots(dailyAccuracies(), i)}</div>
-        <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
         <div class="dq-board" id="dq-board"></div>
-        <div class="dc-display" id="dc-display">${daily.input || "0"}</div>
-        <div class="dc-padrow dq-padrow">${kpKeysHtml()}<div class="dq-mascot" aria-hidden="true"><img src="anim/mode-mascots/${DAILY_ROOSTER_ART.ready}" alt="" draggable="false"></div></div>
+        <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
+        <div class="dc-padrow dq-padrow"><div class="dq-pad"><div class="dc-display" id="dc-display">${daily.input || "0"}</div>${kpKeysHtml()}</div><div class="dq-mascot" aria-hidden="true"><img src="anim/mode-mascots/${DAILY_ROOSTER_ART.ready}" alt="" draggable="false"></div></div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="dc-submit" disabled>Lock it in</button></div>`;
       if (dailyScreenEl.classList.contains("active")) qBoardMount(el.querySelector("#dq-board"), q.prompt);
       return;
@@ -12466,7 +12465,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             <div class="wb-result-quip sv-arr" style="--a:.6s">${wbSideHtml(r.side)}<div class="wb-quip">${escapeHtml(r.quip)}</div></div></div>
             <div class="wb-result-stamp"><div class="wb-burst"><div class="wb-mark ${r.ok ? "ok" : "bad"}" aria-label="${r.ok ? "Right" : "Off"}">${r.ok ? "&#10004;" : "&#10006;"}</div></div></div>
           </div>
-          <p class="wb-line sv-arr" style="--a:.5s"><span class="wb-line-label">The answer</span><b>${r.ans}</b><span>You said ${said} &middot; ${formatAccuracy(r.acc)}% accurate</span></p>
+          <div class="sv-answer sv-arr" style="--a:.5s"><div class="sv-answer-row">
+            <div class="sv-answer-side"><span class="sv-side-label">Your guess</span><b>${said}</b></div>
+            <div class="sv-answer-mid"><span class="sv-answer-label">Correct answer</span><strong>${escapeHtml(String(r.ans))}</strong></div>
+            <div class="sv-answer-side"><span class="sv-side-label">Accuracy</span><b class="sv-answer-accuracy">${formatAccuracy(r.acc)}%</b></div>
+          </div></div>
           <div class="sv-arr sv-arr-gauge" style="--a:.5s">${dcGaugeHtml(r.acc)}</div>
         </div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="dc-next">${last ? "See my results" : "Next question"}</button></div>`;
@@ -14103,8 +14106,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const i = wl.guesses.length;
       const q = wl.questions[i], u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
       el.innerHTML = `<div class="pin-top">${header}${dots(i)}${worldProgressHtml()}</div>
-        <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
         <div class="dq-board" id="dq-board"></div>
+        <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
         <div class="dc-display" id="wl-display">${wl.input || "0"}</div>
         <div class="dc-padrow">${kpKeysHtml()}${powerups?.html(powerupContext()) || ""}</div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="wl-submit" ${parseFloat(wl.input) > 0 ? "" : "disabled"}>Lock it in</button></div>`;
@@ -14656,8 +14659,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       monthlyStop();
       const i = mo.guesses.length, q = mo.questions[i], u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
       el.innerHTML = `<div class="pin-top"><h2 class="dc-title">Question ${i + 1} of ${mo.questions.length}</h2>${scoredRoundDots(monthlyAccs(), i)}</div>
-        <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
         <div class="dq-board" id="dq-board"></div>
+        <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
         <div class="dc-display" id="mo-display">${mo.input || "0"}</div>
         ${kpKeysHtml()}
         <div class="pin-bottom"><button type="button" class="dc-btn" id="mo-submit" disabled>Lock it in</button></div>`;
@@ -15248,8 +15251,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       persistSoloSession("survival",sv);
       const q = sv.q, u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
       el.innerHTML = `<div class="pin-top">${svHudHtml(sv.lives, sv.asked + 1, svRunAcc(sv.accs.length))}${sv.q.theme ? svThemeStripHtml(sv.q.theme) : ""}</div>
-        <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
         <div class="dq-board" id="dq-board"></div>
+        <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
         <div class="dc-display" id="sv-display">${sv.input || "0"}</div>
         <div class="sv-diff"><span class="wb-diff-l">DIFFICULTY</span>${svStampHtml(q.answer, "in")}</div>
         <div class="dc-padrow">${kpKeysHtml()}${powerups?.html(powerupContext()) || ""}</div>
