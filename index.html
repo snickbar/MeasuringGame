@@ -21198,20 +21198,26 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // The mascot that waited at the bottom of the question screen slides out to the left when the phase moves on (the question screen is
   // about to be replaced, so a copy of it carries the exit).
-  let qWaitExited = "";
-  function qWaitExit(phase) {
-    if (phase === "question" || phase === "countdown" || !qWaitKey || qWaitExited === qWaitKey) return;
+  let qWaitExited = "", qWaitLastKey = "", qWaitSeen = null; // qWaitSeen: where the mascot was last seen standing (the screen may already be hidden when the exit is asked for)
+  function qWaitSnap() {
     const m = document.querySelector("#q-wait-scene .qw-mascot");
-    qWaitExited = qWaitKey;
-    if (!m || prefersReducedMotion() || !m.animate) return;
+    if (!m || document.getElementById("q-wait-scene").hidden) return;
     const r = m.getBoundingClientRect();
-    if (r.width < 20 || r.height < 20 || getComputedStyle(m).opacity === "0") return;
+    if (r.width >= 20 && r.height >= 20 && getComputedStyle(m).opacity !== "0") qWaitSeen = { left: r.left, top: r.top, width: r.width, height: r.height, right: r.right };
+  }
+  function qWaitExit(phase) {
+    if (phase === "question" || phase === "countdown" || !qWaitLastKey || qWaitExited === qWaitLastKey) return;
+    const m = document.querySelector("#q-wait-scene .qw-mascot");
+    qWaitSnap();
+    qWaitExited = qWaitLastKey;
+    if (!m || prefersReducedMotion() || !m.animate || !qWaitSeen) return;
+    const r = qWaitSeen;
     const copy = document.createElement("div");
     copy.setAttribute("aria-hidden", "true");
-    copy.style.cssText = `position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;display:flex;align-items:center;justify-content:center;gap:4px;pointer-events:none;z-index:6`;
+    copy.style.cssText = `position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;display:flex;align-items:center;justify-content:center;gap:4px;pointer-events:none;z-index:60`;
     m.querySelectorAll("img").forEach((i) => { const c = i.cloneNode(); c.style.cssText = `height:92%;max-width:${m.querySelectorAll("img").length > 1 ? "calc(50% - 2px)" : "100%"};width:auto;object-fit:contain`; copy.appendChild(c); });
     document.body.appendChild(copy);
-    copy.animate([{ transform: "none" }, { transform: `translateX(${-(r.right + 30)}px)` }], { duration: 480, easing: "cubic-bezier(.5,0,.8,.4)", fill: "forwards" }).finished.then(() => copy.remove(), () => copy.remove());
+    copy.animate([{ transform: "none" }, { transform: `translateX(${-(r.right + 30)}px)` }], { duration: 520, easing: "cubic-bezier(.45,0,.55,1)", fill: "forwards" }).finished.then(() => copy.remove(), () => copy.remove());
   }
   function qWaitScene(on) {
     const qv = document.getElementById("question-view"), scene = document.getElementById("q-wait-scene");
@@ -21220,7 +21226,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (key === qWaitKey) return;
     qWaitTimers.forEach(clearTimeout); qWaitTimers = [];
     const wasOn = !!qWaitKey; qWaitKey = key;
-    if (!key) { qv.classList.remove("q-waiting", "q-wait-ready"); scene.hidden = true; return; }
+    if (key) { qWaitLastKey = key; qWaitSeen = null; qWaitTimers.push(setTimeout(qWaitSnap, 900)); }
+    if (!key) {
+      if (wasOn && roomState?.phase && roomState.phase !== "question" && roomState.phase !== "countdown") qWaitExit(roomState.phase); // the phase moved on: slide the waiting mascot out before the scene is hidden
+      qv.classList.remove("q-waiting", "q-wait-ready"); scene.hidden = true; return; }
     const answer = document.getElementById("guess-display"), status = document.getElementById("guess-status");
     const before = answer.getBoundingClientRect().top;
     [["u", q.unitId], ["g", q.targetId]].forEach(([side, id]) => {
