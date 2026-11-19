@@ -51,6 +51,7 @@ window.__layoutAudit=async requested=>{
  if(['teamworlds','highlow'].includes(mode)){delete players.third;delete players.fourth;}
  lastSeenPhaseForReset='waiting';hasSubmittedThisRound=false;guessLocked=false;currentGuessStr='';roomState={phase:'question',gameId:'audit',round:1,settings:{mode:mode==='highlow'?'teamworlds':mode==='quick'?'party':mode,variant:mode==='highlow'?'hl':null,solo:mode==='quick',timerSeconds:30,totalRounds:5,autoAdvanceEnabled:false,itemSelectionMode:'anything'},players,currentQuestion:q,guesses:{},phaseEndsAt:Date.now()+300000,hlRoles:{me:'low',friend:'high'},hlLives:3,hlSurvived:0};
  if(mode==='teamvteam'){players.me.team='red';players.friend.team='red';players.third.team='blue';players.fourth.team='blue';}
+ if(mode==='teamvteam'&&variant==='many'){const tn=['green','yellow','purple'];for(let i=0;i<6;i++)players['t'+i]={name:'Team Player '+i,avatar:'av07',score:0,joinedAt:20+i,team:tn[Math.floor(i/2)]};}
  if(variant==='many')for(let i=4;i<10;i++)players['p'+i]={name:'Player '+i,avatar:'av07',score:0,joinedAt:i+1};
  currentPlayers=players;lastScoreColumnSignature='';
  if(mode==='highstakes'){roomState.phase='hs';roomState.hsQ=q;const hs=HS.hsNewGame(Object.keys(players),100);roomState.hs=HS.hsStartRound(hs,{options:[1,2,3,4],realIdx:2,fakeBy:{},now:Date.now()});if(variant==='bet'){roomState.hs=HS.hsBeginBetting(roomState.hs,Object.fromEntries(Object.keys(players).map(id=>[id,0])),Date.now());roomState.hs.bet.turn='me';}}
@@ -180,8 +181,10 @@ server.listen(0,'127.0.0.1',()=>{
     if(!process.env.PLAY_LAYOUT_NAV_ONLY){
     const baselines={};
 if(process.env.PLAY_LAYOUT_WALLS){const bad=[];const run=async tag=>{const rows=JSON.parse(await evaluate(WALLS));rows.forEach(x=>bad.push(tag+' '+width+'x'+height+': '+x))};
- const modes=['quick','party','teamvteam','worlds','daily','monthly','survival','whichbigger','highlow','teamworlds','highstakes','highstakes:bet','bluff','bluff:vote','bluff:summary','bluff:standings','quick:many','bluff:many','highstakes:many'];
- for(const mode of modes){await evaluate('window.__layoutAudit('+JSON.stringify(mode)+')');await new Promise(r=>setTimeout(r,2200));await run(mode)}
+ const modes=['quick','party','teamvteam','worlds','daily','monthly','survival','whichbigger','highlow','teamworlds','highstakes','highstakes:bet','bluff','bluff:vote','bluff:summary','bluff:standings','quick:many','teamvteam:many','bluff:many','highstakes:many'];
+ for(const mode of modes){await evaluate('window.__layoutAudit('+JSON.stringify(mode)+')');await new Promise(r=>setTimeout(r,2200));await run(mode);
+  const top=await evaluate(`(()=>{const c=document.querySelector('#hud.active[data-play-layout=party] .score-col'),p=document.querySelector('#hud.active .question-prompt');if(!c||!p)return null;return {col:Math.round(c.getBoundingClientRect().top),board:Math.round(p.getBoundingClientRect().bottom)}})()`);
+  if(top&&top.col>top.board-20)bad.push(mode+' '+width+'x'+height+': score column starts under the board ('+JSON.stringify(top)+') - flat edge, it must reach up behind the board')}
  for(const n of [4,10]){await evaluate('window.__layoutAudit("quick")');await evaluate('window.__layoutRv('+n+')');await new Promise(r=>setTimeout(r,500));await run('reveal'+n);await evaluate('window.__layoutAudit("quick")');await evaluate('window.__layoutSm('+n+')');await new Promise(r=>setTimeout(r,500));await run('summary'+n)}
  const uniq=[...new Set(bad)];if(uniq.length){console.error('Invisible walls found:\n'+uniq.join('\n'));process.exitCode=1}else console.log('No invisible walls at '+width+'x'+height);continue;}
     if(process.env.PLAY_LAYOUT_RESULTS){
