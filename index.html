@@ -15092,7 +15092,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const ans = m ? m.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
     if (ok) vibrate(25); else vibrate([70, 60, 70]); // safe: a small buzz; lost a life: a heavy double
     void preloadWbReactionArt();
-    sv.res = { acc, ok, themed: sv.q && sv.q.theme || "", checkpoint: ok && sv.survived > 0 && sv.survived % 5 === 0 ? sv.survived : 0, saved: sv.shieldEvent === "saved", earned: sv.shieldEvent === "earned", dot: ok && sv.shieldEvent !== "earned" && !sv.prevShield && (sv.chain || 0) > (sv.prevChain || 0) ? sv.chain : 0, near: ok && !sv.prevShield && acc < SURVIVAL_SHIELD_ACC, ans, boost: bufferResultNote(q, g, deviceId) };
+    sv.res = { acc, ok, rawOk: roundAccuracy(g / q.answer) >= SURVIVAL_PASS, themed: sv.q && sv.q.theme || "", checkpoint: ok && sv.survived > 0 && sv.survived % 5 === 0 ? sv.survived : 0, saved: sv.shieldEvent === "saved", earned: sv.shieldEvent === "earned", dot: ok && sv.shieldEvent !== "earned" && !sv.prevShield && (sv.chain || 0) > (sv.prevChain || 0) ? sv.chain : 0, near: ok && !sv.prevShield && acc < SURVIVAL_SHIELD_ACC, ans, boost: bufferResultNote(q, g, deviceId) };
     sv.phase = "result";
     renderSurvival();
   }
@@ -15167,7 +15167,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
     const card = (o) => `<div class="wb-card"><img src="${o.image}" alt="" draggable="false"><span class="wb-n">${escapeHtml(o.name)}</span></div>`;
     const said = Number(sv.g).toLocaleString("en-US", { maximumFractionDigits: 2 });
-    const title = r.saved ? "Shield saved you!" : r.boost ? (ok ? "Safe with buffer!" : "Still short of safety") : (ok ? "Safe!" : "Lost a life");
+    // "Safe with buffer" only when the buffer is what saved you; if the plain guess was already safe the buffer just polished it.
+    const title = r.saved ? "Shield saved you!" : r.boost ? (ok ? (r.rawOk ? (Number(formatAccuracy(r.acc)) >= 100 ? "Perfect with buffer!" : "Safe!") : "Safe with buffer!") : "Still short of safety") : (ok ? "Safe!" : "Lost a life");
     return `<div class="pin-top">${svHudHtml(sv.lives + (sv.lossPending ? 1 : 0), sv.asked, svRunAcc(sv.accs.length), !!sv.prevShield, sv.prevChain || 0)}${r.themed ? svThemeStripHtml(r.themed) : ""}</div>
       <div class="wb-cards sv-rcards">${card(u)}${card(t)}</div>
       <div class="wb-verdict ${r.saved ? "saved" : ok ? "ok" : "bad"}">
@@ -15175,8 +15176,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="sv-result-heading"><div class="wb-verdict-t${r.checkpoint ? " mile" : ""}">${r.checkpoint ? "Checkpoint!" : title}</div>${r.checkpoint ? `<span class="sv-checkpoint-coins" aria-hidden="true">${svCoinBurstHtml()}</span>` : ""}</div>
         ${r.themed && ok ? `<div class="sv-callout bonus sv-arr" style="--a:.55s"><b>Bonus!</b> Themed round won &middot; +${SURVIVAL_THEME_COINS} coins instead of +${SURVIVAL_COINS_PER}</div>` : ""}
         <div class="sv-answer">
-          <span class="sv-answer-label">Correct answer</span><strong>${escapeHtml(String(r.ans))}</strong>
-          <dl class="sv-answer-stats"><div><dt>Your guess</dt><dd>${said}</dd></div><div><dt>Accuracy</dt><dd class="sv-answer-accuracy">${svAccuracyLabel(r.acc)}</dd></div></dl>
+          <div class="sv-answer-row">
+            <div class="sv-answer-side"><span class="sv-side-label">Your guess</span><b>${said}</b></div>
+            <div class="sv-answer-mid"><span class="sv-answer-label">Correct answer</span><strong>${escapeHtml(String(r.ans))}</strong></div>
+            <div class="sv-answer-side"><span class="sv-side-label">Accuracy</span><b class="sv-answer-accuracy">${svAccuracyLabel(r.acc)}</b></div>
+          </div>
           ${svGaugeHtml(r.acc)}
         </div>
         ${r.boost || ""}

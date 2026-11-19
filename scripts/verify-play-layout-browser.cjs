@@ -81,6 +81,7 @@ window.__layoutHsRefresh=()=>{roomState.players.me.layoutTick=(roomState.players
 window.__layoutBluffRefresh=()=>{roomState.players.me.layoutTick=(roomState.players.me.layoutTick||0)+1;bluffUI.refresh();};
 window.__layoutBoard=id=>{roomState.board=id;applyBoard(id);getPlayLayout().measure();};
 window.__layoutPh=async ph=>{if(ph==='animation'){roomState={...roomState,phase:'animation',animEndsAt:Date.now()+60000};}else if(ph==='answers'){const ids=Object.keys(currentPlayers);roomState={...roomState,phase:'answers',answersEndsAt:Date.now()+60000,answers:ids.map((id,i)=>({playerId:id,value:10+i*7.3+(i%3)})),picks:{}};}else roomState={...roomState,phase:ph};applyPhase(roomState);if(ph==='answers')renderAnswersScreen(roomState);};
+window.__layoutSvRes=res=>{sv={...sv,phase:'result',g:res.g||32,lives:3,res:{themed:'',checkpoint:0,saved:false,earned:false,dot:0,near:false,boost:'',ans:'57.2',...res}};renderSurvival();};
 window.__layoutRv=async n=>{
  await window.__layoutAudit('quick');
  const base=Object.keys(currentPlayers);for(let i=base.length;i<n;i++)currentPlayers['x'+i]={...currentPlayers[base[i%base.length]],name:'P'+i};
