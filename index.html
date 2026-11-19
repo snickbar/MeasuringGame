@@ -5092,7 +5092,7 @@ if (location.protocol === "file:") {
         <button type="button" id="cs-tour" class="lobby-opt" role="switch" aria-checked="false" aria-pressed="false" data-opt="tour"><img class="lobby-opt-ic" src="icons/flair/bolt.webp" alt=""><span class="lobby-opt-tx"><b>Show how to play</b><small>A short slideshow for everyone before round 1</small></span><span class="lobby-switch" aria-hidden="true"><span class="lobby-switch-state">Off</span></span></button>
         <button type="button" id="cs-anim" class="lobby-opt" role="switch" aria-checked="true" aria-pressed="true" data-opt="anim"><img class="lobby-opt-ic" src="items/fireworks.webp" alt=""><span class="lobby-opt-tx"><b>Answer animation</b><small>Watch the answer play out each round</small></span><span class="lobby-switch" aria-hidden="true"><span class="lobby-switch-state">On</span></span></button>
         <button type="button" id="cs-mb" class="lobby-opt" role="switch" aria-checked="true" aria-pressed="true" data-opt="mb"><img class="lobby-opt-ic" src="items/unicorn.webp" alt=""><span class="lobby-opt-tx"><b>Make-believe objects</b><small>Include dragons, unicorns and more</small></span><span class="lobby-switch" aria-hidden="true"><span class="lobby-switch-state">On</span></span></button>
-        <button type="button" id="cs-solo2x" class="lobby-opt" role="switch" aria-checked="true" aria-pressed="true" data-opt="solo2x" hidden><img class="lobby-opt-ic" src="icons/coin.webp" alt=""><span class="lobby-opt-tx"><b>Double points for a team of one</b><small>Keeps 2 v 1 fair: a lone player earns twice the points</small></span><span class="lobby-switch" aria-hidden="true"><span class="lobby-switch-state">On</span></span></button>
+        <button type="button" id="cs-solo2x" class="lobby-opt" role="switch" aria-checked="true" aria-pressed="true" data-opt="solo2x" hidden><img class="lobby-opt-ic" src="icons/coin.webp" alt=""><span class="lobby-opt-tx"><b>Double second-chance points for a team of one</b><small>Keeps 2 v 1 fair: a lone player earns 2 for a correct pick</small></span><span class="lobby-switch" aria-hidden="true"><span class="lobby-switch-state">On</span></span></button>
       </div>
     </div>
     <details class="cozy-host-settings" id="host-settings-card">
@@ -12851,7 +12851,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     ["tour", "icons/flair/bolt.webp", "Show how to play", "A short slideshow for everyone before round 1"],
     ["anim", "items/fireworks.webp", "Answer animation", "Watch the answer play out each round"],
     ["mb", "items/unicorn.webp", "Make-believe objects", "Include dragons, unicorns and more"],
-    ["solo2x", "icons/coin.webp", "Double points for a team of one", "Keeps 2 v 1 fair: a lone player earns twice the points"],
+    ["solo2x", "icons/coin.webp", "Double second-chance points for a team of one", "Keeps 2 v 1 fair: a lone player earns 2 for a correct pick"],
   ];
   function roomOptsHtml(avail, st) {
     return `<div class="lobby-opts" role="group" aria-label="Room options">${ROOM_OPT_ROWS.map(([id, ic, t, sub]) => `<button type="button" class="lobby-opt" role="switch" data-opt="${id}" aria-checked="${!!st[id]}" aria-pressed="${!!st[id]}"${avail[id] === false ? " hidden" : ""}><img class="lobby-opt-ic" src="${ic}" alt=""><span class="lobby-opt-tx"><b>${t}</b><small>${sub}</small></span><span class="lobby-switch" aria-hidden="true"><span class="lobby-switch-state">${st[id] ? "On" : "Off"}</span></span></button>`).join("")}</div>`;
@@ -13003,7 +13003,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function renderTeamVTeamInfo() {
     teamvteamContentEl.innerHTML = `<h2 class="dc-title">Team vs Team</h2>${tourBtn('teamvteam')}
-      <div class="dc-card dc-hot"><div class="dc-big">Play as a team</div><div class="dc-note">Pick a team color with your partner in the lobby. Whoever guesses closest each round wins the point for the whole team, not just themselves. Teams can be uneven (2 v 1, 2 v 2 v 1...) with at least 3 players; a team of one earns double points to keep it fair (the host can turn that off in the room options).</div></div>
+      <div class="dc-card dc-hot"><div class="dc-big">Play as a team</div><div class="dc-note">Pick a team color with your partner in the lobby. Whoever guesses closest each round wins the point for the whole team, not just themselves. Teams can be uneven (2 v 1, 2 v 2 v 1...) with at least 3 players; a team of one earns double second-chance points to keep it fair, since a pair gets two picks (the host can turn that off in the room options).</div></div>
       <div class="dc-card"><div class="dc-big">Scoring</div><div class="dc-note">Same rules as Classic Party &mdash; closest guess, second chances, crowd favorite &mdash; just credited to your team. If you and your teammate tie for the round win, your team only gets it once.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">Both teammates earn the same full amount, based on your team's final score.</div></div>
       <h3 class="cs-h">Your best teams</h3>${teamVTeamBestHtml()}
@@ -20449,8 +20449,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const team = playersSnap[id].team;
         if (team) { teamTotals[team] = (teamTotals[team] || 0) + (lastRoundPoints[id] || 0); teamSizes[team] = (teamSizes[team] || 0) + 1; }
       });
-      // A team of one plays 2 v 1 against pairs: its points are doubled (room option "Double points for a team of one", on by default) so it is not outscored just for having one player.
-      Object.keys(teamTotals).forEach((t) => { if (teamSizes[t] === 1 && (roomState.settings || currentSettings).soloTeamDouble !== false) teamTotals[t] *= 2; });
+      // A team of one plays 2 v 1 against pairs, which get two second-chance picks a round: a lone player's second-chance points count double
+      // (room option "Double second-chance points for a team of one", on by default). Closest-guess and double-down points stay single.
+      if ((roomState.settings || currentSettings).soloTeamDouble !== false) {
+        const pickPts = {};
+        entries.forEach((e) => e.pickedBy.forEach((pk) => { pickPts[pk.playerId] = (pickPts[pk.playerId] || 0) + pk.points; }));
+        truthPickedBy.forEach((pk) => { pickPts[pk.playerId] = (pickPts[pk.playerId] || 0) + pk.points; });
+        Object.keys(playersSnap).forEach((id) => {
+          const team = playersSnap[id].team;
+          if (team && teamSizes[team] === 1 && pickPts[id]) {
+            teamTotals[team] += pickPts[id];
+            updates[`players/${id}/individualPoints`] = (updates[`players/${id}/individualPoints`] || 0) + pickPts[id];
+          }
+        });
+      }
       Object.keys(playersSnap).forEach((id) => {
         const team = playersSnap[id].team;
         if (team) lastRoundPoints[id] = teamTotals[team];
@@ -24230,7 +24242,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const img = (src) => `<img src="${src}" alt="" draggable="false">`;
     let lrKey, lrTitle, lrChips;
     if (bluffMode) { lrKey='bluff'; lrTitle='Bluff the Room'; lrChips=[chip('🔁', data.settings.bluffTurns===1?'1 turn each':data.settings.bluffTurns===2?'2 turns each':'Auto turns'), chip('✅','+2 correct vote'), chip('🎭','+1 per player fooled'), chip('🚫','No Second Chance')]; }
-    else if (teamMode) { lrKey='teamvteam'; lrTitle='Team vs Team'; lrChips=[chip('🏁', `${data.settings?.totalRounds||5} rounds`), ...(data.settings?.soloTeamDouble !== false ? [chip('2️⃣','Solo team ×2 points')] : [])]; }
+    else if (teamMode) { lrKey='teamvteam'; lrTitle='Team vs Team'; lrChips=[chip('🏁', `${data.settings?.totalRounds||5} rounds`), ...(data.settings?.soloTeamDouble !== false ? [chip('2️⃣','Solo team: 2× second chance')] : [])]; }
     else if (hsMode) { lrKey='highstakes'; lrTitle='High Stakes'; lrChips=[chip(img('icons/coin.webp'), `${data.settings?.startCoins || HS.HS_START_COINS} coins each`), chip('🏁', `Up to ${HS.HS_MAX_ROUNDS} rounds`)]; }
     else if (hlMode) { lrKey='hlsurvival'; lrTitle='High/Low Survival'; lrChips=[chip(img(HL_MESSAGE_BOTTLE), `${data.settings?.lives || HL_LIVES} bottles`), chip(data.settings?.cap ? '🏁' : '♾️', data.settings?.cap ? `Up to ${data.settings.cap} rounds` : 'Endless')]; }
     else if (worldsMode) { lrKey='teamworlds'; lrTitle='Team Worlds'; lrChips=[chip('🌍', escapeHtml(WORLDS.find((w) => w.id === data.settings?.worldId)?.name || 'World')), chip('❓','5 questions')]; }
