@@ -275,6 +275,7 @@ for(const m of ['quick:many','teamvteam:many','party']){await evaluate('window._
       const m=await evaluate(`(()=>{const q=e=>document.querySelector(e).getBoundingClientRect(),board=q('.question-prompt'),col=q('.main-col'),rows=[...document.querySelectorAll('#summary-list > li')],hit=document.elementFromPoint(board.left+board.width/2,board.top+board.height/2),first=rows[0].getBoundingClientRect().top;document.querySelector('.main-col').scrollTop=1e5;const last=rows[rows.length-1].getBoundingClientRect(),bar=q('#bottom-toolbar');const r={gap:Math.round(first-board.bottom),behind:col.top<=board.top+1,boardOnTop:!!(hit&&hit.closest('.question-prompt')),lastClear:last.bottom<=bar.top+1,reaches:col.bottom>=bar.bottom-1};document.querySelector('.main-col').scrollTop=0;return r})()`);
       if(m.gap>40||m.gap<0||!m.behind||!m.boardOnTop||!m.lastClear||!m.reaches)throw Error('Round summary '+n+' players '+width+'x'+height+': '+JSON.stringify(m));
       console.log(JSON.stringify({summaryRows:n,width,height,gap:m.gap,pass:true}));
+      if(n===4){const rb=await evaluate('window.__layoutRobotIdle()');if(!rb||!rb.on||rb.off||!rb.visible||!rb.card||Math.abs(rb.rect.b-rb.card.t)>10)throw Error('Quick robot must still stand on your Player card on the round summary '+width+'x'+height+': '+JSON.stringify(rb));await evaluate('window.__layoutRobotHide()');}
      }
      // After Lock it in: the answer sits at the bottom with the fact boxes and mascot above it, and nothing overflows.
      for(const mode of ['quick','party','teamvteam']){

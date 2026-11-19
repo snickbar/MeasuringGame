@@ -21,3 +21,6 @@ console.log('ok: score column reaches up behind the power-up tray');
 const kp = html.slice(html.indexOf('focusedPlayLayout?.restoreHighLow()'), html.indexOf('focusedPlayLayout?.keepParty(hudEl)'));
 if (!kp.includes('"answers"') || !kp.includes('"animation"')) { console.error('FAIL: applyPhase must keep the party layout in the answers and animation phases too'); process.exit(1); }
 console.log('ok: second-chance and reveal-scene phases keep the party layout');
+
+if (!html.includes('phase !== "reveal" && phase !== "summary") quickRobot.hide()')) { console.error('FAIL: the Quick robot must stay on your card through the round summary (applyPhase hides him only outside reveal and summary)'); process.exit(1); }
+console.log('ok: the Quick robot stays through reveal and summary');
