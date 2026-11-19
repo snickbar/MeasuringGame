@@ -66,7 +66,7 @@ export function createPlayLayout(doc = document) {
           const boardRect = board.getBoundingClientRect();
           const up = Math.max(0, Math.round(col.getBoundingClientRect().top - boardRect.top));
           let pull = 0;
-          if (stage) { const slack = boardRect.bottom - stage.getBoundingClientRect().bottom; if (slack > 6) pull = Math.round(slack - 3); }
+          if (stage && stage.getClientRects().length) { const slack = boardRect.bottom - stage.getBoundingClientRect().bottom; if (slack > 6) pull = Math.round(slack - 3); }
           owner.style.setProperty('--rv-up', `${up}px`);
           owner.style.setProperty('--rv-pad', `${Math.max(0, up - pull)}px`);
         }
