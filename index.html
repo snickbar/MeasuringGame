@@ -225,7 +225,7 @@ if (location.protocol === "file:") {
 
   #question-view, #answers-view, #animation-view, #reveal-view, #summary-view, #countdown-view { display: none; }
   #question-view.active, #answers-view.active, #animation-view.active, #reveal-view.active, #summary-view.active { display: block; }
-  #anim-stage { max-width: 360px; margin: 4px auto 0; border-radius: 12px; }
+  #anim-stage { max-width: min(100%, 560px); margin: 4px auto 0; border-radius: 12px; }
   #countdown-view.active { display: flex; }
   #countdown-view {
     flex-direction: column; align-items: center; justify-content: center; gap: 20px;
@@ -14107,7 +14107,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     qBoardHome(el);
     if (wl.phase === "reveal") {
       const k = wl.guesses.length - 1;
-      el.innerHTML = `<div class="pin-top">${header}${dots(k)}${worldProgressHtml(k)}</div><p class="dc-prompt">${escapeHtml(wl.questions[k].prompt)}</p><div id="wl-stage"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="wl-skip">Skip</button></div>`;
+      el.innerHTML = `<div class="pin-top">${header}${dots(k)}</div><p class="dc-prompt">${escapeHtml(wl.questions[k].prompt)}</p><div id="wl-stage"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="wl-skip">Skip</button></div>`;
       getPlayLayout().worlds(worldsScreenEl, el);
       worldRunReveal();
       return;
@@ -24299,7 +24299,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       let bar = document.getElementById("tw-anim-progress");
       if (!bar) { bar = document.createElement("div"); bar.id = "tw-anim-progress"; bar.hidden = true; (qPromptEl.closest(".hud-timer-row") || qPromptEl).before(bar); } // above the question row, full width
       // High/Low Survival has no star bar - and showing the running average here would spoil the round's result.
-      const showBar = twShowPrompt && !isHlSettings(roomState.settings);
+      const showBar = false; // the reveal scene gets the room: no accuracy star graph during the animation
       if (showBar) {
         const meNow = currentPlayers[currentPlayerId];
         // Scoring is saved before the stack animation starts. Keep this meter on
@@ -24319,11 +24319,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // listener happens to fire on. A CSS class with !important sidesteps the race entirely -
     // it keeps winning regardless of what applyBoard resets the attribute/inline styles to,
     // as long as the class itself stays on, which only this code ever touches.
-    qPromptEl.classList.toggle("tw-plain", isTeamWorlds && !twBorrowed);
+    qPromptEl.classList.toggle("tw-plain", (isTeamWorlds || phase === "animation") && !twBorrowed); // the reveal scene gets the room: the question is just a plain pill during the animation in every multiplayer mode
     applyBoard(activeBoard()); // plain box for Team Worlds / High-Low, the equipped board everywhere else (no-op when unchanged)
     hudEl.dataset.twPhase = isTeamWorlds ? phase : "";
     hudEl.dataset.phase = phase;
-    hudTimerColEl.style.display = isTeamWorlds ? "none" : "";
+    hudTimerColEl.style.display = (isTeamWorlds || phase === "animation") ? "none" : "";
     if (phase !== "animation") stopAnimation();
     revealViewEl.classList.toggle("active", phase === "reveal");
     summaryViewEl.classList.toggle("active", phase === "summary");
