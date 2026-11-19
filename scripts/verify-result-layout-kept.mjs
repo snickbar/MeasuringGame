@@ -17,6 +17,7 @@ if (!sets || publishes < sets || clears < 2) { console.error('FAIL: powerup-ui.m
 if (!/\.score-col\{margin-top:calc\(-1 \* var\(--sc-pu,0px\)\)/.test(css)) { console.error('FAIL: play-layout.css must pull .score-col up by --sc-pu'); process.exit(1); }
 console.log('ok: score column reaches up behind the power-up tray');
 
-// The second-chance ("answers") phase is also a party screen: without the layout the score column starts flat under the board.
-if (!/phase === "answers"\) && data\.settings\?\.mode !== "teamworlds"\) focusedPlayLayout\?\.keepParty\(hudEl\)/.test(html)) { console.error('FAIL: applyPhase must keep the party layout in the second-chance (answers) phase too'); process.exit(1); }
-console.log('ok: second-chance phase keeps the party layout');
+// The second-chance ("answers") and reveal-scene ("animation") phases are party screens too: without the layout the score column / scene starts flat under the board.
+const kp = html.slice(html.indexOf('focusedPlayLayout?.restoreHighLow()'), html.indexOf('focusedPlayLayout?.keepParty(hudEl)'));
+if (!kp.includes('"answers"') || !kp.includes('"animation"')) { console.error('FAIL: applyPhase must keep the party layout in the answers and animation phases too'); process.exit(1); }
+console.log('ok: second-chance and reveal-scene phases keep the party layout');

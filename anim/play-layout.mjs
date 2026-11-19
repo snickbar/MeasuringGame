@@ -52,9 +52,10 @@ export function createPlayLayout(doc = document) {
         const row = owner.querySelector('.hud-timer-row'), side = owner.querySelector('.score-sidebar');
         if (row && side && side.getClientRects().length) owner.style.setProperty('--sc-up', `${Math.max(0, Math.round(side.getBoundingClientRect().top - row.getBoundingClientRect().top))}px`);
       }
-      if (owner.dataset.playLayout === 'party' && owner.querySelector('#reveal-view.active, #summary-view.active')) {
+      if (owner.dataset.playLayout === 'party' && owner.querySelector('#reveal-view.active, #summary-view.active, #animation-view.active')) {
         const col = owner.querySelector('.main-col');
         owner.style.removeProperty('--rv-fit');
+        owner.style.removeProperty('--an-fit');
         owner.style.removeProperty('--rv-up');
         owner.style.removeProperty('--rv-pad');
         // The papers scroll BEHIND the question board (no clip edge floating under it): the column reaches up to the board's top,
@@ -74,6 +75,12 @@ export function createPlayLayout(doc = document) {
         for (let i = 0; reveal && i < 3 && col && col.scrollHeight > col.clientHeight + 1; i++) {
           k = Math.max(0.66, k * (col.clientHeight / col.scrollHeight) * 0.99);
           owner.style.setProperty('--rv-fit', k.toFixed(3));
+        }
+        // The reveal scene shrinks a little (never below 70%) so it rarely needs to scroll; whatever is left scrolls behind the board.
+        const anim = !!owner.querySelector('#animation-view.active');
+        for (let i = 0; anim && i < 3 && col && col.scrollHeight > col.clientHeight + 14; i++) { // (a few px of overflow is just the bottom padding: the scene already sizes itself to the space)
+          k = Math.max(0.7, k * (col.clientHeight / col.scrollHeight) * 0.99);
+          owner.style.setProperty('--an-fit', k.toFixed(3));
         }
         continue; // the question board keeps its size here; only the papers adapt
       }
@@ -99,7 +106,7 @@ export function createPlayLayout(doc = document) {
   const remeasure = () => { if (watchFrame) return; watchFrame = win.requestAnimationFrame(() => { watchFrame = 0; measure(); }); };
   // The board can still be changing size when the reveal opens (scene art loads, text refits, answer line appears), so also re-measure when it resizes and shortly after the screen opens.
   const boardResize = new win.ResizeObserver(remeasure);
-  { const hudEl = doc.getElementById('hud'); hudEl?.querySelectorAll('.hud-timer-row, .question-prompt, #q-stage, .score-sidebar').forEach(el => boardResize.observe(el)); }
+  { const hudEl = doc.getElementById('hud'); hudEl?.querySelectorAll('.hud-timer-row, .question-prompt, #q-stage, #anim-stage, .score-sidebar').forEach(el => boardResize.observe(el)); }
   const lateMeasure = () => { for (const ms of [250, 700, 1500]) win.setTimeout(remeasure, ms); };
   const watch = new win.MutationObserver(muts => { if (muts.some(m => m.type === 'attributes' && m.target.id && /view$/.test(m.target.id))) lateMeasure(); remeasure(); });
   for (const id of ['reveal-view', 'summary-view']) { const el = doc.getElementById(id); if (el) watch.observe(el, {attributes: true, attributeFilter: ['class']}); }
