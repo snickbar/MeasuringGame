@@ -111,13 +111,18 @@ window.__layoutAnt=async()=>{quickRobot.hide();partyAnt.hide();const solo=roomSt
  standMascots('reveal');await robotWait(300);const back=snap(),slideAgain=pop.getAnimations()[0]!==slide;
  partyAnt.sync(key,order,0);await robotWait(300);const idle=snap();const reactions=[];
  for(let i=1;i<=order.length;i++){partyAnt.sync(key,order,i);await robotWait(1000);reactions.push(partyAnt.reaction);}
- const end=snap();partyAnt.hide();roomState.settings.solo=solo;return {arrived,held,back,slideAgain,idle,reactions,end};};
+ const end=snap();partyAnt.hide();
+ // Team vs Team: a cat pair one round, a dog pair the next
+ const mode0=roomState.settings.mode,round0=roomState.round,sets=[];roomState.settings.mode='teamvteam';
+ for(const r of [1,2,3]){roomState.round=r;partyAnt.hide();standMascots('answers');await robotWait(400);const sn=snap();sets.push(document.querySelector('.pa-ant').dataset.set);partyAnt.sync(roomState.gameId+':'+r,order,order.length);await robotWait(700);sets.push(document.querySelector('.pa-ant').dataset.reaction+(sn&&sn.card&&Math.abs(sn.rect.b-sn.card.t)<=10?':on-card':':NOT-on-card'));}
+ partyAnt.hide();roomState.settings.mode=mode0;roomState.round=round0;roomState.settings.solo=solo;return {arrived,held,back,slideAgain,idle,reactions,end,sets};};
 window.__layoutAntShow=async i=>{partyAnt.hide();roomState.settings.solo=false;const order=roomState.revealOrder.slice(),key='antshot:'+Math.random();partyAnt.sync(key,order,0);await robotWait(1000);partyAnt.sync(key,order,i);await robotWait(1100);};
 window.__layoutQWaitExit=async()=>{const qv=document.getElementById('question-view'),scene=document.getElementById('q-wait-scene');qWaitKey=qWaitLastKey='audit:wait:'+Math.random();qWaitExited='';qWaitSeen=null;
  scene.querySelector('.qw-mascot').innerHTML='<img src="anim/mode-mascots/party-ant-tutorial.webp" alt="">';const wasQ=qv.classList.contains('active');qv.classList.add('active','q-waiting','q-wait-ready');scene.hidden=false;scene.querySelector('.qw-mascot').style.cssText='opacity:1;flex:none;height:80px;width:173px';await robotWait(100);
  const mm=scene.querySelector('.qw-mascot'),dbg={h:Math.round(mm.getBoundingClientRect().height),op:getComputedStyle(mm).opacity,key:qWaitKey,ex:qWaitExited,hid:scene.hidden};const m=mm.getBoundingClientRect(),n0=document.body.querySelectorAll(':scope > div[aria-hidden=true]').length;qWaitSnap();scene.hidden=true;qv.classList.remove('q-waiting','q-wait-ready');qWaitExit('answers'); /* the screen is already gone when the exit is asked for */
  const n1=document.body.querySelectorAll(':scope > div[aria-hidden=true]').length,c=document.body.querySelector(':scope > div[aria-hidden=true]:last-child'),r1=c&&c.getBoundingClientRect();await robotWait(260);const r2=c&&c.getBoundingClientRect();await robotWait(700);
  const n2=document.body.querySelectorAll(':scope > div[aria-hidden=true]').length;scene.querySelector('.qw-mascot').style.cssText='';qWaitKey='';scene.hidden=true;qv.classList.remove('q-waiting','q-wait-ready');if(!wasQ)qv.classList.remove('active');return {dbg,w:Math.round(m.width),n0,n1,n2,moved:r1&&r2?Math.round(r1.left-r2.left):0};};
+window.__layoutAntTeam=async r=>{partyAnt.hide();roomState.round=r;const order=(roomState.revealOrder&&roomState.revealOrder.length)?roomState.revealOrder:Object.keys(currentPlayers).map(id=>({playerId:id,accuracyPercent:50}));standMascots('answers');await robotWait(900);partyAnt.sync(roomState.gameId+':'+r,order,order.length);await robotWait(1100);return document.querySelector('.pa-ant')&&document.querySelector('.pa-ant').dataset.set;};
 window.__layoutRobotIdle=async()=>{quickRobot.hide();quickRobot.stand('idle:'+Math.random());await robotWait(1300);return robotSnap();};
 window.__layoutRobot=async acc=>{quickRobot.hide();const key='test:'+Math.random();quickRobot.stand(key);await robotWait(700);
  const idle=robotSnap();quickRobot.react(key,acc);await robotWait(1500);
@@ -223,7 +228,7 @@ server.listen(0,'127.0.0.1',()=>{
      const shot=async name=>{await new Promise(r=>setTimeout(r,700));const sh=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(dir,name+'-'+width+'x'+height+'.png'),Buffer.from(sh.data,'base64'));};
      await evaluate('window.__layoutRv(4)');await shot('quick-papers');
      await evaluate('window.__layoutSummaryPhase("quick")');await shot('quick-summary');
-     await evaluate('window.__layoutAudit("teamvteam")');await evaluate('window.__layoutPh("reveal")');await shot('teamvteam-reveal');
+     await evaluate('window.__layoutAudit("teamvteam")');await evaluate('window.__layoutPh("reveal")');await shot('teamvteam-reveal');await evaluate('window.__layoutAntTeam(1)');await shot('teamvteam-cats');await evaluate('window.__layoutAntTeam(2)');await shot('teamvteam-dogs');
      await evaluate('window.__layoutSummaryPhase("teamvteam")');await shot('teamvteam-summary');
      await evaluate('window.__layoutAudit("highlow")');await evaluate('window.__layoutPh("reveal")');await shot('highlow-reveal');
      await evaluate('window.__layoutSummaryPhase("highlow")');await shot('highlow-summary');
@@ -286,6 +291,7 @@ for(const m of ['quick:many','teamvteam:many','party']){await evaluate('window._
        if(!ant.arrived||!ant.arrived.visible||!ant.arrived.card||Math.abs(ant.arrived.rect.b-ant.arrived.card.t)>10)throw Error(why+'he must already stand on the top card on the second-chance page: '+JSON.stringify(ant.arrived));
        if(!ant.held||!ant.held.off)throw Error(why+'he must step aside while the reveal scene plays: '+JSON.stringify(ant.held));
        if(!ant.back||!ant.back.visible||ant.slideAgain)throw Error(why+'he must be back after the scene WITHOUT sliding in a second time: '+JSON.stringify({back:ant.back,slideAgain:ant.slideAgain}));
+       if(JSON.stringify(ant.sets)!=='["cats","win:on-card","dogs","win:on-card","cats","win:on-card"]')throw Error(why+'Team vs Team must alternate cats and dogs by round and stand on the top team card: '+JSON.stringify(ant.sets));
        if(JSON.stringify(ant.reactions)!=='["lose","soso","close","win"]')throw Error(why+'he must react to every paper by place (lose, soso, close, win): '+JSON.stringify(ant.reactions));
        if(!ant.end||!ant.end.visible||ant.end.off||!ant.end.card||Math.abs(ant.end.rect.b-ant.end.card.t)>10)throw Error(why+'he must stand on top of the TOP score card: '+JSON.stringify(ant.end));
        if(ant.end.rect.l<ant.end.hud.l-1||ant.end.rect.r>ant.end.hud.r+1)throw Error(why+'he runs off the side of the game screen: '+JSON.stringify(ant.end));

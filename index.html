@@ -13001,7 +13001,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function renderTeamVTeamInfo() {
     teamvteamContentEl.innerHTML = `<h2 class="dc-title">Team vs Team</h2>${tourBtn('teamvteam')}
-      <div class="dc-card dc-hot"><div class="dc-big">Play as a team</div><div class="dc-note">Pick a team color with your partner in the lobby. Whoever guesses closest each round wins the point for the whole team, not just themselves.</div></div>
+      <div class="dc-card dc-hot"><div class="dc-big">Play as a team</div><div class="dc-note">Pick a team color with your partner in the lobby. Whoever guesses closest each round wins the point for the whole team, not just themselves. Teams can be uneven (2 v 1, 2 v 2 v 1...) with at least 3 players; a team of one earns double points to keep it fair.</div></div>
       <div class="dc-card"><div class="dc-big">Scoring</div><div class="dc-note">Same rules as Classic Party &mdash; closest guess, second chances, crowd favorite &mdash; just credited to your team. If you and your teammate tie for the round win, your team only gets it once.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">Both teammates earn the same full amount, based on your team's final score.</div></div>
       <h3 class="cs-h">Your best teams</h3>${teamVTeamBestHtml()}
@@ -20442,11 +20442,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // every other system that already keys off a player's own score (ranks, the
     // combined team box, final-screen coin rewards) just works unmodified.
     if ((roomState.settings || currentSettings).mode === "teamvteam") {
-      const teamTotals = {};
+      const teamTotals = {}, teamSizes = {};
       Object.keys(playersSnap).forEach((id) => {
         const team = playersSnap[id].team;
-        if (team) teamTotals[team] = (teamTotals[team] || 0) + (lastRoundPoints[id] || 0);
+        if (team) { teamTotals[team] = (teamTotals[team] || 0) + (lastRoundPoints[id] || 0); teamSizes[team] = (teamSizes[team] || 0) + 1; }
       });
+      // A team of one plays 2 v 1 against pairs: its points are doubled so it is not outscored just for having one player.
+      Object.keys(teamTotals).forEach((t) => { if (teamSizes[t] === 1) teamTotals[t] *= 2; });
       Object.keys(playersSnap).forEach((id) => {
         const team = playersSnap[id].team;
         if (team) lastRoundPoints[id] = teamTotals[team];
@@ -22185,20 +22187,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   // Classic Party: the ant stands on the TOP score card (not yours) and reacts to every paper as it is revealed.
   const partyAnt = createPartyAnt({ hud: hudEl, cardFor: () => scoreColEl.querySelector(".score-card"), reduceMotion: prefersReducedMotion });
+  // Classic Party: the ant. Team vs Team: a cat pair one round, a dog pair the next (nobody is "the cats" or "the dogs").
+  function partyAntMode() { const m = roomState.settings?.mode || "party"; return !roomState.settings?.solo && (m === "party" || m === "teamvteam"); }
+  function partyAntSet() { return roomState.settings?.mode === "teamvteam" ? ((roomState.round || 1) % 2 ? "cats" : "dogs") : "ant"; }
   function syncMascots(order, settled) { syncQuickRobot(order, settled); syncPartyAnt(order, settled); }
   function syncPartyAnt(order, revealIndex) {
-    const party = !roomState.settings?.solo && (roomState.settings?.mode || "party") === "party";
-    if (!party || !order.length) { partyAnt.hide(); return; }
+    if (!partyAntMode() || !order.length) { partyAnt.hide(); return; }
+    partyAnt.use(partyAntSet());
     partyAnt.sync(`${roomState.gameId}:${roomState.round}`, order, revealIndex);
   }
 
   // The mascots arrive when the second-chance page does (sliding in from the right, once) and stay through the reveal scene,
   // the reveals and the round summary. While the full-width reveal scene plays they only step aside (no second slide-in after).
   function standMascots(phase) {
-    const party = (roomState.settings?.mode || "party") === "party" && !roomState.settings?.solo, quick = (roomState.settings?.mode || "party") === "party" && !!roomState.settings?.solo;
+    const party = partyAntMode(), quick = (roomState.settings?.mode || "party") === "party" && !!roomState.settings?.solo;
     const key = `${roomState.gameId}:${roomState.round}`, held = phase === "animation";
     if (quick && currentPlayers[currentPlayerId]) { quickRobot.stand(key, held); quickRobot.hold(held); } else quickRobot.hide();
-    if (party && Object.keys(currentPlayers || {}).length) { partyAnt.stand(key, held); partyAnt.hold(held); } else partyAnt.hide();
+    if (party && Object.keys(currentPlayers || {}).length) { partyAnt.use(partyAntSet()); partyAnt.stand(key, held); partyAnt.hold(held); } else partyAnt.hide();
   }
 
   function renderRevealChoreography(data) {
@@ -24199,13 +24204,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // Ready is intentionally absent; the host starts once the mode has enough players.
     let needsFriend, waitingMsg;
     if (teamMode) {
-      // Team vs Team needs at least 2 full (2-member) teams before it can start -
-      // an uneven/incomplete team blocks Start even if the room has four players.
+      // Team vs Team: teams of 2 or 1 (2 v 1, 2 v 2 v 1, ...). It starts with at least 3 players on at least 2 teams, everyone on a team.
       const teamCounts = {};
-      Object.values(data.players || {}).forEach((p) => { if (p.team) teamCounts[p.team] = (teamCounts[p.team] || 0) + 1; });
-      const fullTeams = Object.values(teamCounts).filter((n) => n >= 2).length;
-      needsFriend = fullTeams < 2;
-      waitingMsg = "Need at least 2 full teams of 2 to start — pick a color above, or add bots to fill a team.";
+      const everyone = Object.values(data.players || {});
+      everyone.forEach((p) => { if (p.team) teamCounts[p.team] = (teamCounts[p.team] || 0) + 1; });
+      const usedTeams = Object.keys(teamCounts).length, unassigned = everyone.filter((p) => !p.team).length;
+      needsFriend = everyone.length < 3 || usedTeams < 2 || unassigned > 0;
+      waitingMsg = unassigned > 0 ? "Everyone needs a team — pick a color above." : "Need at least 3 players on 2 teams (2 v 1 is fine) — pick a color above, or add bots.";
     } else if(bluffMode){
       needsFriend=Object.keys(data.players||{}).length<3;waitingMsg='Need at least 3 players — invite friends or add bots.';
     } else if (hsMode) {
