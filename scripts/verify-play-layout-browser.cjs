@@ -135,6 +135,10 @@ window.__layoutRobotScroll=async()=>{quickRobot.hide();quickRobot.stand('scroll:
  return {scrollable:true,before,after};};
 const FRAME_PROBE_MS=300;
 // Monthly always plays on its own month's question board (the fixture's month is 2026-10, board mb10), whatever board is equipped.
+window.__layoutMonthlyShot=async kind=>{await window.__layoutAudit('monthly');
+ if(kind==='question'){renderMonthly();return;}
+ if(kind==='result'){mo.phase='reveal';mo.guesses=[3];renderMonthly();await new Promise(r=>setTimeout(r,400));monthlyShowGuess(mo,document.getElementById('mo-result'),null);return;}
+ mo.phase='done';mo.guesses=[3,2,5];mo.flairShown=true;mo.coins=12;mo.practice=true;mo.level=1;renderMonthly();};
 window.__layoutMonthlyBoard=async()=>{await window.__layoutAudit('monthly');renderMonthly();await new Promise(r=>setTimeout(r,500));const q=document.getElementById('question-prompt').getBoundingClientRect(),sub=document.getElementById('mo-submit').getBoundingClientRect(),bar=document.getElementById('bottom-toolbar').getBoundingClientRect();return {board:document.getElementById('question-prompt').dataset.board,mounted:!!document.querySelector('#dq-board #question-prompt'),boardH:Math.round(q.height),submitBottom:Math.round(sub.bottom),barTop:Math.round(bar.top),vh:innerHeight};};
 window.__layoutReveal=async mode=>{
  await window.__layoutAudit(mode);
@@ -228,7 +232,7 @@ server.listen(0,'127.0.0.1',()=>{
      const shot=async name=>{await new Promise(r=>setTimeout(r,700));const sh=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(dir,name+'-'+width+'x'+height+'.png'),Buffer.from(sh.data,'base64'));};
      await evaluate('window.__layoutRv(4)');await shot('quick-papers');
      await evaluate('window.__layoutSummaryPhase("quick")');await shot('quick-summary');
-     await evaluate('window.__layoutAudit("daily")');await new Promise(r=>setTimeout(r,500));await shot('daily-question');await evaluate('window.__layoutAudit("teamvteam")');await evaluate('window.__layoutPh("reveal")');await shot('teamvteam-reveal');await evaluate('window.__layoutAntTeam(1)');await shot('teamvteam-cats');await evaluate('window.__layoutAntTeam(2)');await shot('teamvteam-dogs');
+     await evaluate('window.__layoutAudit("daily")');await new Promise(r=>setTimeout(r,500));await shot('daily-question');for(const k of ['question','result','final'])try{await evaluate('window.__layoutMonthlyShot("'+k+'")');await shot('monthly-'+k);}catch(e){fs.writeFileSync(path.join(dir,'monthly-'+k+'-ERR.txt'),String(e));}await evaluate('window.__layoutAudit("teamvteam")');await evaluate('window.__layoutPh("reveal")');await shot('teamvteam-reveal');await evaluate('window.__layoutAntTeam(1)');await shot('teamvteam-cats');await evaluate('window.__layoutAntTeam(2)');await shot('teamvteam-dogs');
      await evaluate('window.__layoutSummaryPhase("teamvteam")');await shot('teamvteam-summary');
      await evaluate('window.__layoutAudit("highlow")');await evaluate('window.__layoutPh("reveal")');await shot('highlow-reveal');
      await evaluate('window.__layoutSummaryPhase("highlow")');await shot('highlow-summary');
