@@ -12457,7 +12457,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const card = (o) => `<div class="wb-card"><img src="${o.image}" alt="" draggable="false"><span class="wb-n">${escapeHtml(o.name)}</span></div>`;
       const said = Number(daily.guesses[r.i]).toLocaleString("en-US", { maximumFractionDigits: 2 });
       el.innerHTML = `<div class="pin-top"><h2 class="dc-title">${roundTitle} ${r.i + 1} of 3</h2>${scoredRoundDots(dailyAccuracies(), r.i, r.i + 1)}</div>
-        <div class="wb-cards sv-rcards">${card(u)}${card(t)}</div>
+        <div class="wb-cards sv-rcards">${card(u)}${card(t)}</div>${soloFactsHtml(q)}
         <div class="wb-verdict ${r.ok ? "ok" : "bad"}">
           <div class="wb-result-stage dc-stage">${soloScoreMascotHtml(DAILY_ROOSTER_ART, soloScoreReaction(r.acc), { sunriseStep: r.i })}</div>
           <div class="dc-verdict-row">
@@ -14719,7 +14719,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (currentDot) currentDot.outerHTML = completedRoundDot(acc);
     document.getElementById("mo-stage").hidden = true;
     const objCard = (o) => `<div class="wb-card"><img src="${o.image}" alt="" draggable="false"><span class="wb-n">${escapeHtml(o.name)}</span></div>`;
-    host.innerHTML = `<div class="wb-cards sv-rcards mo-rcards">${objCard(OBJECT_BY_ID.get(q.unitId))}${objCard(OBJECT_BY_ID.get(q.targetId))}</div><div class="dc-card dc-hot dc-res mo-round-result">
+    host.innerHTML = `<div class="wb-cards sv-rcards mo-rcards">${objCard(OBJECT_BY_ID.get(q.unitId))}${objCard(OBJECT_BY_ID.get(q.targetId))}</div>${soloFactsHtml(q)}<div class="dc-card dc-hot dc-res mo-round-result">
       <div class="mo-score-grid">${soloScoreMascotHtml(MONTHLY_SQUIRREL_ART, reaction, { gesture, foreground: monthlyAcornPile(i + 1, arrival) })}
         <div class="mo-verdict"><div class="dc-res-head">${markSvg(acc)}<span>${label}</span></div></div>
       </div>
@@ -14735,7 +14735,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     skip.disabled = false;
     skip.className = "dc-btn";
     skip.textContent = run.guesses.length >= run.questions.length ? "See my results" : "Next question";
-    requestAnimationFrame(() => requestAnimationFrame(() => fitPlayScroll(host.closest(".play-middle"), 0.5)));
+    requestAnimationFrame(() => requestAnimationFrame(() => fitPlayScroll(host.closest(".play-middle"), 0.8)));
   }
   async function monthlyRunReveal() {
     const run = mo, q = run.questions[run.guesses.length - 1], host = document.getElementById("mo-result");
@@ -21210,6 +21210,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // seen and your accuracy in that object's role), and the mode's mascot waits in between. The mascot is the first thing to shrink for room.
   const QW_MASCOTS = { quick: ["anim/mode-mascots/quick-robot-tutorial.webp"], party: ["anim/mode-mascots/party-ant-tutorial.webp"], teamvteam: ["anim/mode-mascots/team-cat-tutorial.webp", "anim/mode-mascots/team-dog-tutorial.webp"] };
   let qWaitKey = "", qWaitTimers = [];
+  // The same two fact boxes (new discovery, or times seen + your accuracy in that role) under the object pictures on the solo result screens.
+  function soloFactsHtml(q) {
+    const a = qWaitFact(q.unitId, "u"), b = qWaitFact(q.targetId, "g");
+    return `<div class="qw-facts solo-facts"><div class="qw-fact${a.cls || ""}" data-side="u">${a.html}</div><div class="qw-fact${b.cls || ""}" data-side="g">${b.html}</div></div>`;
+  }
   function qWaitFact(id, side) {
     const times = id ? (objectFrequency(myProfile)[id] || 0) : 0, role = side === "u" ? "small" : "big";
     if (!id) return { html: "" };
