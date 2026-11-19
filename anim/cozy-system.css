@@ -234,10 +234,15 @@ html[data-motion=reduce] *,html[data-motion=reduce] *::before,html[data-motion=r
 
 /* No Back on an active game screen (questions, rounds, results): it is only for setup and menu screens. */
 [data-play-layout]>.screen-back-btn{display:none!important}
+/* ...except Monthly's level start page and its results: Back there returns to the level list (the old text "Levels" link and the Finish button are gone). */
+#monthly-screen[data-play-layout]:has(>#monthly-content:is([data-mo-phase=intro],[data-mo-phase=done]))>.screen-back-btn{display:block!important}
 
 /* Mode menus: the main button (Start / Create Room) sits right under the banner, above "Watch how to play". */
-:is(#teamvteam-content,#teamworlds-content,#daily-content,#survival-content,#wb-content):has(> .mode-menu-header) > .mode-menu-header{order:-2}
-:is(#teamvteam-content,#teamworlds-content,#daily-content,#survival-content,#wb-content):has(> .mode-menu-header) > .pin-bottom{position:static;order:-1!important;margin:6px 0 10px!important;padding:0!important;z-index:auto}
+:is(#teamvteam-content,#teamworlds-content,#daily-content,#survival-content,#wb-content):has(> .mode-menu-header) > .mode-menu-header{order:-3}
+:is(#teamvteam-content,#teamworlds-content,#daily-content,#survival-content,#wb-content):has(> .mode-menu-header) > .pin-bottom{position:static;order:-2!important;margin:6px 0 10px!important;padding:0!important;z-index:auto}
+
+/* A saved run (Continue? Resume / Discard) sits directly under the Start / New run button, above "Watch how to play". */
+:is(#survival-content,#wb-content):has(> .mode-menu-header) > .resume-card{order:-1;margin:0 0 10px}
 
 /* Banners are titles: flat, squarer, in the mode's colour. Buttons are glossy and rounded. */
 .dc-title.polish-banner.matching-mode-banner[data-menu-banner],.dc-title.polish-banner.plain-banner,.dc-title.polish-banner.matching-mode-banner[data-menu-banner]:is(h1,h2,div){

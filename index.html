@@ -2003,7 +2003,7 @@ if (location.protocol === "file:") {
      and Settings is a full layer above them, under the top toolbar. */
   #settings-back-game { display: none; width: 100%; margin: 0 0 12px; }
   #settings-screen.peek { display: block !important; position: fixed; top: 62px; bottom: 0; left: 0; right: 0; max-width: 520px; margin: 0 auto; z-index: 51; overflow-y: auto; -webkit-overflow-scrolling: touch; box-sizing: border-box; padding: 10px 12px 40px; background: linear-gradient(150deg, #fbfaf6 0%, #f3f1ea 45%, #fdf6ec 100%); animation: none; }
-  #settings-screen.peek #settings-back-game { display: block; }
+  #settings-screen.peek #settings-back-game { display: block; position: sticky; top: 6px; z-index: 8; } /* pinned: stays at the top while Settings scrolls under it (no backing box, the page shows around it) */
   #settings-screen.peek #settings-close-btn { display: none; }
   /* Keep navigation above scrolling content; Lobby pins only Start game and Back. */
   .screen-lock { position: sticky; top: 62px; z-index: 6; margin: 0 -12px 8px; padding: 6px 12px 6px; background: transparent; }
@@ -2874,7 +2874,7 @@ if (location.protocol === "file:") {
     text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26,
                  0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26;
   }
-  button#exit-confirm-no-btn { --pic-h: 44px; width: 100%; font-size: 16px; }
+  button#exit-confirm-no-btn, button#exit-confirm-cancel-btn { --pic-h: 44px; width: 100%; font-size: 16px; }
   button#preset-save-cancel-btn, button#preset-save-confirm-btn { --pic-h: 40px; }
   button.preset-slot-action-btn { --pic-h: 30px; font-size: 12px; }
   button.edit-preset-settings-btn { --pic-h: 46px; font-size: 16px; margin-bottom: 14px; }
@@ -4505,6 +4505,7 @@ if (location.protocol === "file:") {
     <div id="exit-confirm-buttons">
       <button id="exit-confirm-yes-btn" type="button" data-fit-single-line="true">Yes</button>
       <button id="exit-confirm-no-btn" type="button" data-fit-single-line="true">No, go back</button>
+      <button id="exit-confirm-cancel-btn" type="button" class="menu-action-art art-confirm-red" data-fit-single-line="true" style="display:none">Cancel</button>
     </div>
   </div>
 </div>
@@ -6888,17 +6889,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     highstakes: { key: () => roomState && currentRoomCode && gameRewardKey(currentRoomCode, roomState) + "_hs" },
     whichbigger: { key: () => wb && wb.runId, done: () => wb.phase === "over" || wb.phase === "done" }
   };
-  function adBarHtml(mode, finishId) {
+  function adBarHtml(mode, finishId, primaryLabel) { // primaryLabel: this screen's own pinned button (e.g. Monthly's Replay) in place of Finish
+    if (primaryLabel) {
+      const cfg0 = AD_BAR_MODES[mode], o0 = adOffers[mode];
+      const live0 = o0 && cfg0 && adSan(cfg0.key()) === adSan(o0.key) && Date.now() - o0.t < 30 * 60 * 1000;
+      if (!live0) return `<button type="button" class="dc-btn" id="${finishId}">${primaryLabel}</button>`;
+      return `<div class="wl-done-split"><button type="button" class="dc-btn" id="${finishId}">${primaryLabel}</button><button type="button" class="dc-btn wl-ad-btn" data-ad-finish="${mode}"><span>Watch ad to double</span><small>+${o0.coins} bonus coins</small></button></div>`;
+    }
     const cfg = AD_BAR_MODES[mode], o = adOffers[mode];
     const live = o && cfg && adSan(cfg.key()) === adSan(o.key) && Date.now() - o.t < 30 * 60 * 1000;
     if (!live) return `<button type="button" class="dc-btn" id="${finishId}">Finish</button>`;
     const adLabel = ["daily", "monthly", "practice"].includes(mode) ? "Watch ad to double" : "Watch ad: double coins &amp; finish";
     return `<div class="wl-done-split"><button type="button" class="dc-btn" id="${finishId}">Finish &amp; collect coins</button><button type="button" class="dc-btn wl-ad-btn" data-ad-finish="${mode}"><span>${adLabel}</span><small>+${o.coins} bonus coins</small></button></div>`;
   }
-  const adBarSlot = (mode, finishId) => `<div class="pin-bottom" id="ad-done-bar" data-mode="${mode}" data-finish="${finishId}">${adBarHtml(mode, finishId)}</div>`;
+  const adBarSlot = (mode, finishId, primaryLabel) => `<div class="pin-bottom" id="ad-done-bar" data-mode="${mode}" data-finish="${finishId}"${primaryLabel ? ` data-primary="${primaryLabel}"` : ""}>${adBarHtml(mode, finishId, primaryLabel)}</div>`;
   function adBarRefresh(mode) {
     const bar = document.querySelector(`#ad-done-bar[data-mode="${mode}"]`);
-    if (bar) bar.innerHTML = adBarHtml(mode, bar.dataset.finish);
+    if (bar) bar.innerHTML = adBarHtml(mode, bar.dataset.finish, bar.dataset.primary);
   }
   document.addEventListener("click", async (e) => {
     const b = e.target.closest("button[data-ad-finish]");
@@ -6915,6 +6922,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (adOffers[mode] === o) delete adOffers[mode];
     if (mode === "daily" && !dailyScreenEl.classList.contains("active")) return;
     if ((mode === "monthly" || mode === "practice") && !monthlyScreenEl.classList.contains("active")) return;
+    if (bar.dataset.primary) { adBarRefresh(mode); return; } // Monthly: stay on the results (its pinned button is Replay, and Back leaves)
     bar.querySelector(`#${bar.dataset.finish}`)?.click();
   });
   async function watchAdForCoins() {
@@ -9974,6 +9982,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const exitConfirmMessageEl = document.getElementById("exit-confirm-message");
   const exitConfirmYesBtn = document.getElementById("exit-confirm-yes-btn");
   const exitConfirmNoBtn = document.getElementById("exit-confirm-no-btn");
+  const exitConfirmCancelBtn = document.getElementById("exit-confirm-cancel-btn");
   const bottomToolbarEl = document.getElementById("bottom-toolbar");
   const installBanner = document.getElementById("install-banner");
   const installBtn = document.getElementById("install-btn");
@@ -11783,8 +11792,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     exitConfirmYesBtn.classList.toggle("art-start-game", start || resume || join);
     const keepPlaying = illustrated && noLabel === "Keep playing";
     exitConfirmNoBtn.classList.toggle("menu-action-art", start || resume || keepPlaying);
-    exitConfirmNoBtn.classList.toggle("art-confirm-red", start || resume);
-    exitConfirmNoBtn.classList.toggle("art-confirm-green", keepPlaying);
+    exitConfirmNoBtn.classList.toggle("art-confirm-red", start);
+    exitConfirmNoBtn.classList.toggle("art-confirm-green", keepPlaying || resume); // "Start new" is green; the red button on that prompt is Cancel
+    exitConfirmCancelBtn.style.display = resume ? "" : "none";
     exitConfirmNoBtn.classList.toggle("art-play-icon", keepPlaying);
     if (illustrated) {
       document.getElementById("exit-confirm-art").src = start || resume ? "icons/start-medallion.webp"
@@ -12095,6 +12105,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const appPlugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
     if (appPlugin && appPlugin.exitApp) appPlugin.exitApp();
   }
+  exitConfirmCancelBtn.addEventListener("click", () => { // leave the saved game alone and do nothing
+    exitAppAfterLeave = false;
+    exitConfirmOverlayEl.classList.remove("show");
+    pendingExitAction = null;
+    pendingNavAction = null;
+  });
   exitConfirmNoBtn.addEventListener("click", () => {
     exitAppAfterLeave = false;
     exitConfirmOverlayEl.classList.remove("show");
@@ -14080,7 +14096,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (wl.phase === "list") {
       worldStop();
       const wlSaved = readSoloSession("worlds");
-      el.innerHTML = `<div class="wl-menu-header"><h2 class="dc-title">Worlds</h2><p class="dc-sub">${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars</p></div>${tourBtn('worlds')}${soloResumeHtml("worlds")}` +
+      el.innerHTML = `<div class="wl-menu-header"><h2 class="dc-title">Worlds</h2><p class="dc-sub">${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars</p></div>${soloResumeHtml("worlds")}${tourBtn('worlds')}` +
         WORLDS.map((x, i) => {
           const open = worldUnlocked(i), st = worldStarsOf(x.id);
           const sub = open ? worldMeterHtml(x.id) : (x.unlockCount ? `Locked: ${Math.min(unlockedFantasyIds().length, x.unlockCount)} of ${x.unlockCount} creatures unlocked` : x.unlockHolidays ? `Locked: finish ${x.unlockHolidays} holiday Monthly Challenges (${Math.min(holidayMonthsPlayed().length, x.unlockHolidays)} of ${x.unlockHolidays})` : `Locked: get 2 stars on Level 5 of ${WORLDS[i - 1].name}`);
@@ -14615,6 +14631,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!mo) return;
     if (mo.phase === "question") rerollPerRound(mo, mo.guesses.length);
     const el = monthlyContentEl, name = MONTH_NAMES[Number(mo.key.slice(5)) - 1];
+    el.dataset.moPhase = mo.phase; // the screen's Back button shows on the level start page and the results (see cozy-system.css)
     // Pictures of a level's pack objects: black silhouettes until you've seen them in a game.
     const thumbs = (idxs, seen) => `<div class="mc-ths">${idxs.map((i) => { const o = monthlyPackObject(mo.combos[i]); return `<img class="mc-th${seen.has(i) ? "" : " sil"}" src="${o.image}" alt="" draggable="false">`; }).join("")}</div>`;
     if (mo.phase === "hub") {
@@ -14648,7 +14665,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (mo.phase === "intro") {
       monthlyStop();
       const title = mo.level === 4 ? "Mega Challenge" : `Level ${mo.level}`;
-      el.innerHTML = `<button type="button" class="mc-back" id="mo-levels">\u2039 Levels</button><h2 class="dc-title">${name} ${title}</h2><p class="dc-sub">${mo.questions.length} questions \u00b7 the same for everyone</p>${tourBtn('monthly')}
+      el.innerHTML = `<h2 class="dc-title">${name} ${title}</h2><p class="dc-sub">${mo.questions.length} questions \u00b7 the same for everyone</p>${tourBtn('monthly')}
         <div class="dc-card">${thumbs(mo.split[mo.level], monthlySeenIndexes({ levels: mo.prog }, mo.split, mo.level))}</div>
         <div class="pin-bottom"><button type="button" class="menu-action-art art-start-game dc-btn" id="mo-start" data-fit-single-line="true">Start</button></div>
         <h3 class="cs-h">${title} leaderboard</h3><div class="dc-card" id="mo-board">${skelRows(4)}</div>`;
@@ -14690,8 +14707,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       </div>
       <div class="dc-card mo-rounds"><h3 class="mo-rounds-h">Your guesses</h3>${rows}</div>
       ${rewardCard}
-      ${adBarSlot(mo.practice ? "practice" : "monthly", mo.practice ? "mo-main" : "mo-finish")}
-      <button type="button" class="dc-btn dc-alt" id="mo-replay">${mo.practice ? "Replay again" : "Replay for coins"}</button>
+      ${adBarSlot(mo.practice ? "practice" : "monthly", "mo-replay", mo.practice ? "Replay again" : "Replay for coins")}
       ${mo.practice ? '<p class="dc-note">Practice earns half coins. The leaderboard keeps your first try.</p>'
         : `<button type="button" class="dc-btn dc-alt" id="mo-share">Share my result</button><h3 class="cs-h">${lvTitle} leaderboard</h3><div class="dc-card" id="mo-board">${skelRows(4)}</div>`}`;
     el.querySelector(".mo-results-header h2").focus({preventScroll:true});
