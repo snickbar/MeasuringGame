@@ -35,13 +35,13 @@ Completed November 6. All 105 objects are active with production WebP artwork, s
 
 ## Batch 3 (November 19, 2026) — everyday objects + Retro Rewind World
 
-Data: `art-source/object-batch3-2026-11-19/batch3.json` (51 new objects: id, name, plural, mm, measured dimension, Worlds, entrance style, scenery, art description). In the game as `BATCH3_DEFS` in `index.html`; an object only appears once its id is added to `BATCH3_IMAGE_IDS` and `items/<id>.webp` exists (like the seasonal packs). Entrance styles are in `anim/entry-styles.mjs`, scenery in `anim/scenery.mjs`. Retro Rewind opens as a World once 15 of its objects are live; it also needs a home screen (`home-retro.webp`), badge, survival emblem and reveal backdrop art.
+Data: `art-source/object-batch3-2026-11-19/batch3.json` (50 new objects: id, name, plural, mm, measured dimension, Worlds, entrance style, scenery, art description). In the game as `BATCH3_DEFS` in `index.html`; an object only appears once its id is added to `BATCH3_IMAGE_IDS` and `items/<id>.webp` exists (like the seasonal packs). Entrance styles are in `anim/entry-styles.mjs`, scenery in `anim/scenery.mjs`. Retro Rewind opens as a World once 15 of its objects are live; it also needs a home screen (`home-retro.webp`), badge, survival emblem and reveal backdrop art.
 
-Already in the game and reused (no duplicates added): motorcycle, rake, trash can (garbage can), rotary phone, lava lamp, tie-dye shirt (June pack). Existing retro items placed in the Retro World: rotary phone, lava lamp, boombox, vinyl record, retro game cartridge, typewriter.
+Already in the game and reused (no duplicates added): motorcycle, rake, trash can (garbage can), rotary phone, lava lamp, tie-dye shirt (June pack). Existing retro items placed in the Retro World: rotary phone, lava lamp, boombox, vinyl record, retro game system (was mislabeled a cartridge; now 380 mm long), typewriter.
 
 Generic names and designs for branded things (no logos, no known characters): Walkman, Atari, VW Beetle, Cabbage Patch, Barbie, Felix clock, Slinky, Magic 8 Ball, Etch A Sketch, Mr. Potato Head, Tamagotchi, Game Boy, Radio Flyer, Beanie Baby, Trapper Keeper, Transformer, Super Soaker, Blockbuster card, TI-86, Lisa Frank folders.
 
 Open interpretations (change if wrong): "25c machine" = quarter gumball machine; "NY world's fair tower" = a Unisphere-style globe (43 m); McDonald's toys = one generic kids' meal toy; memorial wristband = plain rubber awareness wristband.
 
-- [ ] All 51 objects waiting for artwork (then add ids to `BATCH3_IMAGE_IDS`, set picker settings in the Object Orientation picker)
+- [ ] All 50 objects waiting for artwork (then add ids to `BATCH3_IMAGE_IDS`, set picker settings in the Object Orientation picker)
 - [ ] Retro Rewind World art: home screen, reveal backdrop, badge, survival emblem
