@@ -8698,6 +8698,66 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "skeeball-machine", name: "Skee-Ball machine", plural: "Skee-Ball machines", mm: 3000, image: "items/skeeball-machine.webp" },
   ];
 
+  // Batch 3 (retro + everyday objects). [id, name, plural, mm, measured dimension, worlds]. An object only joins the game once its
+  // picture is listed in BATCH3_IMAGE_IDS (add an id there when items/<id>.webp is added). Data: art-source/object-batch3-2026-11-19.
+  const BATCH3_DEFS = [
+    ["sugar-cube", "sugar cube", "sugar cubes", 15, "edge", "food"],
+    ["double-cheeseburger", "double cheeseburger", "double cheeseburgers", 120, "diameter", "food"],
+    ["weed-whacker", "weed whacker", "weed whackers", 1700, "length", "gadgets"],
+    ["leaf-blower", "leaf blower", "leaf blowers", 700, "length", "gadgets"],
+    ["pruning-shears", "pruning shears", "pairs of pruning shears", 220, "length", "gadgets"],
+    ["hay-bale", "hay bale", "hay bales", 900, "length", "critters"],
+    ["gallon-of-milk", "gallon of milk", "gallons of milk", 250, "height", "home"],
+    ["recycling-bin", "recycling bin", "recycling bins", 900, "height", "town"],
+    ["portable-cassette-player", "portable cassette player", "portable cassette players", 110, "width", "retro"],
+    ["wood-grain-game-console", "wood-grain game console", "wood-grain game consoles", 380, "width", "retro"],
+    ["classic-bug-car", "classic bug car", "classic bug cars", 4000, "length", "retro wheels"],
+    ["rubber-wristband", "rubber wristband", "rubber wristbands", 65, "diameter", "retro"],
+    ["baggy-pants", "baggy pants", "pairs of baggy pants", 1000, "length", "retro"],
+    ["yarn-hair-doll", "yarn-haired baby doll", "yarn-haired baby dolls", 400, "height", "retro"],
+    ["fashion-doll", "fashion doll", "fashion dolls", 290, "height", "retro"],
+    ["wall-payphone", "wall-mounted payphone", "wall-mounted payphones", 350, "height", "retro"],
+    ["cat-wall-clock", "black cat wall clock", "black cat wall clocks", 400, "height", "retro"],
+    ["coil-spring-toy", "coil spring toy", "coil spring toys", 80, "height", "retro"],
+    ["fortune-ball", "fortune-telling ball", "fortune-telling balls", 100, "diameter", "retro"],
+    ["drawing-screen-toy", "knob drawing toy", "knob drawing toys", 250, "width", "retro"],
+    ["potato-toy", "plastic potato toy", "plastic potato toys", 190, "height", "retro"],
+    ["egg-digital-pet", "egg-shaped digital pet", "egg-shaped digital pets", 45, "height", "retro"],
+    ["handheld-game-system", "handheld game system", "handheld game systems", 150, "height", "retro"],
+    ["red-toy-wagon", "red toy wagon", "red toy wagons", 900, "length", "retro"],
+    ["videotape", "videotape", "videotapes", 190, "length", "retro"],
+    ["floor-jukebox", "floor-standing jukebox", "floor-standing jukeboxes", 1500, "height", "retro"],
+    ["stuffed-bean-toy", "stuffed bean toy", "stuffed bean toys", 200, "height", "retro"],
+    ["bean-bag-chair", "bean bag chair", "bean bag chairs", 900, "width", "retro"],
+    ["tv-dinner", "TV dinner", "TV dinners", 230, "length", "retro"],
+    ["smiley-pin", "smiley face pin", "smiley face pins", 55, "diameter", "retro"],
+    ["plastic-food-container", "plastic food container", "plastic food containers", 180, "length", "retro"],
+    ["roller-skate", "roller skate", "roller skates", 280, "length", "retro"],
+    ["mood-ring", "mood ring", "mood rings", 20, "diameter", "retro"],
+    ["pet-rock", "pet rock", "pet rocks", 90, "length", "retro"],
+    ["three-ring-binder", "three-ring school binder", "three-ring school binders", 310, "height", "retro"],
+    ["calculator-watch", "calculator watch", "calculator watches", 38, "width", "retro"],
+    ["slap-bracelet", "slap bracelet", "slap bracelets", 220, "length", "retro"],
+    ["quarter-gumball-machine", "quarter gumball machine", "quarter gumball machines", 750, "height", "retro"],
+    ["transforming-robot-toy", "transforming robot toy", "transforming robot toys", 200, "height", "retro"],
+    ["plastic-army-man", "plastic army man", "plastic army men", 50, "height", "retro"],
+    ["combo-video-player", "VHS and DVD combo player", "VHS and DVD combo players", 430, "width", "retro"],
+    ["school-folder", "school folder", "school folders", 300, "height", "retro"],
+    ["pump-water-blaster", "pump water blaster", "pump water blasters", 600, "length", "retro"],
+    ["video-rental-card", "video rental membership card", "video rental membership cards", 86, "length", "retro"],
+    ["disposable-camera", "disposable camera", "disposable cameras", 110, "width", "retro"],
+    ["photo-booth-strip", "photo booth strip", "photo booth strips", 150, "length", "retro"],
+    ["graphing-calculator", "graphing calculator", "graphing calculators", 190, "height", "retro"],
+    ["plasma-globe", "plasma globe", "plasma globes", 250, "height", "retro"],
+    ["kids-meal-toy", "kids' meal toy", "kids' meal toys", 80, "length", "retro"],
+    ["worlds-fair-globe", "world's fair globe", "world's fair globes", 43000, "height", "retro landmarks"],
+    ["comic-book", "comic book", "comic books", 260, "height", "retro"],
+  ];
+  const BATCH3_IMAGE_IDS = new Set([]);
+  const BATCH3_OBJECTS = BATCH3_DEFS.filter((d) => BATCH3_IMAGE_IDS.has(d[0]))
+    .map((d) => ({ id: d[0], name: d[1], plural: d[2], mm: d[3], batchDimension: d[4], image: `items/${d[0]}.webp` }));
+  BATCH3_OBJECTS.forEach((o) => OBJECTS.push(o));
+
   const RELATIVE_MIN_RATIO = 0.15; // "Keep it relative": unit must be at least 15% of the target's size
   // Objects near either end of the size range (a grain of sand, Mount Everest)
   // have few or no partners within that ratio - with nothing bigger/smaller
@@ -9583,7 +9643,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const dimensionById = new Map(Object.entries(MEASUREMENT_GROUPS).flatMap(([dimension, ids]) => ids.map((id) => [id, dimension])));
   ALL_OBJECTS.forEach((o) => {
     const detail = MEASUREMENT_DETAILS[o.id] || {};
-    o.measurement = { dimension: dimensionById.get(o.id) || "length", ...detail };
+    o.measurement = { dimension: dimensionById.get(o.id) || o.batchDimension || "length", ...detail };
   });
   const OBJECT_BY_ID = new Map(ALL_OBJECTS.map((o) => [o.id, o]));
   installMeasurementGuides({objects:ALL_OBJECTS});
@@ -9743,6 +9803,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // pack, and holds the objects of exactly those months' packs (see holidayMixObjects).
     { id: "holiday-mix", name: "Holiday Mixup", unlockHolidays: 2, ids: [] },
   ];
+  // Batch 3 objects join their Worlds as their pictures arrive. Retro Rewind opens as a World once it has 15 playable objects
+  // (it also needs home-retro.webp, the badge and the reveal backdrop art, see art-source/object-batch3-2026-11-19).
+  const RETRO_EXISTING = "rotary-phone lava-lamp boombox vinyl-record retro-cartridge typewriter".split(" ");
+  BATCH3_OBJECTS.forEach((o) => {
+    const def = BATCH3_DEFS.find((d) => d[0] === o.id);
+    def[5].split(" ").filter((w) => w !== "retro").forEach((w) => { const world = WORLDS.find((x) => x.id === w); if (world) world.ids.push(o.id); });
+  });
+  const RETRO_IDS = RETRO_EXISTING.concat(BATCH3_OBJECTS.filter((o) => BATCH3_DEFS.find((d) => d[0] === o.id)[5].split(" ").includes("retro")).map((o) => o.id));
+  if (RETRO_IDS.length >= 15) WORLDS.splice(WORLDS.findIndex((w) => w.id === "make-believe"), 0, { id: "retro", name: "Retro Rewind", ids: RETRO_IDS });
   const DAILY_TZ = "America/New_York";
   function dailyDateStr(d) {
     return new Intl.DateTimeFormat("en-CA", { timeZone: DAILY_TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(d || new Date());

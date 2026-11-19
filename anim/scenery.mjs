@@ -27,7 +27,8 @@ Object.assign(SCENERY_BY_OBJECT, {
   'tennis-court':'stadium','ice-hockey-rink':'stadium','coast-redwood':'forest',
   submarine:'underwater','cargo-ship':'beach','freight-train':'city','radio-mast':'city',
   'sports-stadium':'stadium','radio-telescope':'desert','water-slide':'beach',
-  'roller-coaster':'city','airport-runway':'city'
+  'roller-coaster':'city','airport-runway':'city',
+  'sugar-cube':'kitchen','double-cheeseburger':'restaurant','weed-whacker':'grass','leaf-blower':'grass','pruning-shears':'grass','hay-bale':'farm','gallon-of-milk':'kitchen','recycling-bin':'town','portable-cassette-player':'living','wood-grain-game-console':'living','classic-bug-car':'city','rubber-wristband':'tabletop','baggy-pants':'living','yarn-hair-doll':'living','fashion-doll':'living','wall-payphone':'city','cat-wall-clock':'kitchen','coil-spring-toy':'tabletop','fortune-ball':'tabletop','drawing-screen-toy':'tabletop','potato-toy':'tabletop','egg-digital-pet':'tabletop','handheld-game-system':'living','red-toy-wagon':'grass','videotape':'living','floor-jukebox':'restaurant','stuffed-bean-toy':'living','bean-bag-chair':'living','tv-dinner':'kitchen','smiley-pin':'tabletop','plastic-food-container':'kitchen','roller-skate':'stadium','mood-ring':'tabletop','pet-rock':'tabletop','three-ring-binder':'library','calculator-watch':'tabletop','slap-bracelet':'tabletop','quarter-gumball-machine':'town','transforming-robot-toy':'tabletop','plastic-army-man':'tabletop','combo-video-player':'living','school-folder':'library','pump-water-blaster':'grass','video-rental-card':'tabletop','disposable-camera':'tabletop','photo-booth-strip':'tabletop','graphing-calculator':'library','plasma-globe':'living','kids-meal-toy':'restaurant','worlds-fair-globe':'city','comic-book':'tabletop'
 });
 for (const [scene, words] of Object.entries(OBJECT_GROUPS)) for (const id of words.split(/\s+/)) {
   if (SCENERY_BY_OBJECT[id]) throw new Error('Duplicate scenery assignment: ' + id);
