@@ -364,6 +364,14 @@ const MOTION = {
   "winery-cask": "walk",
   "zipper-ride": "waddle"
 };
+// The entrance saved for an object (one style for both sides), or null when it uses the automatic one. Used by the Object picker.
+export function savedEntranceOf(id) {
+  const m = MOTION[id];
+  if (typeof m === 'string') return m;
+  if (!m) return null;
+  return m.small !== 'slide' ? m.small : (m.big !== 'slide' ? m.big : null);
+}
+
 
 export const LIGHT_THEME = {
   stage: '#e6eefb', skyTop: '#a9cdf1', skyBottom: '#e6f2fd', ground: '#d3e5c3', cloudAlpha: 0.95,

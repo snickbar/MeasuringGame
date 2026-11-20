@@ -22,7 +22,8 @@ export function buildObjectPicker({ loadAnim, objects }) {
 
   const savedOrient = (id) => ORIENT[id] || null;
   const orientNow = (id) => ({ ...DEFAULT, ...(savedOrient(id) || {}), ...((drafts[id] || {}).orient || {}) });
-  const motionNow = (id) => ({ small: "auto", big: "auto", ...((drafts[id] || {}).motion || {}) });
+  let savedEntrance = () => null;
+  const motionNow = (id) => { const d = (drafts[id] || {}).motion; return d || savedEntrance(id) || "auto"; };
   const isChanged = (id) => !!drafts[id];
   const isNew = (id) => !savedOrient(id);
 
@@ -63,7 +64,7 @@ export function buildObjectPicker({ loadAnim, objects }) {
   const thumbBefore = el("img"), thumbAfter = el("img");
   [thumbBefore, thumbAfter].forEach((i) => { i.style.cssText = "max-width:42%;max-height:140px;object-fit:contain"; i.alt = ""; i.draggable = false; });
   const cap = (img, text) => { const f = el("div"); f.style.cssText = "display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;min-width:0"; f.append(img, el("span", "dbg-note", text)); return f; };
-  thumbBox.append(cap(thumbBefore, "Stored picture"), cap(thumbAfter, "Standing (as set)"));
+  thumbBox.append(cap(thumbBefore, "As drawn (art file)"), cap(thumbAfter, "As it stands in the game"));
 
   const rotRow = el("div", "dbg-row"), rotBtns = ROTS.map((r) => { const b = btn(r + "°", () => set((s) => { s.rot = r; })); rotRow.appendChild(b); return [r, b]; });
   const flipBtn = btn("Flip", () => set((s) => { s.flip = !s.flip; }));
@@ -72,19 +73,15 @@ export function buildObjectPicker({ loadAnim, objects }) {
   [leanL, leanR].forEach((s) => { s.style.width = "100%"; LEANS.forEach(([v, t]) => { const o = el("option", "", t); o.value = v; s.appendChild(o); }); });
   leanL.setAttribute("aria-label", "Small object lean"); leanR.setAttribute("aria-label", "Big object lean");
   leanL.addEventListener("change", () => set((s) => { s.leanL = leanL.value; })); leanR.addEventListener("change", () => set((s) => { s.leanR = leanR.value; }));
-  const entrySmall = el("select", "dbg-input"), entryBig = el("select", "dbg-input");
-  [entrySmall, entryBig].forEach((s) => { s.style.width = "100%"; });
-  entrySmall.setAttribute("aria-label", "Entrance as the small object"); entryBig.setAttribute("aria-label", "Entrance as the big object");
-  entrySmall.addEventListener("change", () => setMotion("small", entrySmall.value)); entryBig.addEventListener("change", () => setMotion("big", entryBig.value));
+  const entry = el("select", "dbg-input"); entry.style.width = "100%"; entry.setAttribute("aria-label", "How it enters");
+  entry.addEventListener("change", () => setMotion(entry.value));
 
   function fillEntrySelects() {
     const o = byId.get(cur); if (!o) return;
     const auto = entryKindFor(o, "slide", false);
-    [entrySmall, entryBig].forEach((s) => {
-      s.textContent = "";
-      const a = el("option", "", `Auto (${auto})`); a.value = "auto"; s.appendChild(a);
-      ENTRY_KINDS.forEach((k) => { const op = el("option", "", k); op.value = k; s.appendChild(op); });
-    });
+    entry.textContent = "";
+    const a = el("option", "", `Auto (${auto})`); a.value = "auto"; entry.appendChild(a);
+    ENTRY_KINDS.forEach((k) => { const op = el("option", "", k); op.value = k; entry.appendChild(op); });
   }
   function set(fn) {
     if (!cur) return;
@@ -94,10 +91,9 @@ export function buildObjectPicker({ loadAnim, objects }) {
     if (same) delete d.orient; else d.orient = s;
     commit(d); render();
   }
-  function setMotion(which, v) {
-    const m = motionNow(cur); m[which] = v;
+  function setMotion(v) {
     const d = drafts[cur] || {};
-    if (m.small === "auto" && m.big === "auto") delete d.motion; else d.motion = m;
+    if (v === (savedEntrance(cur) || "auto")) delete d.motion; else d.motion = v;
     commit(d); render();
   }
   function commit(d) { if (Object.keys(d).length) drafts[cur] = d; else delete drafts[cur]; saveDrafts(); }
@@ -109,7 +105,7 @@ export function buildObjectPicker({ loadAnim, objects }) {
     thumbAfter.style.transform = `${s.flip ? "scaleX(-1) " : ""}rotate(${s.rot}deg)`;
     rotBtns.forEach(([r, b]) => b.classList.toggle("dbg-on", s.rot === r));
     flipBtn.classList.toggle("dbg-on", !!s.flip); mirBtn.classList.toggle("dbg-on", !!s.mirR);
-    leanL.value = s.leanL; leanR.value = s.leanR; entrySmall.value = m.small; entryBig.value = m.big;
+    leanL.value = s.leanL; leanR.value = s.leanR; entry.value = m;
     status.textContent = isChanged(cur) ? "You changed this one (kept on this device until you copy and send it)." : isNew(cur) ? "New: nothing saved for this object yet, so it uses the default pose." : "Matches what is saved in the game.";
     const label = select.querySelector(`option[value="${CSS.escape(cur)}"]`);
     if (label) label.textContent = (isChanged(cur) ? "● " : isNew(cur) ? "NEW " : "") + o.name;
@@ -127,7 +123,7 @@ export function buildObjectPicker({ loadAnim, objects }) {
   sorted.forEach((o) => { const op = el("option", "", o.name); op.value = o.id; partner.appendChild(op); });
   partner.value = byId.has("empire-state-building") ? "empire-state-building" : sorted[sorted.length - 1].id;
   const stage = el("div"); stage.style.cssText = "width:100%;min-height:80px;border-radius:10px;overflow:hidden;background:#fff8ec";
-  const testNote = el("p", "dbg-note", "Test plays the real reveal with your draft. The object you picked plays as the small one if it is smaller than the object you test against, otherwise as the big one.");
+  const testNote = el("p", "dbg-note", "Plays the real reveal with your draft and the saved entrance. The object you picked plays as the small one if it is smaller than the object you test against, otherwise as the big one.");
   let mod = null, ctl = null, token = 0;
   async function test() {
     const my = ++token, o = byId.get(cur), p = byId.get(partner.value);
@@ -140,7 +136,7 @@ export function buildObjectPicker({ loadAnim, objects }) {
         theme: mod.LIGHT_THEME, imageUrl: (x) => x.image,
         orientationFor: (x) => ({ ...DEFAULT, ...(ORIENT[x.id] || {}), ...(((drafts[x.id] || {}).orient) || {}) }),
         motionFor: (x, right, lean = false) => {
-          const v = ((drafts[x.id] || {}).motion || {})[right ? "big" : "small"];
+          const d = (drafts[x.id] || {}).motion, v = d || (mod.savedEntranceOf ? mod.savedEntranceOf(x.id) : null);
           return entryKindFor(x, v && v !== "auto" ? v : "slide", !!lean);
         },
       });
@@ -175,12 +171,14 @@ export function buildObjectPicker({ loadAnim, objects }) {
     thumbBox,
     field("Turn the picture", rotRow), row(flipBtn, mirBtn),
     field("Small: swings up", leanL), field("Big: swings up", leanR),
-    field("Enters (small)", entrySmall), field("Enters (big)", entryBig),
+    field("How it enters", entry), row(btn("▶ Watch it enter", test)),
     status,
     field("Test against", partner), row(btn("▶ Test in reveal", test)),
     stage, testNote,
     row(btn("Copy choices", copyChoices), resetThis, clearAll), out,
   );
   fillSelect(); if (cur) go(cur);
+  // The saved entrances live in the engine, so load it once and show them in the list.
+  Promise.resolve(loadAnim()).then((m) => { if (!m || !m.savedEntranceOf) return; mod = m; savedEntrance = m.savedEntranceOf; if (cur) go(cur); }).catch(() => {});
   return wrap;
 }
