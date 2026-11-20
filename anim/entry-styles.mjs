@@ -125,7 +125,9 @@ function hash(text) { let h = 0; for (let i = 0; i < text.length; i++) h = (h * 
 // saved is the style the page already chose by hand, if any (its table). Returns one of ENTRY_KINDS.
 // lean is true for an object that comes in lying down and swings up to stand: it cannot also spin or tip over, so
 // those two styles give way to ones that keep it flat.
+// saved 'only-slide' is a deliberate "just glide in" (a plain 'slide' means no choice was made, so a style is picked for it).
 export function entryKindFor(object, saved, lean = false) {
+  if (saved === 'only-slide') return 'slide';
   const kind = pickKind(object, saved);
   if (lean && kind === 'roll') return 'scoot';
   if (lean && kind === 'tumble') return 'skid';

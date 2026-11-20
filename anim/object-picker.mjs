@@ -82,7 +82,7 @@ export function buildObjectPicker({ loadAnim, objects }) {
     const auto = entryKindFor(o, "slide", false);
     entry.textContent = "";
     const a = el("option", "", `Auto (${auto})`); a.value = "auto"; entry.appendChild(a);
-    ENTRY_KINDS.forEach((k) => { const op = el("option", "", k); op.value = k; entry.appendChild(op); });
+    ENTRY_KINDS.forEach((k) => { const op = el("option", "", k === "slide" ? "slide (always, never auto)" : k); op.value = k === "slide" ? "only-slide" : k; entry.appendChild(op); });
   }
   function set(fn) {
     if (!cur) return;

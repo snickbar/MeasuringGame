@@ -23,7 +23,7 @@ for (const [id, d] of Object.entries(data.drafts)) {
     orient[id] = { rot: o.rot, flip: !!o.flip, leanL: o.leanL, leanR: o.leanR, mirR: !!o.mirR }; nO++;
   }
   if (d.motion) {
-    if (d.motion !== 'auto' && !ENTRY_KINDS.includes(d.motion)) throw Error('Bad entrance for ' + id);
+    if (d.motion !== 'auto' && d.motion !== 'only-slide' && !ENTRY_KINDS.includes(d.motion)) throw Error('Bad entrance for ' + id);
     if (d.motion === 'auto') delete motions[id]; else motions[id] = d.motion;
     nM++;
   }
