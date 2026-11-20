@@ -5047,6 +5047,12 @@ if (location.protocol === "file:") {
     </div>
   </div>
 
+  <div class="game-time-box" id="create-game-time" aria-live="polite">
+    <img class="lobby-opt-ic" src="icons/watch-play.webp" alt="">
+    <span class="lobby-opt-tx"><b>Approx. game time</b><small id="create-game-time-note"></small></span>
+    <span class="game-time-val" id="create-game-time-val"></span>
+  </div>
+
   <div id="settings-panel">
     <div class="settings-group">
       <h2 class="settings-eyebrow">Game settings</h2>
@@ -9856,6 +9862,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const createBackBtn = document.getElementById("create-back-btn");
   const createRoomBtn = document.getElementById("create-room-btn");
   const createStatusEl = document.getElementById("create-status");
+  const setCreateStatus = (text) => { createStatusEl.textContent = /^Creating room/i.test(text || "") ? "" : text; };
   const hostModeControlsEl = document.getElementById("host-mode-controls");
   const joinScreen = document.getElementById("join-screen");
   const joinBackBtn = document.getElementById("join-back-btn");
@@ -12961,6 +12968,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (avail.tour && s.showTutorial === undefined) s.showTutorial = tourWanted(like);
     const on = { tour: !!s.showTutorial, anim: s.animationReveal !== false, mb: s.includeMakeBelieve !== false, solo2x: s.soloTeamDouble !== false };
     document.querySelectorAll("#create-room-opts .lobby-opt").forEach((b) => { b.hidden = avail[b.dataset.opt] === false; setLobbySwitch(b, on[b.dataset.opt]); });
+    renderCreateGameTime();
   }
   document.querySelectorAll("#create-room-opts .lobby-opt").forEach((b) => b.addEventListener("click", () => {
     const o = b.dataset.opt, key = o === "tour" ? "showTutorial" : o === "anim" ? "animationReveal" : o === "solo2x" ? "soloTeamDouble" : "includeMakeBelieve";
@@ -13006,7 +13014,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     overlayReturnScreen = null;
     overlayFocusReturn = null;
     syncOverlayReturnFlag();
-    await hostRoomNow((text) => { createStatusEl.textContent = text; });
+    await hostRoomNow((text) => { setCreateStatus(text); });
   }
   let bluffTurnsChoice='auto';
   function openBluffInfo(){
@@ -13068,7 +13076,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     overlayReturnScreen = null;
     overlayFocusReturn = null;
     syncOverlayReturnFlag();
-    await hostRoomNow((text) => { createStatusEl.textContent = text; });
+    await hostRoomNow((text) => { setCreateStatus(text); });
   }
 
   // Shared by both "best list" cards (Team vs Team's best teams, Team Worlds' top 5 for a
@@ -14487,7 +14495,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         overlayReturnScreen = null;
         overlayFocusReturn = null;
         syncOverlayReturnFlag();
-        await hostRoomNow((text) => { createStatusEl.textContent = text; });
+        await hostRoomNow((text) => { setCreateStatus(text); });
       } }));
     }
   });
@@ -18524,6 +18532,28 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   // Settings live as local state (currentSettings) until the room is actually
   // created on the create screen — there's no room to write to yet.
+  // Approximate game length shown on every room setup screen. Players usually lock in before the timer runs out, so a
+  // guess takes about 65% of it; the rest is the reveal, the break between rounds, and the start/finish screens.
+  function estimateGameSeconds(s, mode) {
+    const rounds = mode === "teamworlds" ? 5 : s.totalRounds || 5;
+    const timer = mode === "teamworlds" ? DEFAULT_ROUND_SECONDS : s.timerSeconds || DEFAULT_ROUND_SECONDS;
+    let guess = Math.max(10, timer * 0.65);
+    if (mode === "bluff") guess *= 1.6;           // write a bluff, then vote
+    const reveal = s.animationReveal === false ? 8 : 18;
+    const gap = mode === "solo" || s.autoAdvanceEnabled ? (s.autoAdvanceSeconds || 5) : 8; // manual: the host has to tap Next
+    const extra = mode === "teamvteam" ? 12 : mode === "highstakes" ? 20 : 0; // second chance / betting
+    const intro = (s.showTutorial ? 45 : 0) + 10;
+    return intro + rounds * (guess + reveal + gap + extra) + 25;
+  }
+  function renderCreateGameTime() {
+    const box = document.getElementById("create-game-time");
+    if (!box) return;
+    box.hidden = createMode === "hlsurvival"; // survival has no fixed number of rounds
+    const s = currentSettings, sec = estimateGameSeconds(s, createMode);
+    const lo = Math.max(1, Math.round(sec * 0.85 / 60)), hi = Math.max(lo, Math.round(sec * 1.15 / 60));
+    document.getElementById("create-game-time-val").textContent = lo === hi ? `~${lo} min` : `${lo}-${hi} min`;
+    document.getElementById("create-game-time-note").textContent = createMode === "teamworlds" ? "5 questions" : "Rounds, timer and breaks";
+  }
   function renderLocalSettingsPanel() {
     const s = currentSettings;
     // None of rounds/timer/item-selection apply to Team Worlds (always exactly 5 questions,
@@ -18531,6 +18561,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // same misleading-settings-panel issue the hidden #settings-panel above was just fixed for.
     document.getElementById("create-settings-summary").textContent = createMode === "teamworlds" ? ""
       : `${s.totalRounds} rounds · ${s.timerSeconds} sec · ${s.itemSelectionMode === "relative" ? "Keep it relative" : "Anything goes"}`;
+    renderCreateGameTime();
     if (document.activeElement !== settingTimerInput) settingTimerInput.value = s.timerSeconds;
     if (document.activeElement !== settingRoundsInput) settingRoundsInput.value = s.totalRounds;
     settingItemAnythingInput.classList.toggle("selected", (s.itemSelectionMode || "anything") === "anything");
@@ -18904,6 +18935,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     applyMenuBanner(el, key);
   }
   let flowBannerSettings = null;
+  window.__layoutCreate = (mode) => showCreateScreen(mode); // test hook: open the room setup screen for any mode
   function showCreateScreen(mode) {
     createMode = mode === "solo" ? "solo" : mode;
     createScreenEl.dataset.setupMode = createMode;
@@ -19131,7 +19163,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     flowBannerSettings = settings;
     showNameAvatarScreen("create");
   }
-  createRoomBtn.addEventListener("click", () => hostRoomNow((text) => { createStatusEl.textContent = text; }));
+  createRoomBtn.addEventListener("click", () => hostRoomNow((text) => { setCreateStatus(text); }));
 
   // A mistyped/nonexistent code used to fall through silently here - nothing
   // actually checks the room exists until the later Join Lobby step, several
