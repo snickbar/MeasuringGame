@@ -98,7 +98,7 @@ export function buildObjectPicker({ loadAnim, objects }) {
     commit(d); render();
   }
   // Every change replays the reveal after a short pause, so you see the result without pressing Watch.
-  let replayTimer = 0;
+  let replayTimer = 0, replayOnGo = false;
   const replaySoon = () => { clearTimeout(replayTimer); replayTimer = setTimeout(() => { if (wrap.isConnected) test(); }, 350); };
   function commit(d) { if (Object.keys(d).length) drafts[cur] = d; else delete drafts[cur]; saveDrafts(); replaySoon(); }
 
@@ -118,7 +118,7 @@ export function buildObjectPicker({ loadAnim, objects }) {
     const nChg = Object.keys(drafts).length;
     summary.textContent = summary.textContent.replace(/· \d+ changed/, `· ${nChg} changed`);
   }
-  function go(id) { cur = id; try { localStorage.setItem(KEY + "-last", id); } catch (e) { /* storage unavailable */ } fillEntrySelects(); render(); if (select.value !== id) select.value = id; }
+  function go(id) { const changed = id !== cur; cur = id; try { localStorage.setItem(KEY + "-last", id); } catch (e) { /* storage unavailable */ } fillEntrySelects(); render(); if (select.value !== id) select.value = id; if (changed && replayOnGo) replaySoon(); }
   select.addEventListener("change", () => go(select.value));
   search.addEventListener("input", () => { query = search.value; fillSelect(); if (cur) go(cur); });
   filterSel.addEventListener("change", () => { filter = filterSel.value; fillSelect(); if (cur) go(cur); });
@@ -183,6 +183,7 @@ export function buildObjectPicker({ loadAnim, objects }) {
     row(btn("Copy choices", copyChoices), resetThis), out,
   );
   fillSelect(); if (cur) go(cur);
+  replayOnGo = true;
   // The saved entrances live in the engine, so load it once and show them in the list.
   Promise.resolve(loadAnim()).then((m) => { if (!m || !m.savedEntranceOf) return; mod = m; savedEntrance = m.savedEntranceOf; if (cur) go(cur); }).catch(() => {});
   return wrap;
