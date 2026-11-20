@@ -2,6 +2,7 @@
 // Built from the game's own catalogs, so new items show up here automatically. Everything writes straight to the profile.
 // To hide the whole section for a release, set DEBUG_TOOLS = false in index.html.
 import { buildSceneViewer } from "./scene-viewer.mjs";
+import { buildObjectPicker } from "./object-picker.mjs";
 import { buildPlayerFramePreview } from "./player-frames.mjs";
 export function installDebugTools(ctx) {
   const card = document.getElementById("settings-debug-card"), root = document.getElementById("debug-tools-root");
@@ -201,6 +202,8 @@ export function installDebugTools(ctx) {
   // Built once, so rebuilding the other sections never interrupts a reveal that is playing.
   let sceneViewer = null;
   function sceneViewerEl() { return sceneViewer || (sceneViewer = buildSceneViewer(ctx.sceneViewer)); }
+  let objectPicker = null;
+  function objectPickerEl() { return objectPicker || (objectPicker = buildObjectPicker(ctx.sceneViewer)); }
   let framePreview;
   let building = false;
   function refresh() {
@@ -219,7 +222,8 @@ export function installDebugTools(ctx) {
         framePreview.refreshPlayer();
         root.appendChild(section("playerFrames", "Player card preview", "frames and colors", framePreview));
       }
-      [["scenes", "Scene viewer", "watch any reveal scene", sceneViewerEl()], ["master", "Everything", "", masterBody()], ["coins", "Coins & pulls", (P().coins || 0).toLocaleString() + " coins", coinsBody()],
+      [["scenes", "Scene viewer", "watch any reveal scene", sceneViewerEl()],
+        ["objects", "Object picker", "standing pose and entrance", objectPickerEl()], ["master", "Everything", "", masterBody()], ["coins", "Coins & pulls", (P().coins || 0).toLocaleString() + " coins", coinsBody()],
         ["avatars", "Avatars", count(S.avatars), setBody(S.avatars)], ["homes", "Home screens", count(S.homes), setBody(S.homes)],
         ["worlds", "World stars", ctx.worlds.reduce((n, w) => n + worldStars(w.id), 0) + "★", worldsBody()],
         ["borders", "Card borders", count(S.borders), setBody(S.borders)], ["colors", "Name colors", count(S.colors), setBody(S.colors)],
