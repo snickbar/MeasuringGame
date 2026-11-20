@@ -135,7 +135,10 @@ export function buildObjectPicker({ loadAnim, objects }) {
     try {
       mod = mod || await loadAnim();
       if (!mod) { testNote.textContent = "The animation engine did not load."; return; }
-      if (!ctl) ctl = mod.createStackAnimation(stage, {
+      // The engine keeps each object's turned picture for the life of the animation, so a fresh one is built every time:
+      // otherwise a turn, flip or lean changed after the first watch would still show the old pose.
+      if (ctl) { try { ctl.destroy(); } catch (e) { /* rebuilding */ } stage.textContent = ""; }
+      ctl = mod.createStackAnimation(stage, {
         theme: mod.LIGHT_THEME, imageUrl: (x) => x.image,
         orientationFor: (x) => ({ ...DEFAULT, ...(ORIENT[x.id] || {}), ...(((drafts[x.id] || {}).orient) || {}) }),
         motionFor: (x, right, lean = false) => {
