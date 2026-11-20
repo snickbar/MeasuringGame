@@ -97,7 +97,10 @@ export function buildObjectPicker({ loadAnim, objects }) {
     if (v === (savedEntrance(cur) || "auto")) delete d.motion; else d.motion = v;
     commit(d); render();
   }
-  function commit(d) { if (Object.keys(d).length) drafts[cur] = d; else delete drafts[cur]; saveDrafts(); }
+  // Every change replays the reveal after a short pause, so you see the result without pressing Watch.
+  let replayTimer = 0;
+  const replaySoon = () => { clearTimeout(replayTimer); replayTimer = setTimeout(() => { if (wrap.isConnected) test(); }, 350); };
+  function commit(d) { if (Object.keys(d).length) drafts[cur] = d; else delete drafts[cur]; saveDrafts(); replaySoon(); }
 
   function render() {
     const o = byId.get(cur); if (!o) return;
@@ -125,6 +128,7 @@ export function buildObjectPicker({ loadAnim, objects }) {
   const partner = el("select", "dbg-input"); partner.style.width = "100%"; partner.setAttribute("aria-label", "Test against");
   sorted.forEach((o) => { const op = el("option", "", o.name); op.value = o.id; partner.appendChild(op); });
   partner.value = byId.has("empire-state-building") ? "empire-state-building" : sorted[sorted.length - 1].id;
+  partner.addEventListener("change", replaySoon);
   const stage = el("div"); stage.style.cssText = "width:100%;min-height:80px;border-radius:10px;overflow:hidden;background:#fff8ec";
   const testNote = el("p", "dbg-note", "Plays the real reveal with your draft and the saved entrance. The object you picked plays as the small one if it is smaller than the object you test against, otherwise as the big one.");
   let mod = null, ctl = null, token = 0;
@@ -163,7 +167,7 @@ export function buildObjectPicker({ loadAnim, objects }) {
     try { await navigator.clipboard.writeText(text); status.textContent = `Copied ${Object.keys(drafts).length} object change(s). Paste them to Claude to lock them into the game.`; }
     catch (e) { out.focus(); out.select(); status.textContent = "Select the text below and copy it."; }
   }
-  const resetThis = btn("Reset this object", () => { delete drafts[cur]; saveDrafts(); fillSelect(); go(cur); });
+  const resetThis = btn("Reset this object", () => { delete drafts[cur]; saveDrafts(); fillSelect(); go(cur); replaySoon(); });
   resetThis.classList.add("dbg-warn");
 
   wrap.append(
