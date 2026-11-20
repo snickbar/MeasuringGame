@@ -73,6 +73,7 @@ export function buildObjectPicker({ loadAnim, objects }) {
   [leanL, leanR].forEach((s) => { s.style.width = "100%"; LEANS.forEach(([v, t]) => { const o = el("option", "", t); o.value = v; s.appendChild(o); }); });
   leanL.setAttribute("aria-label", "Small object lean"); leanR.setAttribute("aria-label", "Big object lean");
   leanL.addEventListener("change", () => set((s) => { s.leanL = leanL.value; })); leanR.addEventListener("change", () => set((s) => { s.leanR = leanR.value; }));
+  const leanNote = el("p", "dbg-note"); leanNote.style.color = "#a04000";
   const entry = el("select", "dbg-input"); entry.style.width = "100%"; entry.setAttribute("aria-label", "How it enters");
   entry.addEventListener("change", () => setMotion(entry.value));
 
@@ -106,6 +107,8 @@ export function buildObjectPicker({ loadAnim, objects }) {
     rotBtns.forEach(([r, b]) => b.classList.toggle("dbg-on", s.rot === r));
     flipBtn.classList.toggle("dbg-on", !!s.flip); mirBtn.classList.toggle("dbg-on", !!s.mirR);
     leanL.value = s.leanL; leanR.value = s.leanR; entry.value = m;
+    const lying = (side) => side === "cw" || side === "ccw", swap = { roll: "scoot", tumble: "skid" }[m];
+    leanNote.textContent = swap && (lying(s.leanL) || lying(s.leanR)) ? `${m} can't be used while it swings up to stand, so it plays as ${swap}. Set "swings up" to "Stays as it is" on the side you want to see it.` : "";
     status.textContent = isChanged(cur) ? "You changed this one (kept on this device until you copy and send it)." : isNew(cur) ? "New: nothing saved for this object yet, so it uses the default pose." : "Matches what is saved in the game.";
     const label = select.querySelector(`option[value="${CSS.escape(cur)}"]`);
     if (label) label.textContent = (isChanged(cur) ? "● " : isNew(cur) ? "NEW " : "") + o.name;
@@ -158,11 +161,7 @@ export function buildObjectPicker({ loadAnim, objects }) {
     catch (e) { out.focus(); out.select(); status.textContent = "Select the text below and copy it."; }
   }
   const resetThis = btn("Reset this object", () => { delete drafts[cur]; saveDrafts(); fillSelect(); go(cur); });
-  const clearAll = btn("Clear all my changes", () => {
-    if (clearAll.dataset.arm !== "1") { clearAll.dataset.arm = "1"; clearAll.textContent = "Tap again to clear all"; setTimeout(() => { clearAll.dataset.arm = ""; clearAll.textContent = "Clear all my changes"; }, 3000); return; }
-    drafts = {}; saveDrafts(); fillSelect(); if (cur) go(cur);
-  });
-  clearAll.classList.add("dbg-warn"); resetThis.classList.add("dbg-warn");
+  resetThis.classList.add("dbg-warn");
 
   wrap.append(
     el("p", "dbg-note", "Every object in the game is listed here, so new ones appear on their own. Stand each one the way you want it, pick how it enters, and press Test."),
@@ -171,11 +170,10 @@ export function buildObjectPicker({ loadAnim, objects }) {
     thumbBox,
     field("Turn the picture", rotRow), row(flipBtn, mirBtn),
     field("Small: swings up", leanL), field("Big: swings up", leanR),
-    field("How it enters", entry), row(btn("▶ Watch it enter", test)),
+    field("How it enters", entry), leanNote, row(btn("▶ Watch it enter", test)),
     status,
-    field("Test against", partner), row(btn("▶ Test in reveal", test)),
-    stage, testNote,
-    row(btn("Copy choices", copyChoices), resetThis, clearAll), out,
+    stage, testNote, field("Test against", partner),
+    row(btn("Copy choices", copyChoices), resetThis), out,
   );
   fillSelect(); if (cur) go(cur);
   // The saved entrances live in the engine, so load it once and show them in the list.
