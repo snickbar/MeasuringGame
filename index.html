@@ -12942,6 +12942,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // ---- Room options: the switches that used to sit in the lobby are chosen before the room exists ----
   let roomOptsPending = null, roomOptsBack = null;
+  let lastRoomOpts = null; // the settings page you are on, so Back from the avatar screen can come straight back to it
   const roomOptsAvail = (like) => { const key = tourKeyFor(like); return { tour: !like.solo && !!key && !!modeTutorialUI?.count(key), mb: isPartyRoomSettings(like), solo2x: like.mode === "teamvteam" }; };
   const ROOM_OPT_ROWS = [
     ["mb", "items/unicorn.webp", "Make-believe objects", "Include dragons, unicorns and more"],
@@ -12954,6 +12955,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function applyRoomOpts() { if (roomOptsPending) { Object.assign(currentSettings, roomOptsPending); roomOptsPending = null; } }
   function showRoomOptions({ title, like, extrasHtml = "", bindExtras = null, onCreate, back, host = teamvteamContentEl }) {
+    lastRoomOpts = { args: { title, like, extrasHtml, bindExtras, onCreate, back, host }, screenEl: host === teamworldsContentEl ? teamworldsScreenEl : teamvteamScreenEl };
     const avail = roomOptsAvail(like), st = { tour: avail.tour && tourWanted(like), anim: true, mb: true, solo2x: true };
     host.innerHTML = `<h2 class="dc-title">${title}</h2>${roomOptsHtml(avail, st)}${extrasHtml}
       <div class="pin-bottom"><button type="button" class="menu-action-art art-pick-avatar dc-btn" id="ro-create" data-fit-single-line="true">Pick Avatar</button></div>`;
@@ -19040,11 +19042,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function leaveNameAvatarScreen() {
     nameAvatarScreenEl.classList.remove("active");
     if (takenAvatarsUnsub) { takenAvatarsUnsub(); takenAvatarsUnsub = null; }
-    if (nameAvatarCameFrom === "create" && (createMode === "hlsurvival" || createMode === "highstakes" || createMode === "bluff")) {
+    if (nameAvatarCameFrom === "create" && lastRoomOpts && (createMode === "hlsurvival" || createMode === "highstakes" || createMode === "bluff" || createMode === "teamworlds")) {
+      // These modes skip the Create Room screen: Back goes one page back, to the room settings page you just left.
+      const r = lastRoomOpts;
+      openOverlay(r.screenEl);
+      overlayReturnScreen = partyScreenEl;
+      showRoomOptions(r.args);
+    } else if (nameAvatarCameFrom === "create" && (createMode === "hlsurvival" || createMode === "highstakes" || createMode === "bluff")) {
       openPartyHub();
     } else if (nameAvatarCameFrom === "create" && createMode === "teamworlds") {
-      // Team Worlds never shows the classic Create Room screen (nothing to configure) - back goes
-      // to its own World picker instead.
       openTeamWorldsScreen();
     } else if (nameAvatarCameFrom === "create") {
       createScreenEl.classList.add("active");
