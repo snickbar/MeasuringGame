@@ -12884,6 +12884,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ${card("pm-highstakes", "items/poker-chip.webp", "High Stakes", "Bet your chips on the real answer &mdash; bluff, raise, outlast", "highstakes", "icons/banner-blank-purple.webp")}`;
     partyContentEl.insertAdjacentHTML('beforeend',card('pm-bluff','icons/reactions/giggle.webp','Bluff the Room','One claim. Tell the truth or fool your friends.','bluff',"icons/banner-blank-pink.webp"));
   }
+  // Opening a mode's info page from its own settings page (Back) must not toggle the overlay shut, which is what openOverlay does
+  // when its screen is already showing (that dropped you out to Party Mode).
+  function showInfoOverlay() {
+    if (teamvteamScreenEl.classList.contains("active")) { window.scrollTo({ top: 0, behavior: "instant" }); return; }
+    openOverlay(teamvteamScreenEl);
+  }
   function openPartyHub() {
     renderPartyHub();
     openOverlay(partyScreenEl);
@@ -12931,7 +12937,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">Every player earns coins based on their final score.</div></div>
       <h3 class="cs-h">Your personal best</h3>${classicBestHtml()}
       <div class="pin-bottom"><button type="button" class="menu-action-art art-room-settings dc-btn" id="classic-start" data-fit-single-line="true">Room Settings</button></div>`;
-    openOverlay(teamvteamScreenEl);
+    showInfoOverlay();
     overlayReturnScreen = partyScreenEl;
   }
   // ---- Room options: the switches that used to sit in the lobby are chosen before the room exists ----
@@ -12982,7 +12988,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">2 coins for every round you survive, every game. The free game ends at ${HL_FREE_CAP} rounds; Party Mode hosts can play endless.</div></div>
       <h3 class="cs-h">Your best runs</h3>${hlBestHtml()}
       <div class="pin-bottom"><button type="button" class="menu-action-art art-room-settings dc-btn" id="hl-start" data-fit-single-line="true">Room Settings</button></div>`;
-    openOverlay(teamvteamScreenEl);
+    showInfoOverlay();
     overlayReturnScreen = partyScreenEl;
   }
   function openHsInfo() {
@@ -12998,7 +13004,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card"><div class="dc-big">Outlast the table</div><div class="dc-note">Start with ${HS.HS_START_COINS} chips. The ante rises by 5 every 2 rounds. Run out of chips and you’re out. The last player standing or the biggest stack after ${HS.HS_MAX_ROUNDS} rounds wins.</div></div>
       <h3 class="cs-h">Your personal best</h3>${classicBestHtml("highstakes", "chips")}
       <div class="pin-bottom"><button type="button" class="menu-action-art art-room-settings dc-btn" id="hs-start" data-fit-single-line="true">Room Settings</button></div>`;
-    openOverlay(teamvteamScreenEl);
+    showInfoOverlay();
     overlayReturnScreen = partyScreenEl;
   }
   async function startHsFromInfo() {
@@ -13029,7 +13035,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card"><div class="dc-big">On the clock</div><div class="dc-note">60 seconds to make a claim, then 60 seconds to vote. After you submit, you can change your vote for up to 10 seconds if time remains. Missed votes earn no points. No Second Chance or power-ups.</div></div>
       <h3 class="cs-h">Your personal best</h3>${classicBestHtml("bluff", "points")}
       <div class="pin-bottom"><button type="button" class="menu-action-art art-room-settings dc-btn" id="bluff-start" data-fit-single-line="true">Room Settings</button></div>`;
-    openOverlay(teamvteamScreenEl);overlayReturnScreen=partyScreenEl;
+    showInfoOverlay();overlayReturnScreen=partyScreenEl;
     document.getElementById('bluff-start').onclick=()=>showRoomOptions({title:'Bluff the Room',like:{mode:'bluff'},back:openBluffInfo,
       extrasHtml:`<div class="dc-card"><div class="dc-big">Equal maker turns</div><div class="dc-note">Auto gives everyone two turns with 3 players, or one turn with 4 or more.</div>
         <div class="bl-setup-options" role="group" aria-label="Maker turns each">${[['auto','Auto'],[1,'1 each'],[2,'2 each']].map(([id,label])=>`<button type="button" data-bluff-turns="${id}" aria-pressed="${bluffTurnsChoice===id}">${label}</button>`).join('')}</div></div>`,
@@ -13102,7 +13108,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function openTeamVTeamInfo() {
     renderTeamVTeamInfo();
-    openOverlay(teamvteamScreenEl);
+    showInfoOverlay();
     overlayReturnScreen = partyScreenEl;
   }
   teamvteamContentEl.addEventListener("click", (e) => {
@@ -14448,8 +14454,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card dc-hot"><div class="dc-big">Play as a team</div><div class="dc-note">You and your partner each answer the same 5 questions independently - we average your two guesses and score that. Rated the same way as Solo Worlds: up to 3 stars for a great run.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${WORLD_STAR_COINS} coins for every star your team earns, every game you play - replay for more.</div></div>
       <h3 class="cs-h">Your top 5 for ${escapeHtml(w.name)}</h3>${teamWorldsBestHtml(w.id)}
-      <div class="pin-bottom"><button type="button" class="menu-action-art art-room-settings dc-btn" id="tw-start" data-fit-single-line="true">Room Settings</button>
-      <button type="button" class="dc-btn dc-alt" id="tw-back-to-list">Pick another World</button></div>`;
+      <div class="pin-bottom"><button type="button" class="menu-action-art art-room-settings dc-btn" id="tw-start" data-fit-single-line="true">Room Settings</button></div>`;
   }
   function openTeamWorldsScreen() {
     twWorldId = null;
@@ -14465,7 +14470,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       renderTeamWorldsScreen();
       return;
     }
-    if (b.id === "tw-back-to-list") { twWorldId = null; renderTeamWorldsScreen(); return; }
     if (b.id === "tw-start") {
       activateButton(b, () => showRoomOptions({ title: WORLDS.find((x) => x.id === twWorldId)?.name || "Team Worlds", like: { mode: "teamworlds" }, host: teamworldsContentEl, back: renderTeamWorldsScreen, onCreate: async () => {
         const granted = await confirmAndPurchaseHostUnlock("teamworlds");
