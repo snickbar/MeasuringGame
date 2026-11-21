@@ -1,3 +1,4 @@
+import { drawAquarium } from './aquarium.mjs';
 import { installIndoorV3, projectedRoomImages, drawProjectedIndoor, drawWorkshopCeiling } from './indoor-perspective.mjs';
 import { FLOOR_DATA } from './scenery-data.mjs';
 import { drawRetroSky, drawRetroRink } from './retro-rink.mjs';
@@ -974,17 +975,7 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
         ctx.restore();
       }
       for (const fl of layer.flows || []) drawFlow(ctx, kit, fl, x, top, k, k, time, reduced);
-      for (const tk of layer.tanks || []) { // fish swimming inside a glass tank painted on this layer, clipped to the water
-        const [bx0, by0, bx1, by1] = tk.box, tx = x + bx0 * tw, ty = top + by0 * th, tW = (bx1 - bx0) * tw, tH = (by1 - by0) * th;
-        ctx.save(); ctx.beginPath(); ctx.rect(tx, ty, tW, tH); ctx.clip();
-        for (const f of tk.fish) {
-          const pic = kit.images[f.img]; if (!pic) continue;
-          const fw = f.w * tW, fh = fw * pic.naturalHeight / pic.naturalWidth, span = tW + fw, u = ((f.phase + (reduced ? 0 : time * f.speed)) % 1 + 1) % 1, dir = f.speed < 0 ? -1 : 1;
-          const fx = tx - fw / 2 + (dir > 0 ? u : 1 - u) * span, fy = ty + f.y * tH + (reduced ? 0 : Math.sin(time * 1.3 + f.phase * 9) * tH * .04);
-          ctx.save(); ctx.translate(fx, fy); if (dir < 0) ctx.scale(-1, 1); ctx.drawImage(pic, -fw / 2, -fh / 2, fw, fh); ctx.restore();
-        }
-        ctx.restore();
-      }
+      for (const tank of layer.tanks || []) drawAquarium(ctx, kit.images, tank, { x, y: top, width: tw, height: th, time, reduced });
       if (layer.mirror) { // keep painting below the picture with its own lower rows, flipped back and forth, so no flat band or edge ever shows
         const m = Math.min(layer.mirror, image.naturalHeight - st.sky - 20), mh = m * k;
         for (let j = 0; bottom + j * mh < height && j < 8; j++) {
