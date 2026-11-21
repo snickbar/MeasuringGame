@@ -76,7 +76,7 @@ function make(kind, opts = {}) {
   const size = kind === "mote" ? rnd(5, 9) : kind === "bubble" ? rnd(12, 36) : kind === "snow" ? rnd(5, 11) : kind === "ember" ? rnd(7, 14) : kind === "star" ? rnd(5, 12) : kind === "sparkle" ? rnd(10, 20) : kind === "petal" ? rnd(11, 18) : kind === "confetti" ? rnd(8, 13) : rnd(7, 13);
   el.style.setProperty("--s", size.toFixed(1) + "px");
   if(kind==='mist')el.style.setProperty('--s',rnd(320,470).toFixed(0)+'px');
-  const dur = kind==='mist'?rnd(25,36):kind==='sand'?rnd(7,12):kind==='puff'?rnd(18,27):rising ? rnd(9, 17) : falling ? rnd(8, 15) : kind === "shoot" ? 11 : rnd(2.2, 5);
+  const dur = kind==='pixel'?rnd(18,26):kind==='mist'?rnd(25,36):kind==='sand'?rnd(7,12):kind==='puff'?rnd(18,27):rising ? rnd(9, 17) : falling ? rnd(8, 15) : kind === "shoot" ? 11 : rnd(2.2, 5);
   el.style.setProperty("--d", dur.toFixed(1) + "s");
   el.style.setProperty("--dl", (-rnd(0, dur)).toFixed(1) + "s");
   if (kind === "shoot") el.style.setProperty("--dl", (-rnd(0, 6)).toFixed(1) + "s");

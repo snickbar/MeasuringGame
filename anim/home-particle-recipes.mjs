@@ -4,6 +4,7 @@ export const HOME_PARTICLES={
   ants:[['pollen',10],['puff',8]],
   sunflower:[['pollen',10],['petal',5,{colors:gold}],['puff',8]],
   games:[['confetti',12],['sparkle',5]],
+  retro:[['pixel',8,{colors:['#ff75d0','#64e9f4','#ffd666'],dr:18}],['sparkle',3,{colors:['#ffb6e5','#a5f7ff','#ffe59a']}]],
   house:[['fizz',12],['steam',5]],
   snacks:[['sugar',10],['heart',5]],
   town:[['paper',7],['petal',5,{colors:green}]],
@@ -26,6 +27,6 @@ export const HOME_PARTICLES={
   'make-believe':[['sparkle',12,{colors:['#ffb8eb','#bceaff','#ffe08a']}],['rune',6],['mist',7]],
   'holiday-mix':[['snow',18],['heart',5],['confetti',5]],
 };
-export const RISING_PARTICLES=new Set(['mote','ember','bubble','pollen','seed','fizz','steam','smoke','spray','caustic','music','heat','rune']);
+export const RISING_PARTICLES=new Set(['pixel','mote','ember','bubble','pollen','seed','fizz','steam','smoke','spray','caustic','music','heat','rune']);
 export const FALLING_PARTICLES=new Set(['snow','petal','confetti','sugar','heart','paper','crystal','feather','ash','puff']);
 export const SIDEWAYS_PARTICLES=new Set(['sand','mist']);

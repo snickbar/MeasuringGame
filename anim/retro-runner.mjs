@@ -63,7 +63,12 @@ export function drawRunnerGame(ctx, { x = 0, y = 0, width, height, time = 0, spr
     if (px > right || px + config.pitWidth < left) continue;
     ctx.fillStyle = '#0d2547'; ctx.fillRect(px, config.groundY, config.pitWidth, bottom - config.groundY + 1);
     ctx.fillStyle = '#123554'; ctx.fillRect(px + 2, config.groundY + 15, config.pitWidth - 4, bottom - config.groundY);
-    if (art) actor(ctx, sprites, art.frames[6 + Math.floor(time * 3) % 2], center, config.groundY + 22, 18 / art.enemyHeight);
+    const pitFloor = config.groundY + 23;
+    ctx.fillStyle = '#a47450'; ctx.fillRect(px, pitFloor, config.pitWidth, Math.max(0, bottom - pitFloor + 1));
+    ctx.fillStyle = '#d5ad73'; ctx.fillRect(px, pitFloor, config.pitWidth, 2);
+    ctx.fillStyle = '#75503b'; ctx.fillRect(px, pitFloor + 7, config.pitWidth, 1);
+    for (let brick = 0; brick < 3; brick++) ctx.fillRect(px + brick * 18 + 8, pitFloor + 2, 1, Math.max(0, bottom - pitFloor));
+    if (art) actor(ctx, sprites, art.frames[6 + Math.floor(time * 3) % 2], center, pitFloor, 18 / art.enemyHeight);
   }
   if (art) actor(ctx, sprites, art.frames[state.pose], state.heroX, config.groundY - state.jump, 32 / art.heroHeight);
   ctx.restore();
