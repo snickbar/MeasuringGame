@@ -1688,7 +1688,17 @@ if (location.protocol === "file:") {
     position: relative; width: 160px; height: 160px; padding: 10px; box-sizing: border-box;
     background: #fffaf0; border: 4px solid #d9c3a3; border-radius: 20px; animation: popIn 160ms ease;
   }
+  #avatar-zoom-overlay .avatar-zoom-card { height: auto; width: 200px; }
+  #avatar-zoom-overlay .avatar-zoom-pic { width: 100%; aspect-ratio: 1; }
   #avatar-zoom-overlay .avatar-zoom-card img { width: 100%; height: 100%; object-fit: contain; }
+  #avatar-zoom-overlay .avatar-zoom-info { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: 8px; text-align: center; color: #4a2c12; }
+  #avatar-zoom-overlay .avatar-zoom-name { font-size: 17px; line-height: 1.1; }
+  #avatar-zoom-overlay .avatar-zoom-rarity { font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 2px 10px; border-radius: 10px; background: #efe2c8; color: #6b4a22; }
+  #avatar-zoom-overlay .avatar-zoom-rarity.tier-common { background: #dfe8d2; color: #3f6226; }
+  #avatar-zoom-overlay .avatar-zoom-rarity.tier-rare { background: #d3e3f4; color: #1f5a99; }
+  #avatar-zoom-overlay .avatar-zoom-rarity.tier-ultra { background: #f6e2a8; color: #8a5a00; }
+  #avatar-zoom-overlay .avatar-zoom-pers { font-size: 13px; }
+  #avatar-zoom-overlay .avatar-zoom-blurb { font-size: 12px; opacity: .8; }
   #avatar-zoom-overlay .avatar-zoom-card img.zoom-dim { opacity: .4; filter: grayscale(1); }
   /* Favorites: heart badge on tiles, labels in the pickers, and the heart on the zoomed avatar. */
   .avatar-choice, .collection-tile { position: relative; }
@@ -5448,7 +5458,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { normalizeCode, resolveCode, applyRedeem, BUILT_IN_CODES, CODE_MAX_LENGTH } from "./anim/redeem-codes.mjs";
   import { questionClockPending, questionReadyToken, beginQuestionClock, boardReadingMs } from "./anim/question-clock.mjs";
   import { botDecisionScope, commitBotDecision } from "./anim/bot-decisions.mjs";
-  import { personalityFor, shapeRatio, shapeDelay } from "./anim/bot-personalities.mjs";
+  import { personalityFor, shapeRatio, shapeDelay, PERSONALITY_UNLOCK_ROUNDS } from "./anim/bot-personalities.mjs";
   import { HL_SHIELD_CHAIN, hlThemeDue, hlSurvivalOutcome } from "./anim/high-low-survival.mjs";
   import { mountHighLowReveal, HL_REVEAL_STEP_MS } from "./anim/high-low-reveal.mjs";
   import { HL_MESSAGE_BOTTLE, HL_EMPTY_BOTTLE, highLowBottlePieces } from "./anim/high-low-bottles.mjs";
@@ -6148,6 +6158,33 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Favorite avatars: saved on the profile (so they follow the account) and shown first in every avatar picker as well as in their usual place.
   const FAV_HEART = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>';
   const isFavAvatar = (id) => !!(myProfile.favAvatars || {})[id];
+  // Rounds this player has played against each avatar as a bot (saved on the profile). After PERSONALITY_UNLOCK_ROUNDS of them
+  // that avatar's personality shows on its card; until then it reads ???.
+  const botRoundsAgainst = (id) => Number((myProfile.botRounds || {})[id]) || 0;
+  const personalityKnown = (id) => botRoundsAgainst(id) >= PERSONALITY_UNLOCK_ROUNDS;
+  let botRoundsNoted = null;
+  // How many rounds a finished game had, for counting rounds against bots.
+  function roundsPlayedIn(room) {
+    const mode = room?.settings?.mode;
+    if (mode === "bluff") return Object.keys(room.bluffRounds || {}).length;
+    if (mode === "highstakes") return Number(room.hs?.round) || 1;
+    const total = Number(room?.settings?.totalRounds) || 0, played = Number(room?.round) || 0;
+    return total ? Math.min(total, played || total) : played;
+  }
+  function noteBotRounds(room, key, rounds) {
+    try {
+      if (!key || !room || !(rounds > 0)) return;
+      const seenKey = "mg_botRoundsNoted";
+      let seen = []; try { seen = JSON.parse(localStorage.getItem(seenKey) || "[]") || []; } catch (e) { seen = []; }
+      if (botRoundsNoted === key || seen.includes(key)) return;
+      botRoundsNoted = key; try { localStorage.setItem(seenKey, JSON.stringify(seen.concat(key).slice(-30))); } catch (e) {}
+      const mine = { ...(myProfile.botRounds || {}) }, updates = {};
+      Object.values(room.players || {}).forEach((p) => { if (p && p.isBot && p.avatar) { mine[p.avatar] = (Number(mine[p.avatar]) || 0) + rounds; updates[`botRounds/${p.avatar}`] = mine[p.avatar]; } });
+      if (!Object.keys(updates).length) return;
+      myProfile = { ...myProfile, botRounds: mine };   // shown at once; the save goes out in the background
+      update(ref(db, `profiles/${deviceId}`), updates).catch(() => {});
+    } catch (e) { /* counting rounds must never break a final screen */ }
+  }
   function toggleFavAvatar(id) {
     if (!id || !isAvatarUnlocked(id)) return;
     const on = !isFavAvatar(id), favs = { ...(myProfile.favAvatars || {}) };
@@ -6377,6 +6414,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return {
       coins: 0,
       favAvatars: {},
+      botRounds: {},
       freePulls: 0,
       booster: 0,
       tipCount: 0,
@@ -6671,6 +6709,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         whichBigger: data.whichBigger || null,
         achClaimed: { ...(data.achClaimed || {}) },
         favAvatars: { ...(data.favAvatars || {}) },
+        botRounds: { ...(data.botRounds || {}) },
         accountUpgrade: data.accountUpgrade || null,
         // Were missing from this normalization entirely until now - every real
         // profile update from the server was silently dropping them back to
@@ -13736,6 +13775,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const key = gameRewardKey(currentRoomCode, data), st = hs.stats?.[me] || {};
       if (hsRecorded !== key) {
         hsRecorded = key;
+        noteBotRounds(data, key, roundsPlayedIn(data));
         const others = hs.seatsAll.filter(id => id !== me).map(id => players[id]?.isBot ? players[id].botDifficulty || 'medium' : 'human');
         careerLedger.save({kind:'match', key, mode:'highstakes', t:Date.now(), won:iWon && hs.seatsAll.length >= 2, place:rw.place,
           group:hs.seatsAll.filter(id => !players[id]?.isBot).length >= 2 && hs.seatsAll.length >= 3, score:hs.chips[me] || 0, accuracy:0,
@@ -17551,7 +17591,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const ov = document.createElement("div");
     ov.id = "avatar-zoom-overlay";
     const canFav = !dim && isAvatarUnlocked(id);
-    ov.innerHTML = `<div class="avatar-zoom-card">${avatarHtml(id, dim ? "zoom-dim" : "")}${canFav ? `<button type="button" class="avatar-zoom-fav${isFavAvatar(id) ? " on" : ""}" aria-label="Favorite" aria-pressed="${isFavAvatar(id)}">${FAV_HEART}</button>` : ""}<button type="button" class="avatar-zoom-close" aria-label="Close">&times;</button></div>`;
+    const tier = AVATAR_TIERS[id], tierLabel = { default: "Starter", common: "Common", rare: "Rare", ultra: "Ultra-rare" }[tier] || "";
+    const info = `<div class="avatar-zoom-info"><b class="avatar-zoom-name">${escapeHtml(BOT_NAME_BY_AVATAR[id] || "")}</b><span class="avatar-zoom-rarity tier-${tier}">${tierLabel}</span><span class="avatar-zoom-pers">Personality: <b>${personalityKnown(id) ? escapeHtml(personalityFor(id).label) : "???"}</b></span>${personalityKnown(id) ? `<span class="avatar-zoom-blurb">${escapeHtml(personalityFor(id).blurb)}</span>` : ""}</div>`;
+    ov.innerHTML = `<div class="avatar-zoom-card"><div class="avatar-zoom-pic">${avatarHtml(id, dim ? "zoom-dim" : "")}</div>${info}${canFav ? `<button type="button" class="avatar-zoom-fav${isFavAvatar(id) ? " on" : ""}" aria-label="Favorite" aria-pressed="${isFavAvatar(id)}">${FAV_HEART}</button>` : ""}<button type="button" class="avatar-zoom-close" aria-label="Close">&times;</button></div>`;
     ov.addEventListener("click", (e) => {
       const heart = e.target.closest(".avatar-zoom-fav");
       if (heart) { toggleFavAvatar(id); const on = isFavAvatar(id); heart.classList.toggle("on", on); heart.setAttribute("aria-pressed", String(on)); return; } // stays open so you can see it filled
@@ -23253,6 +23295,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     finalScreenEl.classList.toggle('party-ranked', !['bluff','teamworlds','highstakes','hlsurvival'].includes(roomState.settings?.mode));
     finalRendered = true;
     updateFinalButtons();
+    noteBotRounds(roomState, gameRewardKey(currentRoomCode, roomState), roundsPlayedIn(roomState));
     if(roomState.settings?.mode==='bluff'){renderBluffFinal();return;}
     if (roomState.settings?.mode === "teamworlds") { renderTeamWorldsFinal(); return; }
     const myFinalScore = (currentPlayers[currentPlayerId] && currentPlayers[currentPlayerId].score) || 0;
