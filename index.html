@@ -5448,6 +5448,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { normalizeCode, resolveCode, applyRedeem, BUILT_IN_CODES, CODE_MAX_LENGTH } from "./anim/redeem-codes.mjs";
   import { questionClockPending, questionReadyToken, beginQuestionClock, boardReadingMs } from "./anim/question-clock.mjs";
   import { botDecisionScope, commitBotDecision } from "./anim/bot-decisions.mjs";
+  import { personalityFor, shapeRatio, shapeDelay } from "./anim/bot-personalities.mjs";
   import { HL_SHIELD_CHAIN, hlThemeDue, hlSurvivalOutcome } from "./anim/high-low-survival.mjs";
   import { mountHighLowReveal, HL_REVEAL_STEP_MS } from "./anim/high-low-reveal.mjs";
   import { HL_MESSAGE_BOTTLE, HL_EMPTY_BOTTLE, highLowBottlePieces } from "./anim/high-low-bottles.mjs";
@@ -19555,9 +19556,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
   });
 
-  function botGuessValue(answer, difficulty) {
+  function botGuessValue(answer, difficulty, avatar) {
     const range = BOT_DIFFICULTY_RANGES[difficulty] || BOT_DIFFICULTY_RANGES.medium;
-    const ratio = range[0] + Math.random() * (range[1] - range[0]);
+    const ratio = shapeRatio(range[0] + Math.random() * (range[1] - range[0]), personalityFor(avatar));
     return Math.max(0, Math.round(answer * ratio * 100) / 100);
   }
 
@@ -19573,14 +19574,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const p = players[id];
       if (!p || !p.isBot) return;
       if (existingGuesses[id] !== undefined) return; // already guessed - e.g. re-triggered after a host handoff
-      const delay = fast ? 200 + Math.random() * 1500 : Math.min(1000 + Math.random() * 4000, timerMs * 0.7);
+      const baseDelay = fast ? 200 + Math.random() * 1500 : Math.min(1000 + Math.random() * 4000, timerMs * 0.7);
+      const delay = fast ? baseDelay : shapeDelay(baseDelay, personalityFor(p.avatar), timerMs); // a personality changes how long it waits
       setTimeout(() => {
         if (currentRoomCode !== roomCode) return;
         if (!isHost || currentPlayerId !== hostId || roomState.paused) return;
         if (roomState.phase !== "question") return;
         if (questionClockPending(roomState)) return;
         if (!roomState.currentQuestion || roomState.currentQuestion.prompt !== q.prompt) return;
-        let val = botGuessValue(q.answer, p.botDifficulty);
+        let val = botGuessValue(q.answer, p.botDifficulty, p.avatar);
         // High/Low Survival: a bot partner plays its role, and how tight a bracket it makes depends on its accuracy level.
         if (isHlSettings(roomState.settings)) val = hlBotGuess(q.answer, p.botDifficulty, (roomState.hlRoles || {})[id], hlLimit(roomState.hlSurvived || 0));
         if (!commitBotDecision(roomState, scope, hostId, id, "guesses", val, nowMs())) return;

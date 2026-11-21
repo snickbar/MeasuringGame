@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import { PERSONALITIES, PERSONALITY_IDS, personalityIdFor, shapeRatio, shapeDelay, PERSONALITY_UNLOCK_ROUNDS } from '../anim/bot-personalities.mjs';
+assert.equal(PERSONALITY_UNLOCK_ROUNDS, 25);
+assert.equal(personalityIdFor('av300'), personalityIdFor('av300'), 'the same avatar always gets the same personality');
+const seen = new Set(Array.from({ length: 309 }, (_, i) => personalityIdFor('av' + (i + 1))));
+assert.equal(seen.size, PERSONALITY_IDS.length, 'every personality is used across the avatars');
+assert.ok(shapeRatio(1, PERSONALITIES.lowballer) < 1 && shapeRatio(1, PERSONALITIES.overshooter) > 1);
+assert.equal(shapeRatio(1, PERSONALITIES.steady), 1);
+assert.ok(shapeRatio(1.4, PERSONALITIES.overthinker) < 1.4 && shapeRatio(1.4, PERSONALITIES.gambler) > 1.4, 'spread tightens or widens the miss');
+assert.ok(shapeRatio(0, PERSONALITIES.gambler) >= 0, 'a guess never goes below zero');
+assert.ok(shapeDelay(3000, PERSONALITIES.speedster, 30000) < shapeDelay(3000, PERSONALITIES.overthinker, 30000));
+assert.ok(shapeDelay(4000, PERSONALITIES.overthinker, 5000) <= 5000 * 0.85, 'never waits past the round');
+console.log('Bot personalities: stable per avatar, all used, bias/spread/speed behave.');
