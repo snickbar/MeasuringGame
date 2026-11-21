@@ -2,6 +2,8 @@
 
 Saved November 5, 2026. These are follow-ups, not authorization to implement them.
 
+- November 21: user likes the Roller Rink's projected floor and wants the same perspective approach in more scenes, especially indoors. Prioritize a scene-by-scene pass through Restaurant, Kitchen, Library and Workshop. Keep comparison objects undistorted; use shared floor projection, depth-based furniture scale and occlusion, and appropriate motion for scenery. The current Roller Rink revision adds a larger guarded oval with a rear entrance, horizontal 2-by-2 bench tables, four-frame skating strides, a matching skate-logo roof cap, and two animated arcade screens.
+
 - Profile monthly animation performance on another phone, especially April rain (about 300 animations) and August bubbles (about 259). User reports their current phone runs them well; preserve the approved appearance.
 - January appearance is satisfactory per the user on November 6; no sparkle replacement remains outstanding.
 - Completed November 6: all 105 batch 2 objects are active with approved measurements, orientations and travel styles, production artwork, scenery and Worlds assignments. The catalog contains 681 objects; the separate batch picker preserves the approved choices.
