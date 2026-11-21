@@ -18501,8 +18501,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   // ==================== Lobby / join flow ====================
 
-  // A "?" picture for a hidden bot. It uses the avatar picture classes so every lobby layout sizes it like an avatar.
-  const MYSTERY_AVATAR_HTML = '<img class="avatar-icon mystery-avatar" alt="" draggable="false" src="data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#e6d3b0" stroke="#b79a6c" stroke-width="5"/><text x="50" y="66" text-anchor="middle" font-family="Arial Rounded MT Bold,Arial,sans-serif" font-weight="900" font-size="56" fill="#fffaf0" stroke="#a07f4d" stroke-width="3" paint-order="stroke">?</text></svg>') + '">';
+  // The picture for a hidden bot: a black person silhouette on a circle in the colour of that player's answer paper
+  // (frameIndex 1-10, the same colour their paper and score card use). It uses the avatar picture classes so every lobby layout sizes it like an avatar.
+  const MYSTERY_COLORS = ["#ba765c", "#d9b778", "#b89289", "#8b8f97", "#748574", "#87943d", "#cb757f", "#bea884", "#f05c61", "#cb9863"];
+  function mysteryAvatarHtml(frameIndex) {
+    const color = MYSTERY_COLORS[((Number(frameIndex) || 1) - 1 + 10) % 10];
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><clipPath id="c"><circle cx="50" cy="50" r="46"/></clipPath></defs><circle cx="50" cy="50" r="46" fill="${color}"/><g clip-path="url(#c)" fill="#000"><circle cx="50" cy="38" r="16"/><path d="M16 100 C16 70 32 58 50 58 C68 58 84 70 84 100 Z"/></g><circle cx="50" cy="50" r="46" fill="none" stroke="rgba(0,0,0,.3)" stroke-width="4"/></svg>`;
+    return '<img class="avatar-icon mystery-avatar" alt="" draggable="false" src="data:image/svg+xml;utf8,' + encodeURIComponent(svg) + '">';
+  }
   function renderPlayerList() {
     const isFirstRender = renderedPlayerListIds.size === 0;
     const newIds = new Set();
@@ -18533,7 +18539,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (p.isHost) li.classList.add("lobby-player-host");
       const teamDot = (roomState.settings?.mode === "teamvteam" && p.team) ? `<span class="team-dot" style="--tc:${TEAM_COLOR_HEX[p.team]}"></span>` : "";
       const dragOn = canMoveToTeam(id);
-      nameSpan.innerHTML = `<span class="player-avatar${dragOn ? " lobby-drag" : ""}"${dragOn ? ` data-drag-pid="${id}"` : ""}>${mystery ? MYSTERY_AVATAR_HTML : avatarHtml(p.avatar)}</span><span class="lobby-player-name">${teamDot}${escapeHtml(shownName)}${p.isHost ? ' <span class="lobby-host-tag">Host</span>' : ""}${(!p.isBot && Number.isInteger(p.lvl) && p.lvl > 0) ? `<span class="lobby-rank" title="${Number.isInteger(p.rank) && CAREER_RANKS[p.rank] ? escapeHtml(CAREER_RANKS[p.rank][1]) : ""}">Lv ${p.lvl}</span>` : ""}${!p.isBot&&p.connected===false?`<span class="connection-badge">${isPlayerAway(p)?'Away':'Reconnecting'}</span>`:''}${p.isBot && !botRowsOn ? `<span class="bot-tag"><span class="bot-tag-icon"></span>${escapeHtml(p.botDifficulty || "")}</span>` : ""}</span>`;
+      nameSpan.innerHTML = `<span class="player-avatar${dragOn ? " lobby-drag" : ""}"${dragOn ? ` data-drag-pid="${id}"` : ""}>${mystery ? mysteryAvatarHtml(p.frameIndex) : avatarHtml(p.avatar)}</span><span class="lobby-player-name">${teamDot}${escapeHtml(shownName)}${p.isHost ? ' <span class="lobby-host-tag">Host</span>' : ""}${(!p.isBot && Number.isInteger(p.lvl) && p.lvl > 0) ? `<span class="lobby-rank" title="${Number.isInteger(p.rank) && CAREER_RANKS[p.rank] ? escapeHtml(CAREER_RANKS[p.rank][1]) : ""}">Lv ${p.lvl}</span>` : ""}${!p.isBot&&p.connected===false?`<span class="connection-badge">${isPlayerAway(p)?'Away':'Reconnecting'}</span>`:''}${p.isBot && !botRowsOn ? `<span class="bot-tag"><span class="bot-tag-icon"></span>${escapeHtml(p.botDifficulty || "")}</span>` : ""}</span>`;
       li.appendChild(nameSpan);
       showPlayerFrame(li, p.playerFrame, p.frameIndex);
       if (botRowsOn) {
