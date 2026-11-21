@@ -18501,6 +18501,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   // ==================== Lobby / join flow ====================
 
+  // A "?" picture for a hidden bot. It uses the avatar picture classes so every lobby layout sizes it like an avatar.
+  const MYSTERY_AVATAR_HTML = '<img class="avatar-icon mystery-avatar" alt="" draggable="false" src="data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#e6d3b0" stroke="#b79a6c" stroke-width="5"/><text x="50" y="66" text-anchor="middle" font-family="Arial Rounded MT Bold,Arial,sans-serif" font-weight="900" font-size="56" fill="#fffaf0" stroke="#a07f4d" stroke-width="3" paint-order="stroke">?</text></svg>') + '">';
   function renderPlayerList() {
     const isFirstRender = renderedPlayerListIds.size === 0;
     const newIds = new Set();
@@ -18521,6 +18523,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
       const nameSpan = document.createElement("span");
       const botRowsOn = isHost && p.isBot && roomState && roomState.phase === "waiting";
+      // Bots stay a mystery until the game starts (their avatar and name appear the moment round 1 begins), so nobody rejects a bot by who it is.
+      const mystery = !!(p.isBot && roomState && roomState.phase === "waiting"), shownName = mystery ? "???" : p.name;
       nameSpan.className='lobby-player-identity';
       const party=!roomState.settings?.solo;
       // Every mode gets the same cream cards (self / host shading); Team vs Team keeps its colour dot.
@@ -18529,7 +18533,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (p.isHost) li.classList.add("lobby-player-host");
       const teamDot = (roomState.settings?.mode === "teamvteam" && p.team) ? `<span class="team-dot" style="--tc:${TEAM_COLOR_HEX[p.team]}"></span>` : "";
       const dragOn = canMoveToTeam(id);
-      nameSpan.innerHTML = `<span class="player-avatar${dragOn ? " lobby-drag" : ""}"${dragOn ? ` data-drag-pid="${id}"` : ""}>${avatarHtml(p.avatar)}</span><span class="lobby-player-name">${teamDot}${escapeHtml(p.name)}${p.isHost ? ' <span class="lobby-host-tag">Host</span>' : ""}${(!p.isBot && Number.isInteger(p.lvl) && p.lvl > 0) ? `<span class="lobby-rank" title="${Number.isInteger(p.rank) && CAREER_RANKS[p.rank] ? escapeHtml(CAREER_RANKS[p.rank][1]) : ""}">Lv ${p.lvl}</span>` : ""}${!p.isBot&&p.connected===false?`<span class="connection-badge">${isPlayerAway(p)?'Away':'Reconnecting'}</span>`:''}${p.isBot && !botRowsOn ? `<span class="bot-tag"><span class="bot-tag-icon"></span>${escapeHtml(p.botDifficulty || "")}</span>` : ""}</span>`;
+      nameSpan.innerHTML = `<span class="player-avatar${dragOn ? " lobby-drag" : ""}"${dragOn ? ` data-drag-pid="${id}"` : ""}>${mystery ? MYSTERY_AVATAR_HTML : avatarHtml(p.avatar)}</span><span class="lobby-player-name">${teamDot}${escapeHtml(shownName)}${p.isHost ? ' <span class="lobby-host-tag">Host</span>' : ""}${(!p.isBot && Number.isInteger(p.lvl) && p.lvl > 0) ? `<span class="lobby-rank" title="${Number.isInteger(p.rank) && CAREER_RANKS[p.rank] ? escapeHtml(CAREER_RANKS[p.rank][1]) : ""}">Lv ${p.lvl}</span>` : ""}${!p.isBot&&p.connected===false?`<span class="connection-badge">${isPlayerAway(p)?'Away':'Reconnecting'}</span>`:''}${p.isBot && !botRowsOn ? `<span class="bot-tag"><span class="bot-tag-icon"></span>${escapeHtml(p.botDifficulty || "")}</span>` : ""}</span>`;
       li.appendChild(nameSpan);
       showPlayerFrame(li, p.playerFrame, p.frameIndex);
       if (botRowsOn) {
@@ -18553,8 +18557,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         x.type = "button";
         x.className = "bot-x-btn";
         x.innerHTML = '<svg width="23" height="23" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 5 14 14M19 5 5 19" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg>';
-        x.setAttribute("aria-label", "Remove " + p.name);
-        x.title = "Remove " + p.name;
+        x.setAttribute("aria-label", "Remove " + shownName);
+        x.title = "Remove " + shownName;
         const isSolo = !!(roomState.settings && roomState.settings.solo);
         const botCount = Object.values(currentPlayers).filter((q) => q.isBot).length;
         x.disabled = isSolo && botCount <= SOLO_MIN_BOTS;
