@@ -27,6 +27,14 @@ const ART = (id) => id === "idle-sheet" ? "anim/mode-mascots/quick-robot-idle-sh
 
 export const robotTier = (accuracy) => accuracy >= 60 ? "win" : accuracy >= 40 ? "soso" : "lose";
 
+// Tier of the paper at `index` of `order` (worst first, winner last): the bottom third is upset, the middle third so-so, the top third (and the winner) happy.
+// Alone at the table there is nothing to compare, so the accuracy decides.
+export function robotTierByPlace(index, count, accuracy = 0) {
+  if (count <= 1) return robotTier(accuracy);
+  const pos = index / (count - 1);
+  return pos < 0.34 ? "lose" : pos < 0.67 ? "soso" : "win";
+}
+
 // Random one of the tier's three, never repeating `last` (the id he played most recently).
 export function pickRobotReaction(tier, last, random = Math.random) {
   const pool = REACTIONS[tier].filter(([id]) => id !== last);
@@ -36,7 +44,7 @@ export function pickRobotReaction(tier, last, random = Math.random) {
 // hud: the fixed game container the robot is added to (nothing in it clips, so he can overlap the question board).
 // cardFor(): your own score card element (or null). reduceMotion(): true when animation should be skipped.
 export function createQuickRobot({ hud, cardFor, reduceMotion = () => false }) {
-  let el = null, sprite = null, raf = 0, standKey = null, reactKey = null, last = null, stepTimer = 0, idleTimer = 0, reactTimer = 0, held = false;
+  let el = null, sprite = null, raf = 0, standKey = null, reactKey = null, last = null, stepTimer = 0, idleTimer = 0, reactTimer = 0, held = false, seen = 0;
 
   function build() {
     el = document.createElement("div");
@@ -90,7 +98,7 @@ export function createQuickRobot({ hud, cardFor, reduceMotion = () => false }) {
 
   function hide() {
     clearTimeout(reactTimer); stopFrames();
-    standKey = reactKey = null; held = false;
+    standKey = reactKey = null; held = false; seen = 0;
     cancelAnimationFrame(raf); raf = 0;
     if (el) { el.classList.remove("on", "reacting"); el.classList.add("off"); }
   }
@@ -99,7 +107,7 @@ export function createQuickRobot({ hud, cardFor, reduceMotion = () => false }) {
   function stand(key, hold = false) {
     if (standKey === key) return;
     hide();
-    standKey = key;
+    standKey = key; seen = 0;
     if (!el) build();
     if (reduceMotion()) setStrip(IDLE[0], IDLE[1]); else { setStrip(IDLE_SHEET[0], IDLE_SHEET[1]); setFrame(0, IDLE_SHEET[1]); playIdle(key); }
     el.classList.remove("reacting", "on");
@@ -115,15 +123,12 @@ export function createQuickRobot({ hud, cardFor, reduceMotion = () => false }) {
     if (!held && el && standKey !== null && !el.classList.contains("on")) { void el.offsetWidth; el.classList.add("on"); }
   }
 
-  // Your paper is revealed: play the reaction to your accuracy (0-100), looping. Does nothing twice for the same round.
-  function react(key, accuracy) {
-    if (standKey !== key) stand(key);
-    if (reactKey === key) return;
-    reactKey = key;
+  // Play one reaction of `tier` (looping) after a short beat; a newer one replaces it. `guard` says whether it is still wanted when the beat is over.
+  function playTier(tier, wanted) {
     clearTimeout(reactTimer);
-    reactTimer = setTimeout(() => { // once your paper has finished flipping
-      if (reactKey !== key) return;
-      const [id, frames] = pickRobotReaction(robotTier(accuracy), last);
+    reactTimer = setTimeout(() => { // once the paper has finished flipping
+      if (!wanted()) return;
+      const [id, frames] = pickRobotReaction(tier, last);
       last = id;
       stopFrames();
       setStrip(id, frames);
@@ -131,8 +136,28 @@ export function createQuickRobot({ hud, cardFor, reduceMotion = () => false }) {
       if (reduceMotion()) { setFrame(frames - 1, frames); return; } // reduced motion: hold the last pose
       let i = 0;
       stepTimer = setInterval(() => { i = (i + 1) % frames; setFrame(i, frames); }, FRAME_MS);
-    }, 300); // `accuracy` is only passed once your paper is completely revealed (flair included)
+    }, 300);
   }
 
-  return { stand, react, hide, hold: setHeld, get reaction() { return el?.dataset.reaction || null; }, get reacting() { return !!el && el.classList.contains("reacting"); } };
+  // A reaction to one accuracy (0-100), once per round. (Kept for the layout tests; the game uses sync().)
+  function react(key, accuracy) {
+    if (standKey !== key) stand(key);
+    if (reactKey === key) return;
+    reactKey = key;
+    playTier(robotTier(accuracy), () => reactKey === key);
+  }
+
+  // Call on every render of the reveal: `order` worst-first, `revealIndex` = papers completely revealed so far (flair included).
+  // He reacts to EVERY paper as it is revealed, whoever's it is: upset for the worst, so-so for the middle, happy for the best.
+  function sync(key, order, revealIndex) {
+    if (standKey !== key) stand(key);
+    if (revealIndex <= seen) return;
+    seen = revealIndex;
+    const index = revealIndex - 1; // the paper that was just revealed
+    const tier = robotTierByPlace(index, order.length, Number(order[index]?.accuracyPercent) || 0);
+    reactKey = key; // the waiting story stops for good this round
+    playTier(tier, () => standKey === key && seen === revealIndex);
+  }
+
+  return { stand, react, sync, hide, hold: setHeld, get reaction() { return el?.dataset.reaction || null; }, get reacting() { return !!el && el.classList.contains("reacting"); } };
 }

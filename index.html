@@ -22406,7 +22406,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
   }
 
-  // Quick Game: once your own paper has flipped, the robot stands on your Player card and reacts to your accuracy.
+  // Quick Game: the robot stands on your Player card and reacts to every paper as it is revealed (by place, not only yours).
   const quickRobot = createQuickRobot({ hud: hudEl, cardFor: () => scoreColEl.querySelector(`.score-card[data-id="${currentPlayerId}"]`), reduceMotion: prefersReducedMotion });
   function syncQuickRobot(order, revealIndex) {
     const quick = !!roomState.settings?.solo && (roomState.settings.mode || "party") === "party"; // Quick Game is a solo party-style room
@@ -22414,7 +22414,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (mine < 0) { quickRobot.hide(); return; }
     const key = `${roomState.gameId}:${roomState.round}`;
     quickRobot.stand(key); // he slides in and waits on your card while the papers are revealed...
-    if (revealIndex > mine) quickRobot.react(key, Number(order[mine].accuracyPercent) || 0); // ...and reacts to YOUR answer as soon as your paper is revealed
+    quickRobot.sync(key, order, revealIndex); // ...and reacts to EVERY paper as it is revealed (worst first): upset, so-so, happy by place
   }
 
   // Classic Party: the ant stands on the TOP score card (not yours) and reacts to every paper as it is revealed.
