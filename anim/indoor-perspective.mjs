@@ -3,39 +3,19 @@ const prop = (img, x, z, w, extra = {}) => ({ img, x, z, w, ...extra });
 const definitions = {
   workshop: { material: 'concrete', colors: ['#b69b83', '#a58c77'], props: [
     prop('workshop-climb-garage-door', -1.8, 7, 4.5), prop('workshop-climb-storage', 1.05, 3.5, 2.6),
-    prop('workshop-climb-board', -.2, 7, 2.5, { lift: 2.6 }), prop('workshop-climb-fan', 2.4, 7, 1.3, { lift: 2.8 }),
+    prop('workshop-climb-board', 2.35, 7, 2.3, { lift: 2.9 }), prop('workshop-climb-fan', 2.4, 7, 1.3, { lift: 6.3 }),
     prop('workshop-climb-straight-bench', .55, .4, 1.9, { bench: true }), prop('workshop-climb-offcuts', -.65, -.05, .7),
   ] },
   library: { material: 'wood', colors: ['#ab713f', '#bd844b'], props: [
-    prop('library-v2-back', 0, 7, 7.3),
-    ...[5.2, 3.1].flatMap((z, i) => [prop('library-v2-case-' + (i + 1), -1.55, z, 2.3), prop('library-v2-case-' + (2 - i), 1.55, z, 2.3)]),
+    prop('library-v2-back', 0, 7, 7.3, { rise: 1.65, terrace: 'back', fire: true }),
+    ...[5.2, 3.1].flatMap((z, i) => [
+      prop('library-v2-case-' + (i + 1), -1.55, z, 2.3, { rise: i ? .2 : .9, terrace: 'shelves-' + i }),
+      prop('library-v2-case-' + (2 - i), 1.55, z, 2.3, { rise: i ? .2 : .9, terrace: 'shelves-' + i }),
+    ]),
     prop('library-v2-furn-0', .9, 1.25, 1.5), prop('library-v2-furn-3', -.9, 1.6, .65),
     prop('library-v2-furn-1', -.58, .02, .94), prop('library-v2-furn-4', .95, .05, .62),
   ] },
-  restaurant: { material: 'tile', colors: ['#e2c8a1', '#cda982'], props: [
-    prop('restaurant-n-far', 0, 7, 7.4),
-    ...[5.2, 3.2, 1.5].flatMap((z, i) => [prop('restaurant-table-' + (i * 2), -1.13, z, 1.65), prop('restaurant-table-' + (i * 2 + 1), 1.13, z, 1.65)]),
-    prop('restaurant-table-6', -.66, -.05, 1.35), prop('restaurant-table-7', .88, .08, 1.35),
-  ] },
-  kitchen: { material: 'checker', colors: ['#fff0cf', '#4d5149'], props: [
-    prop('kitchen-v2-back', 0, 7, 7.4), prop('kitchen-v2-furn-5', -1.9, 4.6, .8),
-    prop('kitchen-v2-furn-6', 1.7, 4.1, 1.1), prop('kitchen-v2-furn-0', -.95, 2.2, 1.35),
-    prop('kitchen-v2-furn-3', 1.1, 2.2, .9), prop('kitchen-v2-furn-2', -.76, .22, 1.4),
-    prop('kitchen-v2-furn-1', .79, .05, 1.45),
-  ] },
-  living: { material: 'wood', colors: ['#c3955c', '#d5ab72'], rug: true, props: [
-    prop('living-v2-back', 0, 7, 7.3), prop('living-v2-furn-7', -1.7, 4, 1.1),
-    prop('living-v2-furn-0', -.55, 2.3, 2.05), prop('living-v2-furn-4', 1.38, 3.4, .55),
-    prop('living-v2-furn-3', -1.1, 1.4, .8), prop('living-v2-furn-1', .85, .6, 1.15),
-    prop('living-v2-furn-2', -.25, .55, 1.2), prop('living-v2-furn-6', -.74, -.18, .8),
-    prop('living-v2-furn-5', .85, -.18, .62),
-  ] },
-  tabletop: { material: 'desk', colors: ['#ce9554', '#dba664'], props: [
-    prop('tabletop-climb-rocket-board', -.8, 7, 3.2, { lift: 1 }),
-    prop('tabletop-n-big-0', 1.32, 3, 1.6), prop('tabletop-climb-pencil-cup', -1.12, 2.5, .72),
-    prop('tabletop-n-loose-2', .8, .15, .62), prop('tabletop-n-loose-4', -.75, .1, .58),
-    prop('tabletop-n-loose-0', -.9, 1.1, .2, { angle: -.8 }),
-  ] },
+
 };
 export function installIndoorV3(settings, variants) {
   for (const [id, room] of Object.entries(definitions)) {
@@ -43,7 +23,7 @@ export function installIndoorV3(settings, variants) {
     Object.assign(c, { projectedRoom: room, parallax: [], floorDepth: undefined, floorBehind: false,
       fittedFloor: true, floorProp: undefined, bookcase: undefined, workshop: undefined,
       deskLamp: undefined, roomPlant: undefined, roomBackGlint: undefined,
-      overlapTerrain: false });
+      overlapTerrain: false, finishedWorkshopCeiling: id === 'workshop' });
     settings[id + '-v3'] = c; variants[id + '-v3'] = id;
   }
 }
@@ -83,15 +63,30 @@ export function drawProjectedIndoor(ctx, kit, { width, height, floorY, shiftY = 
     if (room.rug) polygon([P(-1.5,-.35),P(1.5,-.35),P(1.5,2.3),P(-1.5,2.3)], '#a853435c', '#82463b70');
     if (room.material === 'desk') { const lip = P(0,-.35).y;ctx.fillStyle='#89542e';ctx.fillRect(0,lip,width,14);ctx.fillStyle='#efbf7a';ctx.fillRect(0,lip,width,3); }
   }
+  const terraces = new Set();
   for (const p of [...room.props].sort((a,b)=>b.z-a.z)) {
     const im = kit.images[p.img]; if (!im) continue;
-    const q = P(p.x,p.z), w = p.w*q.s, h = w*im.naturalHeight/im.naturalWidth, y = q.y-(p.lift||0)*q.s;
+    const q = P(p.x,p.z);
+    q.y -= (p.rise || 0) * width; // Raise a row without shrinking its books or furniture.
+    const w = p.w*q.s, h = w*im.naturalHeight/im.naturalWidth, y = q.y-(p.lift||0)*q.s;
+    if (p.terrace && !terraces.has(p.terrace)) {
+      terraces.add(p.terrace);
+      const depth = q.s * .42;
+      if (y + depth > 0 && y < height) {
+        const shade=ctx.createLinearGradient(0,y,0,y+depth);shade.addColorStop(0,'#b98249');shade.addColorStop(1,'#996033');
+        ctx.fillStyle=shade;ctx.fillRect(0,y-2,width,depth+2);
+        ctx.strokeStyle='#684027';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,y+depth);ctx.lineTo(width,y+depth);ctx.stroke();
+        ctx.lineWidth=.7;ctx.strokeStyle='#79502c77';
+        for(let x=0;x<width;x+=q.s*.8){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(width/2+(x-width/2)*1.15,y+depth);ctx.stroke();}
+      }
+    }
     if (y-h>height || y<0) continue;
     ctx.save();
     if (!p.lift) { ctx.fillStyle='#38281918';ctx.beginPath();ctx.ellipse(q.x,q.y-1,w*.38,Math.max(2,q.s*.035),0,0,Math.PI*2);ctx.fill(); }
     if (p.z>3) ctx.filter=`saturate(${1-p.z*.018}) brightness(${1-p.z*.008})`;
     ctx.translate(q.x,y);if(p.angle)ctx.rotate(p.angle);
     ctx.drawImage(im,-w/2,-h,w,h);ctx.filter='none';
+    if(p.fire && !reduced) drawLibraryFire(ctx,im,w,h,time);
     if (p.bench) {
       const draw = (name, x, yy, ww) => {const a=kit.images[name];if(!a)return;const hh=ww*a.naturalHeight/a.naturalWidth;ctx.drawImage(a,x-ww/2,yy-hh,ww,hh);};
       draw('workshop-climb-vise',-w*.34,-h*.88,w*.23);
@@ -111,5 +106,31 @@ export function drawProjectedIndoor(ctx, kit, { width, height, floorY, shiftY = 
     ctx.restore();
   }
   if(dark){ctx.fillStyle='#12223833';ctx.fillRect(0,Math.max(0,top),width,height-Math.max(0,top));}
+  ctx.restore();
+}
+
+// Animate only the fire pixels within the existing hearth; the mantel and logs stay still.
+function drawLibraryFire(ctx, image, w, h, time) {
+  const sx=image.naturalWidth/2172, sy=image.naturalHeight/630;
+  const x=-w/2+w*951/2172, y=-h+h*386/630, fw=w*259/2172, fh=h*151/630;
+  const pulse=.5+.5*Math.sin(time*7.1)+.13*Math.sin(time*13.3);
+  ctx.save();ctx.beginPath();ctx.rect(x,y,fw,fh);ctx.clip();
+  const grow=1.05+.13*pulse;
+  ctx.drawImage(image,951*sx,386*sy,259*sx,151*sy,x-fw*.025,y+fh-fh*grow,fw*1.05,fh*grow);
+  const glow=ctx.createRadialGradient(x+fw*.52,y+fh*.8,0,x+fw*.52,y+fh*.8,fw*.7);
+  glow.addColorStop(0,`rgba(255,177,45,${.08+.06*pulse})`);glow.addColorStop(1,'rgba(255,125,20,0)');
+  ctx.fillStyle=glow;ctx.fillRect(x,y,fw,fh);
+  for(let i=0;i<3;i++){const t=(time*.48+i*.33)%1;ctx.globalAlpha=(1-t)*.7;ctx.fillStyle='#ffdd79';ctx.beginPath();ctx.ellipse(x+fw*(.35+i*.14)+Math.sin(time*2+i)*fw*.04,y+fh*(.92-t*.72),Math.max(.4,w*.0018),Math.max(.7,w*.003),0,0,Math.PI*2);ctx.fill();}
+  ctx.restore();
+}
+
+export function drawWorkshopCeiling(ctx, { width, bottom, dark }) {
+  // The rafters artwork is transparent above its lower beam; complete the roof behind it.
+  ctx.save();ctx.beginPath();ctx.rect(0,0,width,bottom);ctx.clip();
+  const wood=ctx.createLinearGradient(0,0,0,bottom);wood.addColorStop(0,dark?'#53341e':'#79502c');wood.addColorStop(1,dark?'#8a5628':'#c98a42');
+  ctx.fillStyle=wood;ctx.fillRect(0,0,width,bottom);
+  for(let y=bottom-12;y>0;y-=Math.max(10,width*.045)){ctx.strokeStyle='#55321c88';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(width,y);ctx.stroke();ctx.strokeStyle='#efbe7433';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,y+2);ctx.lineTo(width,y+2);ctx.stroke();}
+  ctx.strokeStyle='#523119';ctx.lineWidth=Math.max(3,width*.014);
+  for(let i=0;i<5;i++){const x=width*(i/4);ctx.beginPath();ctx.moveTo(width/2+(x-width/2)*.65,0);ctx.lineTo(x,bottom);ctx.stroke();}
   ctx.restore();
 }

@@ -64,6 +64,7 @@ export function buildSceneViewer({ loadAnim, objects }) {
     ids = [...drafts.flatMap((id) => [id, id.slice(0, -3)]), ...base.filter((id) => !drafts.some(d => d.slice(0, -3) === id))];
     const auto = el("option", "", "Auto (follows the big object)"); auto.value = ""; scene.appendChild(auto);
     ids.forEach((id) => { const o = el("option", "", sceneLabel(id)); o.value = id; scene.appendChild(o); });
+    if (saved.scene && !ids.includes(saved.scene) && /-v[23]$/.test(saved.scene) && ids.includes(saved.scene.slice(0,-3))) saved.scene = saved.scene.slice(0,-3);
     scene.value = saved.scene !== undefined && (saved.scene === "" || ids.includes(saved.scene)) ? saved.scene : "rooftop";
   }
   async function play() {

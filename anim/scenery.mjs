@@ -1,4 +1,4 @@
-import { installIndoorV3, projectedRoomImages, drawProjectedIndoor } from './indoor-perspective.mjs';
+import { installIndoorV3, projectedRoomImages, drawProjectedIndoor, drawWorkshopCeiling } from './indoor-perspective.mjs';
 import { FLOOR_DATA } from './scenery-data.mjs';
 import { drawRetroSky, drawRetroRink } from './retro-rink.mjs';
 
@@ -1892,6 +1892,7 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
     const entry = Math.max(0, (progress - .74) / .26);
     const bottom = height * .23 * entry * entry;
     const ceilingHeight = width * ceiling.naturalHeight / ceiling.naturalWidth;
+    if (bottom > 0 && config.finishedWorkshopCeiling) drawWorkshopCeiling(ctx, { width, bottom, dark });
     if (bottom > 0) ctx.drawImage(ceiling, 0, config.workshop ? Math.min(0, bottom - ceilingHeight) : bottom - ceilingHeight, width, ceilingHeight);
   }
   if (pass !== 'foreground' && config.wallpaper && !roomBack) {
