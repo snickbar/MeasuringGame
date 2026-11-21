@@ -14,7 +14,7 @@ const sceneLabels = {
   rooftop: "Rooftops at Sunset", living: "Living Room", resort: "Beach Resort",
   tabletop: "Tabletop", restaurant: "Restaurant", retro: "Roller Rink",
 };
-const sceneLabel = (id) => id.endsWith("-v2") ? sceneLabel(id.slice(0, -3)) + " v2" : sceneLabels[id] ?? id.charAt(0).toUpperCase() + id.slice(1);
+const sceneLabel = (id) => /-v[23]$/.test(id) ? sceneLabel(id.slice(0, -3)) + " " + id.slice(-2) : sceneLabels[id] ?? id.charAt(0).toUpperCase() + id.slice(1);
 
 export function buildSceneViewer({ loadAnim, objects }) {
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
@@ -56,12 +56,12 @@ export function buildSceneViewer({ loadAnim, objects }) {
     const available = Object.keys(m.SETTINGS);
     const base = [
       ...recentScenes.filter((id) => Object.hasOwn(m.SETTINGS, id)),
-      ...available.filter((id) => !recentScenes.includes(id) && !id.endsWith("-v2"))
+      ...available.filter((id) => !recentScenes.includes(id) && !/-v[23]$/.test(id))
         .sort((a, b) => sceneLabel(a).localeCompare(sceneLabel(b))),
     ];
-    // Draft "v2" revisions come first, each followed by the scene it revises, so they are easy to compare.
-    const drafts = available.filter((id) => id.endsWith("-v2"));
-    ids = [...drafts.flatMap((id) => [id, id.slice(0, -3)]), ...base.filter((id) => !drafts.includes(id + "-v2"))];
+    // Comparison drafts come first, each followed by its unchanged current scene.
+    const drafts = available.filter((id) => /-v[23]$/.test(id));
+    ids = [...drafts.flatMap((id) => [id, id.slice(0, -3)]), ...base.filter((id) => !drafts.some(d => d.slice(0, -3) === id))];
     const auto = el("option", "", "Auto (follows the big object)"); auto.value = ""; scene.appendChild(auto);
     ids.forEach((id) => { const o = el("option", "", sceneLabel(id)); o.value = id; scene.appendChild(o); });
     scene.value = saved.scene !== undefined && (saved.scene === "" || ids.includes(saved.scene)) ? saved.scene : "rooftop";
