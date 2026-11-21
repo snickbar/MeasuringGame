@@ -271,7 +271,7 @@ export const SETTINGS = {
       { img: 'stadium-n-near', par: 0.6, lift: 135, scale: 1.37, props: [{ img: 'stadium-n-loose-0', x: 0.06, row: 559, w: 0.060 }, { img: 'stadium-n-loose-2', x: 0.24, row: 559, w: 0.073 }, { img: 'stadium-n-loose-3', x: 0.42, row: 559, w: 0.025 }, { img: 'stadium-n-loose-5', x: 0.6, row: 559, w: 0.068 }, { img: 'stadium-n-loose-6', x: 0.78, row: 559, w: 0.031 }, { img: 'stadium-n-loose-7', x: 0.93, row: 559, w: 0.081 }], drifters: [{ img: 'stadium-n-movers-3', x: 0.5, row: 559, w: 0.042, speed: 24, bob: 0 }] }] },
 };
 const layeredReveals = {
-  retro: { retroRink: { front: 'retro-v3-arcade', track: 'retro-v3-track', back: 'retro-v3-pizza', props: 'retro-v3-props', skaters: 'retro-v4-skaters', table: 'retro-v4-table', roof: 'retro-v4-roof', game: '../home-art/home-retro/game', ceiling: 'retro-reveal-hall' }, parallax: [] },
+  retro: { retroRink: { front: 'retro-v3-arcade', track: 'retro-v3-track', back: 'retro-v3-pizza', props: 'retro-v3-props', skaters: 'retro-v4-skaters', table: 'retro-v4-table', roof: 'retro-v4-roof', game: '../retro-runner', ceiling: 'retro-reveal-hall' }, parallax: [] },
 
   blossom: { fallingPetals: 'petal-leaf-set', parallax: [
     {"img":"blossom-reveal-back","par":0.09,"lift":622,"scale":0.65},

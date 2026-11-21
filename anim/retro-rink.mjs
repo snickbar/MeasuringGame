@@ -1,3 +1,4 @@
+import { drawRunnerGame } from './retro-runner.mjs';
 // A single projected floor gives the rink, skaters and furniture a shared vanishing point.
 const atlasCache = new WeakMap();
 function cell(image, columns, rows, column, row) {
@@ -31,8 +32,7 @@ function arcadeGames(ctx, game, left, top, width, height, time) {
     ctx.save(); ctx.beginPath(); ctx.roundRect(x, y, w, h, Math.max(2, w * .06)); ctx.clip();
     ctx.fillStyle = '#071d48'; ctx.fillRect(x, y, w, h); ctx.imageSmoothingEnabled = false;
     if (index === 1 && game) {
-      const frame = Math.floor(time * 4) % 4, sw = game.naturalWidth / 4;
-      ctx.drawImage(game, frame * sw, 0, sw, game.naturalHeight, x, y, w, h);
+      drawRunnerGame(ctx, { x, y, width: w, height: h, time, sprites: game });
     } else {
       const pixel = w / 29, stride = Math.floor(time * 4) % 2;
       const shape = stride ? [14, 31, 21, 17, 10] : [14, 31, 21, 17, 17];
