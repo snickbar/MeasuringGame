@@ -2,7 +2,7 @@
 // and the game starts over. The picture the artwork was drawn on is the same 1029 x 2222 canvas as the other detailed Home scenes.
 import { place, img, hit, watchActive } from './home-worlds-util.mjs';
 const D = 'anim/home-art/home-retro/';
-const TV = { x: 137, y: 480, w: 261, h: 225 }; // the green screen of the TV in the picture
+const TV = { x: 137, y: 757, w: 261, h: 225 }; // the green screen of the TV in the picture
 const FRAMES = 4, FRAME_MS = 230;
 export const SIZE = { width: 1029, height: 2222 };
 
