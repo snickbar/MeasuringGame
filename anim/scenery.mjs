@@ -1,3 +1,4 @@
+import { installFloorOnlyV3, floorPerspectiveImage } from './floor-perspective.mjs';
 import { drawAquarium } from './aquarium.mjs';
 import { installIndoorV3, projectedRoomImages, drawProjectedIndoor, drawWorkshopCeiling } from './indoor-perspective.mjs';
 import { FLOOR_DATA } from './scenery-data.mjs';
@@ -429,6 +430,7 @@ improve('workshop', c => { c.wallPiecesAbove = -1; c.wallPieces = [{ img: 'works
 improve('tabletop', c => { c.wallPieces = [{ img: 'tabletop-v2-wall-0', x: 0.25, w: 0.250 }, { img: 'tabletop-v2-wall-1', x: 0.74, w: 0.272 }, { img: 'tabletop-v2-wall-2', x: 0.7, w: 0.279 }, { img: 'tabletop-v2-wall-3', x: 0.28, w: 0.218 }, { img: 'tabletop-v2-wall-4', x: 0.22, w: 0.237 }, { img: 'tabletop-v2-wall-5', x: 0.78, w: 0.196 }, { img: 'tabletop-v2-wall-6', x: 0.76, w: 0.221 }, { img: 'tabletop-v2-wall-7', x: 0.26, w: 0.233 }]; });
 
 installIndoorV3(SETTINGS, VARIANT_OF);
+installFloorOnlyV3(SETTINGS, VARIANT_OF);
 
 const imageCache = new Map();
 // Compress extreme object zooms into a gentle terrain zoom (1–1.35×).
@@ -2061,7 +2063,8 @@ export function drawFloorDepthRows(ctx, kit, { width, height, floorY, shiftY = 0
 }
 export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX, shiftY = 0, groundScale = 1, anchorX = width / 2, dark, time = 0, reduced }) {
   if (kit.config.retroRink || kit.config.projectedRoom) return; // The machine row and its carpet are one continuous foreground.
-  const image = kit.images[kit.config.floor]; if (!image) return;
+  const source = kit.images[kit.config.floor]; if (!source) return;
+  const image = floorPerspectiveImage(source, kit.config.floorPerspective, meta.surface);
   const workshop = kit.config.workshop;
   if (workshop) {
     const propFloorY = floorY - width * .31;
