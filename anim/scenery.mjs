@@ -38,6 +38,7 @@ for (const [scene, words] of Object.entries(OBJECT_GROUPS)) for (const id of wor
 for (const [id, scene] of Object.entries(SCENE_MOVES)) SCENERY_BY_OBJECT[id] = scene;
 // Retro Rewind objects (the Retro Rewind World) reveal in the roller rink and arcade.
 for (const id of `rotary-phone lava-lamp boombox vinyl-record retro-cartridge typewriter retro-game-system portable-cassette-player rubber-wristband baggy-pants yarn-hair-doll fashion-doll wall-payphone cat-wall-clock coil-spring-toy fortune-ball drawing-screen-toy potato-toy egg-digital-pet handheld-game-system red-toy-wagon videotape floor-jukebox stuffed-bean-toy bean-bag-chair tv-dinner smiley-pin plastic-food-container roller-skate mood-ring pet-rock three-ring-binder calculator-watch slap-bracelet quarter-gumball-machine transforming-robot-toy plastic-army-man combo-video-player school-folder pump-water-blaster video-rental-card disposable-camera photo-booth-strip graphing-calculator plasma-globe kids-meal-toy worlds-fair-globe comic-book`.split(' ')) SCENERY_BY_OBJECT[id] = 'retro';
+SCENERY_BY_OBJECT['arcade-machine'] = 'retro';
 export function sceneryFor(object) { return SCENERY_BY_OBJECT[object.id] || 'grass'; }
 
 // A scene flagged night:true is always night; night:'dark' is night only when the app is in dark mode.
