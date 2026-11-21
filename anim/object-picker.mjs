@@ -164,8 +164,30 @@ export function buildObjectPicker({ loadAnim, objects }) {
   async function copyChoices() {
     const text = JSON.stringify({ objectPickerChoices: 1, drafts }, null, 1);
     out.value = text; out.style.display = Object.keys(drafts).length ? "block" : "none";
-    try { await navigator.clipboard.writeText(text); status.textContent = `Copied ${Object.keys(drafts).length} object change(s). Paste them to Claude to lock them into the game.`; }
+    try { await navigator.clipboard.writeText(text); status.textContent = `Copied ${Object.keys(drafts).length} object change(s). Paste them to Claude to lock them into the game. For a long list, use Save as file.`; }
     catch (e) { out.focus(); out.select(); status.textContent = "Select the text below and copy it."; }
+  }
+  // Saves every choice as a file: the Android app shares it through the native sheet (Save to Files, Drive, email...),
+  // a browser uses the share sheet or a normal download. This avoids the size limit of copying a long list.
+  async function saveFile() {
+    const n = Object.keys(drafts).length;
+    if (!n) { status.textContent = "Nothing to save yet: change an object first."; return; }
+    const text = JSON.stringify({ objectPickerChoices: 1, drafts }, null, 1), name = "object-choices.json";
+    const plugins = (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins) || {};
+    try {
+      if (plugins.Filesystem && plugins.Share) {
+        const f = await plugins.Filesystem.writeFile({ path: name, data: text, directory: "CACHE", encoding: "utf8" });
+        await plugins.Share.share({ title: "Object choices", files: [f.uri], dialogTitle: "Save object choices" });
+        status.textContent = `Saved ${n} object change(s) as ${name}.`; return;
+      }
+      const file = new File([text], name, { type: "application/json" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: "Object choices" }); status.textContent = `Saved ${n} object change(s).`; return; }
+      const a = document.createElement("a"); a.href = URL.createObjectURL(file); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000); status.textContent = `Saved ${n} object change(s) as ${name}.`;
+    } catch (e) {
+      if (e && (e.name === "AbortError" || /cancel/i.test(String(e.message || e)))) return;
+      out.value = text; out.style.display = "block"; status.textContent = "Couldn't save a file here. Use Copy choices instead.";
+    }
   }
   const resetThis = btn("Reset this object", () => { delete drafts[cur]; saveDrafts(); fillSelect(); go(cur); replaySoon(); });
   resetThis.classList.add("dbg-warn");
@@ -180,7 +202,7 @@ export function buildObjectPicker({ loadAnim, objects }) {
     field("How it enters", entry), leanNote, row(btn("▶ Watch it enter", test)),
     status,
     stage, testNote, field("Test against", partner),
-    row(btn("Copy choices", copyChoices), resetThis), out,
+    row(btn("Save as file", saveFile), btn("Copy choices", copyChoices), resetThis), out,
   );
   fillSelect(); if (cur) go(cur);
   replayOnGo = true;
