@@ -6,11 +6,12 @@ const definitions = {
     prop('workshop-climb-board', 2.35, 7, 2.3, { lift: 2.9 }), prop('workshop-climb-fan', 2.4, 7, 1.3, { lift: 6.3 }),
     prop('workshop-climb-straight-bench', .55, .4, 1.9, { bench: true }), prop('workshop-climb-offcuts', -.65, -.05, .7),
   ] },
-  library: { material: 'wood', colors: ['#ab713f', '#bd844b'], props: [
-    prop('library-v2-back', 0, 7, 7.3, { rise: 1.65, terrace: 'back', fire: true }),
+  library: { material: 'wood', colors: ['#ab713f', '#bd844b'], floorTexture: 'library-v2-floor',
+    floorRise: [[0, 0], [3.1, .04], [5.2, .32], [7, .60]], props: [
+    prop('library-v2-back', 0, 7, 7.3, { fire: true }),
     ...[5.2, 3.1].flatMap((z, i) => [
-      prop('library-v2-case-' + (i + 1), -1.55, z, 2.3, { rise: i ? .2 : .9, terrace: 'shelves-' + i }),
-      prop('library-v2-case-' + (2 - i), 1.55, z, 2.3, { rise: i ? .2 : .9, terrace: 'shelves-' + i }),
+      prop('library-v2-case-' + (i + 1), -1.55, z, 2.3),
+      prop('library-v2-case-' + (2 - i), 1.55, z, 2.3),
     ]),
     prop('library-v2-furn-0', .9, 1.25, 1.5), prop('library-v2-furn-3', -.9, 1.6, .65),
     prop('library-v2-furn-1', -.58, .02, .94), prop('library-v2-furn-4', .95, .05, .62),
@@ -28,15 +29,22 @@ export function installIndoorV3(settings, variants) {
   }
 }
 export function projectedRoomImages(room) {
-  return room ? [...room.props.map(p => p.img), ...(room.props.some(p => p.bench) ?
-    ['workshop-climb-saw', 'workshop-climb-blade', 'workshop-climb-vise', 'workshop-climb-rotor'] : [])] : [];
+  return room ? [room.floorTexture, ...room.props.map(p => p.img), ...(room.props.some(p => p.bench) ?
+    ['workshop-climb-saw', 'workshop-climb-blade', 'workshop-climb-vise', 'workshop-climb-rotor'] : [])].filter(Boolean) : [];
+}
+export function indoorProjection(room, width, floorY, shiftY = 0) {
+  const unit=width*1.2,d=1.5,horizon=floorY-unit*2/d;
+  const rise=z=>{
+    const stops=room.floorRise;if(!stops || z<=stops[0][0])return 0;
+    for(let i=1;i<stops.length;i++)if(z<=stops[i][0]){const [z0,y0]=stops[i-1],[z1,y1]=stops[i];return y0+(y1-y0)*(z-z0)/(z1-z0);}
+    return stops.at(-1)[1];
+  };
+  return (x,z)=>({x:width/2+x*unit/(d+z),y:horizon+unit*2/(d+z)+shiftY*(.3+.7*d/(d+z))-rise(z)*width,s:unit/(d+z)});
 }
 export function drawProjectedIndoor(ctx, kit, { width, height, floorY, shiftY = 0, time = 0, reduced = false, dark = false }) {
   const room = kit.config.projectedRoom;
   if (!room) return;
-  const unit = width * 1.2, d = 1.5, horizon = floorY - unit * 2 / d;
-  const P = (x, z) => ({ x: width / 2 + x * unit / (d + z),
-    y: horizon + unit * 2 / (d + z) + shiftY * (.3 + .7 * d / (d + z)), s: unit / (d + z) });
+  const P = indoorProjection(room, width, floorY, shiftY);
   const polygon = (points, fill, stroke) => {
     ctx.beginPath(); points.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.closePath();
     ctx.fillStyle = fill; ctx.fill(); if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = .7; ctx.stroke(); }
@@ -55,6 +63,16 @@ export function drawProjectedIndoor(ctx, kit, { width, height, floorY, shiftY = 
         polygon([P(a,z), P(a+step,z), P(a+step,z+.35), P(a,z+.35)], room.colors[tone], wood ? '#8d603b55' : '#6c554b30');
       }
     }
+    const texture=kit.images[room.floorTexture];
+    if(texture){
+      // The same continuous floor runs underneath every shelf row and down the aisle.
+      const slices=180;
+      for(let i=0;i<slices;i++){
+        const t=i/slices,t1=(i+1)/slices,y0=P(0,7-7.65*t).y,y1=P(0,7-7.65*t1).y;
+        if(y1<0||y0>height)continue;
+        ctx.drawImage(texture,0,t*texture.naturalHeight,texture.naturalWidth,texture.naturalHeight/slices,0,y0,width,y1-y0+.7);
+      }
+    }
     const wash = ctx.createLinearGradient(0, top, 0, floorY + shiftY);
     wash.addColorStop(0, '#654b382d'); wash.addColorStop(.55, '#fff2ce08'); wash.addColorStop(1, '#fff0cf00');
     ctx.fillStyle = wash; ctx.fillRect(0, Math.max(top,0), width, height - Math.max(top,0));
@@ -63,23 +81,10 @@ export function drawProjectedIndoor(ctx, kit, { width, height, floorY, shiftY = 
     if (room.rug) polygon([P(-1.5,-.35),P(1.5,-.35),P(1.5,2.3),P(-1.5,2.3)], '#a853435c', '#82463b70');
     if (room.material === 'desk') { const lip = P(0,-.35).y;ctx.fillStyle='#89542e';ctx.fillRect(0,lip,width,14);ctx.fillStyle='#efbf7a';ctx.fillRect(0,lip,width,3); }
   }
-  const terraces = new Set();
   for (const p of [...room.props].sort((a,b)=>b.z-a.z)) {
     const im = kit.images[p.img]; if (!im) continue;
     const q = P(p.x,p.z);
-    q.y -= (p.rise || 0) * width; // Raise a row without shrinking its books or furniture.
     const w = p.w*q.s, h = w*im.naturalHeight/im.naturalWidth, y = q.y-(p.lift||0)*q.s;
-    if (p.terrace && !terraces.has(p.terrace)) {
-      terraces.add(p.terrace);
-      const depth = q.s * .42;
-      if (y + depth > 0 && y < height) {
-        const shade=ctx.createLinearGradient(0,y,0,y+depth);shade.addColorStop(0,'#b98249');shade.addColorStop(1,'#996033');
-        ctx.fillStyle=shade;ctx.fillRect(0,y-2,width,depth+2);
-        ctx.strokeStyle='#684027';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,y+depth);ctx.lineTo(width,y+depth);ctx.stroke();
-        ctx.lineWidth=.7;ctx.strokeStyle='#79502c77';
-        for(let x=0;x<width;x+=q.s*.8){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(width/2+(x-width/2)*1.15,y+depth);ctx.stroke();}
-      }
-    }
     if (y-h>height || y<0) continue;
     ctx.save();
     if (!p.lift) { ctx.fillStyle='#38281918';ctx.beginPath();ctx.ellipse(q.x,q.y-1,w*.38,Math.max(2,q.s*.035),0,0,Math.PI*2);ctx.fill(); }

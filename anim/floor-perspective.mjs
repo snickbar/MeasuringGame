@@ -11,6 +11,8 @@ export function installFloorOnlyV3(settings, variants) {
   for (const [id, floorPerspective] of Object.entries(previews)) {
     settings[id+'-v3'] = { ...structuredClone(settings[id]), floorPerspective };
     variants[id+'-v3'] = id;
+    // Accepted tile floors are used in ordinary games too. Keep the v3 alias for saved previews.
+    if(id==='restaurant'||id==='kitchen') settings[id].floorPerspective=floorPerspective;
   }
 }
 const cache = new WeakMap();
