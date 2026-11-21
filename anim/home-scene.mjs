@@ -15,6 +15,7 @@ const CUSTOM_HOME = {
   "cat-room": () => import("./home-cat-room.mjs"),
   jungle: () => import("./home-jungle.mjs"),
   gadgets: () => import("./home-gadgets.mjs"),
+  retro: () => import("./home-retro.mjs"),
   wild: () => import("./home-wild.mjs"),
   "birds-bugs": () => import("./home-birds-bugs.mjs"),
   bedroom: () => import("./home-bedroom.mjs"),
