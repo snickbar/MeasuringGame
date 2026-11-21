@@ -250,7 +250,7 @@ export const SETTINGS = {
     parallax: [{ img: 'restaurant-n-far', par: .5, lift: 365, scale: 0.85, noFill: true,
       props: [{ img: 'restaurant-table-0', x: 0.1, row: 730, w: 0.12 }, { img: 'restaurant-table-5', x: 0.9, row: 730, w: 0.12 }],
       tanks: [{ box: [.418, .493, .582, .76], fish: [{ img: 'restaurant-fish-0', y: .3, w: .17, speed: .05, phase: 0 }, { img: 'restaurant-fish-1', y: .55, w: .2, speed: -.035, phase: .4 }, { img: 'restaurant-fish-2', y: .2, w: .16, speed: .04, phase: .7 }, { img: 'restaurant-fish-7', y: .72, w: .14, speed: -.06, phase: .15 }, { img: 'restaurant-fish-4', y: .45, w: .17, speed: .03, phase: .55 }] }] }] },
-  retro: { floor: 'retro-n-floor', fittedFloor: true, floorInset: 0, sky: ['#2b1650', '#7a3a9a'], parallax: [] },
+  retro: { floor: 'retro-n-floor', fittedFloor: true, floorInset: 0, lightTally: true, sky: ['#2b1650', '#7a3a9a'], parallax: [] },
   workshop: { floor: 'workshop-n-floor', floorTileWidth: 640, floorDrifters: [{ img: 'workshop-n-movers-0', lane: 0.5, w: 0.032, speed: 20, start: 0.2, bob: 0.3 }, { img: 'workshop-n-movers-1', lane: 0.5, w: 0.061, speed: 40, start: 0.5 }, { img: 'workshop-n-movers-3', lane: 0.5, w: 0.043, speed: 10, start: 0.7 }, { img: 'workshop-n-movers-4', lane: 0.5, w: 0.038, speed: 26, start: 0.35, bob: 0.3 }, { img: 'workshop-n-movers-5', lane: 0.5, w: 0.071, speed: 16, start: 0.85 }], sky: ['#d6dbe0', '#eef0f2'],
     parallax: [{ img: 'workshop-n-far', par: .16, lift: 330, scale: 0.85, props: [{ img: 'workshop-n-big-0', x: 0.5, row: 360, w: 0.258 }] },
       { img: 'workshop-n-mid', par: .34, lift: 166, scale: 0.75, props: [{ img: 'workshop-n-reveals-0', x: 0.14, row: 546, w: 0.085 }, { img: 'workshop-n-reveals-1', x: 0.5, row: 546, w: 0.086 }, { img: 'workshop-n-reveals-2', x: 0.84, row: 546, w: 0.150 }, { img: 'workshop-n-anim-0', x: 0.72, row: 546, w: 0.152, spin: { img: 'workshop-n-anim-1', fx: .5, fy: .5, size: .7, speed: .8 } }] },
@@ -269,8 +269,8 @@ export const SETTINGS = {
       { img: 'stadium-n-near', par: 0.6, lift: 135, scale: 1.37, props: [{ img: 'stadium-n-loose-0', x: 0.06, row: 559, w: 0.060 }, { img: 'stadium-n-loose-2', x: 0.24, row: 559, w: 0.073 }, { img: 'stadium-n-loose-3', x: 0.42, row: 559, w: 0.025 }, { img: 'stadium-n-loose-5', x: 0.6, row: 559, w: 0.068 }, { img: 'stadium-n-loose-6', x: 0.78, row: 559, w: 0.031 }, { img: 'stadium-n-loose-7', x: 0.93, row: 559, w: 0.081 }], drifters: [{ img: 'stadium-n-movers-3', x: 0.5, row: 559, w: 0.042, speed: 24, bob: 0 }] }] },
 };
 const layeredReveals = {
-  retro: { parallax: [
-    {"img":"retro-reveal-back","par":0.09,"lift":600,"scale":0.7},
+  // The distant hall is one continuous perspective painting, never a tiled floor.
+  retro: { roomBack: 'retro-reveal-hall', roomBackZoom: 1.2, roomBackPan: .08, parallax: [
     {"img":"retro-reveal-mid","par":0.55,"lift":330,"scale":0.58,"overlapFrom":0.95},
     {"img":"retro-reveal-front","par":1,"lift":5,"scale":0.58,"grounded":true,"overlapFrom":0.95}
   ] },
@@ -1813,7 +1813,7 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   const roomBack = images[config.roomBack];
   if (pass !== 'foreground' && roomBack) {
     const scale = config.roomBackParallax ? width / roomBack.naturalWidth
-      : Math.max(width / roomBack.naturalWidth, height / roomBack.naturalHeight);
+      : Math.max(width / roomBack.naturalWidth, height * (config.roomBackZoom || 1) / roomBack.naturalHeight);
     const w = roomBack.naturalWidth * scale, h = roomBack.naturalHeight * scale;
     const x = (width - w) / 2;
     if (config.roomBackParallax) {
@@ -1851,7 +1851,9 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
       }
       if (roofPic && climbPx > 0) { ctx.restore(); if (roofBottom > 0) { ctx.save(); if (dark) ctx.filter = 'brightness(62%)'; ctx.drawImage(roofPic, 0, roofBottom - roofH, width, roofH); ctx.restore(); } }
     } else {
-      ctx.drawImage(roomBack, x, (height - h) / 2, w, h);
+      // A bounded upward look through a distant room always stays inside its artwork.
+      const y = config.roomBackPan ? Math.min(0, height - h + Math.max(0, shiftY) * config.roomBackPan) : (height - h) / 2;
+      ctx.drawImage(roomBack, x, y, w, h);
     }
   }
   if (pass !== 'foreground' && config.workshop) {

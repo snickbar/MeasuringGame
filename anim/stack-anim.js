@@ -1321,7 +1321,7 @@ export function createStackAnimation(container, options = {}) {
     const bigKind = motionFor(target, !flipFacing, bigLean);
     const smKind = motionFor(unit, flipFacing, smLean);
     const dark = !!theme.dark;
-    const night = isNight(kit.config, dark), earthyFloor = scenery === 'forest' || scenery === 'farm' || night;
+    const night = isNight(kit.config, dark), earthyFloor = scenery === 'forest' || scenery === 'farm' || night || !!kit.config.lightTally;
     const skyColors = night ? (kit.config.nightSky || kit.config.sky) : (!dark && kit.config.sky) ? kit.config.sky : [theme.skyTop, theme.skyBottom];
     const groundCol = night ? '#51576b' : kit.config.floor && !dark ? FLOOR_DATA[kit.config.floor].color : theme.ground;
     const { cloudAlpha } = theme;
@@ -1936,7 +1936,7 @@ export function createStackAnimation(container, options = {}) {
     const bigKind = motionFor(big, !flipFacing, firstIsBig ? false : leanFor(big, !flipFacing)),
       smKind = motionFor(small, flipFacing, firstIsBig ? leanFor(small, flipFacing) : false);
     const dark = !!theme.dark, scenery = kit.id;
-    const night = isNight(kit.config, dark), earthyFloor = scenery === 'forest' || scenery === 'farm' || night;
+    const night = isNight(kit.config, dark), earthyFloor = scenery === 'forest' || scenery === 'farm' || night || !!kit.config.lightTally;
     const skyColors = night ? (kit.config.nightSky || kit.config.sky) : (!dark && kit.config.sky) ? kit.config.sky : [theme.skyTop, theme.skyBottom];
     const groundCol = night ? '#51576b' : kit.config.floor && !dark ? FLOOR_DATA[kit.config.floor].color : theme.ground;
     const { cloudAlpha } = theme;

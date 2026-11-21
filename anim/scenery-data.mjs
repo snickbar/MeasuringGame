@@ -44,7 +44,7 @@ export const FLOOR_DATA = {
   },
   "retro-n-floor": {
     "surface": 0.02,
-    "color": "#db7139"
+    "color": "#100d35"
   },
   "fair-n-floor": {
     "surface": 0.574,
