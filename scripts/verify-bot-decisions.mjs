@@ -30,7 +30,7 @@ function harness(phase){
  let server=fresh(phase),n=100;const jobs=[],writes=[];
  const context={roomState:structuredClone(server),currentRoomCode:'TEST',currentPlayerId:'host',isHost:true,currentSettings:{timerSeconds:30},
   botDecisionScope,commitBotDecision,questionClockPending,nowMs:()=>1000,console,db:{},ref:(_,path)=>path,
-  setTimeout:fn=>jobs.push(fn),botGuessValue:()=>n++,personalityFor:()=>({}),shapeDelay:ms=>ms,isHlSettings:()=>false,
+  setTimeout:fn=>jobs.push(fn),botGuessValue:()=>n++,personalityFor:()=>({}),shapeDelay:ms=>ms,shapeConfidence:c=>c,shapeMiss:m=>m,isHlSettings:()=>false,
   runTransaction:async(path,fn)=>{const next=fn(server);if(next!==undefined){server=next;writes.push(structuredClone(next));}return{committed:next!==undefined}}};
  vm.createContext(context);vm.runInContext(source,context);
  return {context,jobs,writes,server:()=>server,update:fn=>{server=fn(server)},schedule:()=>vm.runInContext(phase==='question'?'scheduleBotGuesses("TEST",roomState.currentQuestion)':'scheduleBotPicks("TEST",[{playerId:"other"},{playerId:"bot"}])',context)};

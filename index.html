@@ -5458,7 +5458,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { normalizeCode, resolveCode, applyRedeem, BUILT_IN_CODES, CODE_MAX_LENGTH } from "./anim/redeem-codes.mjs";
   import { questionClockPending, questionReadyToken, beginQuestionClock, boardReadingMs } from "./anim/question-clock.mjs";
   import { botDecisionScope, commitBotDecision } from "./anim/bot-decisions.mjs";
-  import { personalityFor, shapeRatio, shapeDelay, PERSONALITY_UNLOCK_ROUNDS } from "./anim/bot-personalities.mjs";
+  import { personalityFor, shapeRatio, shapeDelay, shapeConfidence, shapeMiss, PERSONALITY_UNLOCK_ROUNDS } from "./anim/bot-personalities.mjs";
   import { HL_SHIELD_CHAIN, hlThemeDue, hlSurvivalOutcome } from "./anim/high-low-survival.mjs";
   import { mountHighLowReveal, HL_REVEAL_STEP_MS } from "./anim/high-low-reveal.mjs";
   import { HL_MESSAGE_BOTTLE, HL_EMPTY_BOTTLE, highLowBottlePieces } from "./anim/high-low-bottles.mjs";
@@ -8011,10 +8011,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // (so the human must be sharp to keep the bracket within the limit), and always stays on the correct side of
   // the answer, including rounding. Capped below 100% of the slack so a perfect human partner can always survive.
   const HL_BOT_LEVELS = { easy: { lo: 0.35, hi: 0.85, miss: 0.08 }, medium: { lo: 0.25, hi: 0.7, miss: 0.04 }, hard: { lo: 0.05, hi: 0.2, miss: 0.02 } };
-  function hlBotGuess(answer, difficulty, role, limit) {
+  function hlBotGuess(answer, difficulty, role, limit, avatar) {
     const c = HL_BOT_LEVELS[difficulty] || HL_BOT_LEVELS.medium;
     const slack = Math.max(0.1, (limit || HL_LIMIT_START) - 1);
-    const e = (c.lo + Math.random() * (c.hi - c.lo)) * slack;
+    const e = shapeMiss((c.lo + Math.random() * (c.hi - c.lo)) * slack, personalityFor(avatar));
     const above = role === "high"; // A partner never deliberately crosses the answer and spends a shared life.
     const ratio = above ? 1 + e : 1 / (1 + e); // multiplicative, so HIGH/LOW of the two picks stays comparable to the limit
     const rounded = Math.round(answer * ratio * 100) / 100;
@@ -11697,7 +11697,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // a member of this exact room) - without this, your own avatar reads
       // as "taken" by yourself, and renderAvatarGrid()'s silent-reassign
       // guard below bumps you off it onto AVATARS' first entry every time.
-      takenAvatars = new Set(Object.entries(players).filter(([id]) => id !== currentPlayerId).map(([, p]) => p.avatar).filter(Boolean));
+      // Bots are hidden in the lobby, so their avatars never show as taken; if a player picks the same one, the host re-rolls that bot (rerollClashingBots).
+      takenAvatars = new Set(Object.entries(players).filter(([id, p]) => id !== currentPlayerId && !p.isBot).map(([, p]) => p.avatar).filter(Boolean));
       if (nameAvatarScreenEl.classList.contains("active")) renderAvatarGrid();
     });
   }
@@ -13331,7 +13332,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (!players[actor]) next = HS.hsApplyAction(hs, actor, "fold", now);
       else if (tap && tap.k === key) next = HS.hsApplyAction(hs, actor, tap.a, now);
       else if (players[actor].isBot && now >= b.turnAt + 2000 + (hsHash(key + actor) % 2200)) {
-        const act = HS.hsBotDecide(hs, actor, Number(roomState.hsConf?.[actor] ?? 0.3), Math.random, players[actor].botDifficulty || "medium");
+        const act = HS.hsBotDecide(hs, actor, shapeConfidence(Number(roomState.hsConf?.[actor] ?? 0.3), personalityFor(players[actor].avatar)), Math.random, players[actor].botDifficulty || "medium");
         next = HS.hsApplyAction(hs, actor, act, now);
       }
       if (next === hs) next = HS.hsTimeoutAction(hs, now);
@@ -18509,7 +18510,27 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><clipPath id="c"><circle cx="50" cy="50" r="46"/></clipPath></defs><circle cx="50" cy="50" r="46" fill="${color}"/><g clip-path="url(#c)" fill="#000"><circle cx="50" cy="38" r="16"/><path d="M16 100 C16 70 32 58 50 58 C68 58 84 70 84 100 Z"/></g><circle cx="50" cy="50" r="46" fill="none" stroke="rgba(0,0,0,.3)" stroke-width="4"/></svg>`;
     return '<img class="avatar-icon mystery-avatar" alt="" draggable="false" src="data:image/svg+xml;utf8,' + encodeURIComponent(svg) + '">';
   }
+  // A hidden bot must never wear the same avatar as a real player (or another bot). The host gives a clashing bot a new avatar and name.
+  const rerolledBots = new Set();
+  function rerollClashingBots() {
+    if (!isHost || !currentRoomCode || !roomState || roomState.phase !== "waiting") return;
+    const players = currentPlayers || {}, humanAvatars = new Set(Object.values(players).filter((p) => !p.isBot).map((p) => p.avatar).filter(Boolean));
+    const seenBots = new Set(), used = new Set(Object.values(players).map((p) => p.avatar).filter(Boolean)), usedNames = new Set(Object.values(players).map((p) => p.name));
+    Object.entries(players).forEach(([id, p]) => {
+      if (!p.isBot) return;
+      const clash = humanAvatars.has(p.avatar) || seenBots.has(p.avatar);
+      seenBots.add(p.avatar);
+      if (!clash || rerolledBots.has(id + ":" + p.avatar)) return;
+      rerolledBots.add(id + ":" + p.avatar);
+      const pool = AVATARS.filter((a) => !used.has(a)), avatar = (pool.length ? pool : AVATARS)[Math.floor(Math.random() * (pool.length ? pool.length : AVATARS.length))];
+      used.add(avatar);
+      const themed = BOT_NAME_BY_AVATAR[avatar], name = (themed && themed.length <= 12 && !usedNames.has(themed)) ? themed : botNameFor(avatar, usedNames);
+      usedNames.add(name);
+      update(ref(db, `rooms/${currentRoomCode}/players/${id}`), { avatar, name }).catch(() => {});
+    });
+  }
   function renderPlayerList() {
+    rerollClashingBots();
     const isFirstRender = renderedPlayerListIds.size === 0;
     const newIds = new Set();
     playerList.innerHTML = "";
@@ -19636,7 +19657,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (!roomState.currentQuestion || roomState.currentQuestion.prompt !== q.prompt) return;
         let val = botGuessValue(q.answer, p.botDifficulty, p.avatar);
         // High/Low Survival: a bot partner plays its role, and how tight a bracket it makes depends on its accuracy level.
-        if (isHlSettings(roomState.settings)) val = hlBotGuess(q.answer, p.botDifficulty, (roomState.hlRoles || {})[id], hlLimit(roomState.hlSurvived || 0));
+        if (isHlSettings(roomState.settings)) val = hlBotGuess(q.answer, p.botDifficulty, (roomState.hlRoles || {})[id], hlLimit(roomState.hlSurvived || 0), p.avatar);
         if (!commitBotDecision(roomState, scope, hostId, id, "guesses", val, nowMs())) return;
         runTransaction(ref(db, `rooms/${roomCode}`), room => commitBotDecision(room, scope, hostId, id, "guesses", val, nowMs()), { applyLocally: false })
           .catch(error => console.warn("Could not save bot guess", error));

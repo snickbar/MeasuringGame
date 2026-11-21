@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { PERSONALITIES, PERSONALITY_IDS, personalityIdFor, shapeRatio, shapeDelay, PERSONALITY_UNLOCK_ROUNDS } from '../anim/bot-personalities.mjs';
+import { shapeConfidence, shapeMiss, PERSONALITIES, PERSONALITY_IDS, personalityIdFor, shapeRatio, shapeDelay, PERSONALITY_UNLOCK_ROUNDS } from '../anim/bot-personalities.mjs';
 assert.equal(PERSONALITY_UNLOCK_ROUNDS, 25);
 assert.equal(personalityIdFor('av300'), personalityIdFor('av300'), 'the same avatar always gets the same personality');
 const seen = new Set(Array.from({ length: 309 }, (_, i) => personalityIdFor('av' + (i + 1))));
@@ -10,4 +10,6 @@ assert.ok(shapeRatio(1.4, PERSONALITIES.overthinker) < 1.4 && shapeRatio(1.4, PE
 assert.ok(shapeRatio(0, PERSONALITIES.gambler) >= 0, 'a guess never goes below zero');
 assert.ok(shapeDelay(3000, PERSONALITIES.speedster, 30000) < shapeDelay(3000, PERSONALITIES.overthinker, 30000));
 assert.ok(shapeDelay(4000, PERSONALITIES.overthinker, 5000) <= 5000 * 0.85, 'never waits past the round');
+assert.ok(shapeConfidence(0.5, PERSONALITIES.gambler) > 0.5 && shapeConfidence(0.5, PERSONALITIES.cautious) < 0.5 && shapeConfidence(0.98, PERSONALITIES.gambler) <= 1 && shapeConfidence(0.02, PERSONALITIES.cautious) >= 0);
+assert.ok(shapeMiss(1, PERSONALITIES.gambler) > 1 && shapeMiss(1, PERSONALITIES.overthinker) < 1);
 console.log('Bot personalities: stable per avatar, all used, bias/spread/speed behave.');

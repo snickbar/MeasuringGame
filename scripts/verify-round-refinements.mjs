@@ -50,6 +50,6 @@ assert(!hasHostAdGame(grantHostAdGame(p,{...datedReward,rewardId:'again'}),'clas
 assert(canWatchHostAd(p,'classic','2026-10-29'));
 assert(canWatchHostAd(p,'bluff',ticket.day));
 
-const bot=vm.createContext({Math});vm.runInContext(source.match(/  const HL_BOT_LEVELS = [^;]+;/)[0]+'\n'+extract('hlBotGuess'),bot);for(const level of ['easy','medium','hard'])for(const answer of [1.5,1.789,100,1234.567])for(let i=0;i<1000;i++){assert(bot.hlBotGuess(answer,level,'high',2.5)>=answer);assert(bot.hlBotGuess(answer,level,'low',2.5)<=answer);}
+const bot=vm.createContext({Math,shapeMiss:m=>m,personalityFor:()=>({})});vm.runInContext(source.match(/  const HL_BOT_LEVELS = [^;]+;/)[0]+'\n'+extract('hlBotGuess'),bot);for(const level of ['easy','medium','hard'])for(const answer of [1.5,1.789,100,1234.567])for(let i=0;i<1000;i++){assert(bot.hlBotGuess(answer,level,'high',2.5)>=answer);assert(bot.hlBotGuess(answer,level,'low',2.5)<=answer);}
 assert(source.includes('await addBot("easy")'));
 console.log('PASS: tied individual/team scoring and contributions, 1% boundaries, truth-card exclusions, recurring Worlds/Daily rewards, Survival 3/5 coins, idempotence, start-only free allowance, and reliable High/Low partners.');

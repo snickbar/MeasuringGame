@@ -46,3 +46,15 @@ export function shapeDelay(baseMs, personality, timerMs) {
   const p = personality || PERSONALITIES.steady;
   return Math.max(250, Math.min(baseMs * p.speed, timerMs * 0.85));
 }
+
+// A bot's confidence (0..1) nudged by how much it likes a gamble: a Gambler bets bigger, a Cautious bot holds back.
+export function shapeConfidence(confidence, personality) {
+  const p = personality || PERSONALITIES.steady;
+  return Math.max(0, Math.min(1, confidence + (p.risk - 0.5) * 0.3));
+}
+
+// A High/Low partner's miss size (how far past the answer it dares to go), scaled by the personality's spread.
+export function shapeMiss(miss, personality) {
+  const p = personality || PERSONALITIES.steady;
+  return miss * p.spread;
+}
