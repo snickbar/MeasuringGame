@@ -1,5 +1,6 @@
 // Measured alpha-surface positions and lower-edge colors from the approved PNGs.
 export const FLOOR_DATA = {
+  "retro-v3-arcade": { "surface": 0.58, "color": "#100d35" },
   "workshop-climb-concrete": { "surface": 0.8, "color": "#a68d77" },
   "library-climb-reading-nook": { "surface": 0.68, "color": "#714024" },
   "tabletop-climb-side-cup-desk": { "surface": 0.68, "color": "#bb772d" },

@@ -1,4 +1,5 @@
 import { FLOOR_DATA } from './scenery-data.mjs';
+import { drawRetroSky, drawRetroRink } from './retro-rink.mjs';
 
 // Scenery follows the larger object's identity. Measurements never select a biome.
 export const OBJECT_GROUPS = {
@@ -250,7 +251,7 @@ export const SETTINGS = {
     parallax: [{ img: 'restaurant-n-far', par: .5, lift: 365, scale: 0.85, noFill: true,
       props: [{ img: 'restaurant-table-0', x: 0.1, row: 730, w: 0.12 }, { img: 'restaurant-table-5', x: 0.9, row: 730, w: 0.12 }],
       tanks: [{ box: [.418, .493, .582, .76], fish: [{ img: 'restaurant-fish-0', y: .3, w: .17, speed: .05, phase: 0 }, { img: 'restaurant-fish-1', y: .55, w: .2, speed: -.035, phase: .4 }, { img: 'restaurant-fish-2', y: .2, w: .16, speed: .04, phase: .7 }, { img: 'restaurant-fish-7', y: .72, w: .14, speed: -.06, phase: .15 }, { img: 'restaurant-fish-4', y: .45, w: .17, speed: .03, phase: .55 }] }] }] },
-  retro: { floor: 'retro-n-floor', fittedFloor: true, floorInset: 0, lightTally: true, sky: ['#2b1650', '#7a3a9a'], parallax: [] },
+  retro: { floor: 'retro-v3-arcade', fittedFloor: true, floorInset: 0, lightTally: true, sky: ['#162548', '#6676b4'], parallax: [] },
   workshop: { floor: 'workshop-n-floor', floorTileWidth: 640, floorDrifters: [{ img: 'workshop-n-movers-0', lane: 0.5, w: 0.032, speed: 20, start: 0.2, bob: 0.3 }, { img: 'workshop-n-movers-1', lane: 0.5, w: 0.061, speed: 40, start: 0.5 }, { img: 'workshop-n-movers-3', lane: 0.5, w: 0.043, speed: 10, start: 0.7 }, { img: 'workshop-n-movers-4', lane: 0.5, w: 0.038, speed: 26, start: 0.35, bob: 0.3 }, { img: 'workshop-n-movers-5', lane: 0.5, w: 0.071, speed: 16, start: 0.85 }], sky: ['#d6dbe0', '#eef0f2'],
     parallax: [{ img: 'workshop-n-far', par: .16, lift: 330, scale: 0.85, props: [{ img: 'workshop-n-big-0', x: 0.5, row: 360, w: 0.258 }] },
       { img: 'workshop-n-mid', par: .34, lift: 166, scale: 0.75, props: [{ img: 'workshop-n-reveals-0', x: 0.14, row: 546, w: 0.085 }, { img: 'workshop-n-reveals-1', x: 0.5, row: 546, w: 0.086 }, { img: 'workshop-n-reveals-2', x: 0.84, row: 546, w: 0.150 }, { img: 'workshop-n-anim-0', x: 0.72, row: 546, w: 0.152, spin: { img: 'workshop-n-anim-1', fx: .5, fy: .5, size: .7, speed: .8 } }] },
@@ -269,11 +270,7 @@ export const SETTINGS = {
       { img: 'stadium-n-near', par: 0.6, lift: 135, scale: 1.37, props: [{ img: 'stadium-n-loose-0', x: 0.06, row: 559, w: 0.060 }, { img: 'stadium-n-loose-2', x: 0.24, row: 559, w: 0.073 }, { img: 'stadium-n-loose-3', x: 0.42, row: 559, w: 0.025 }, { img: 'stadium-n-loose-5', x: 0.6, row: 559, w: 0.068 }, { img: 'stadium-n-loose-6', x: 0.78, row: 559, w: 0.031 }, { img: 'stadium-n-loose-7', x: 0.93, row: 559, w: 0.081 }], drifters: [{ img: 'stadium-n-movers-3', x: 0.5, row: 559, w: 0.042, speed: 24, bob: 0 }] }] },
 };
 const layeredReveals = {
-  // The distant hall is one continuous perspective painting, never a tiled floor.
-  retro: { roomBack: 'retro-reveal-hall', roomBackZoom: 1.2, roomBackPan: .08, parallax: [
-    {"img":"retro-reveal-mid","par":0.55,"lift":330,"scale":0.58,"overlapFrom":0.95},
-    {"img":"retro-reveal-front","par":1,"lift":5,"scale":0.58,"grounded":true,"overlapFrom":0.95}
-  ] },
+  retro: { retroRink: { front: 'retro-v3-arcade', track: 'retro-v3-track', back: 'retro-v3-pizza', props: 'retro-v3-props', skaters: 'retro-v3-skaters', ceiling: 'retro-reveal-hall' }, parallax: [] },
 
   blossom: { fallingPetals: 'petal-leaf-set', parallax: [
     {"img":"blossom-reveal-back","par":0.09,"lift":622,"scale":0.65},
@@ -443,7 +440,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const pick = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[pick], id = VARIANT_OF[pick] || pick;
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.floorProp?.img, ...Object.values(config.bookcase || {}), ...Object.values(config.workshop || {}), config.deskLamp?.arm, config.deskLamp?.shade, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomCeiling, config.roomRoof?.img, ...(config.floorDepth?.tables || []).map(q => q.img || q), ...(config.floorDepth?.rows || []).flatMap(r => (r.tables || []).map(q => q.img || q)), ...(config.floorDepth?.singles || []).map(q => q.img), config.roomRoof && 'star-field', ...(config.wallPieces || []).map(q => q.img), ...(config.parallax || []).flatMap(l => (l.tanks || []).flatMap(t => t.fish.map(f => f.img))), config.roomPlant, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.paneling, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.floorProp?.img, ...Object.values(config.retroRink || {}), ...Object.values(config.bookcase || {}), ...Object.values(config.workshop || {}), config.deskLamp?.arm, config.deskLamp?.shade, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomCeiling, config.roomRoof?.img, ...(config.floorDepth?.tables || []).map(q => q.img || q), ...(config.floorDepth?.rows || []).flatMap(r => (r.tables || []).map(q => q.img || q)), ...(config.floorDepth?.singles || []).map(q => q.img), config.roomRoof && 'star-field', ...(config.wallPieces || []).map(q => q.img), ...(config.parallax || []).flatMap(l => (l.tanks || []).flatMap(t => t.fish.map(f => f.img))), config.roomPlant, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.paneling, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if ((config.town && Object.values(config.town).some(name => !images[name])) || (config.square && Object.values(config.square).some(name => !images[name])) || (config.coast && Object.values(config.coast).some(name => !images[name])) || (config.rooftop && Object.values(config.rooftop).some(name => !images[name])) || (config.floor && !images[config.floor]) || (config.avenue && ['pier', 'beach', 'ocean'].some(key => !images[config.avenue[key]]))) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -1808,6 +1805,14 @@ function drawFallingPetals(ctx, image, width, height, time, shiftY) {
 }
 
 export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale = 1, anchorX = width / 2, pass = 'all', climbPx = 0, behindFloor }) {
+  if (kit.config.retroRink) {
+    ctx.save();
+    const options = { width, height, shiftY, floorY, dark, time, reduced };
+    if (pass !== 'foreground') drawRetroSky(ctx, options);
+    if (pass !== 'background') drawRetroRink(ctx, kit, options);
+    ctx.restore();
+    return;
+  }
   const { config, images } = kit;
   ctx.save();
   const roomBack = images[config.roomBack];
@@ -2058,6 +2063,7 @@ export function drawFloorDepthRows(ctx, kit, { width, height, floorY, shiftY = 0
   ctx.restore();
 }
 export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX, shiftY = 0, groundScale = 1, anchorX = width / 2, dark, time = 0, reduced }) {
+  if (kit.config.retroRink) return; // The machine row and its carpet are one continuous foreground.
   const image = kit.images[kit.config.floor]; if (!image) return;
   const workshop = kit.config.workshop;
   if (workshop) {
