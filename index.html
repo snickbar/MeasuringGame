@@ -12775,13 +12775,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const played = h.t ? new Date(h.t).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) : "";
     const ov = document.createElement("div");
     ov.id = "dc-day-pop"; ov.className = "dc-day-pop";
+    const tone = (v) => (v >= 90 ? "g" : v >= 60 ? "a" : "r");
+    const perQ2 = daily?.date === key && daily.guesses?.length ? dailyAccuracies().map((a, i) => `<li class="${tone(a)}"><span class="dc-dq-n">Question ${i + 1}</span><span class="dc-dq-bar"><i style="width:${Math.max(3, Math.min(100, a))}%"></i></span><b>${formatAccuracy(a)}%</b></li>`).join("") : "";
     ov.innerHTML = `<div class="dc-day-card" role="dialog" aria-modal="true" aria-label="${dailyPretty(key)}">
       <h3>${dailyPretty(key)}</h3>
-      <div class="dc-day-score"><b>${formatAccuracy(acc)}%</b><span>accuracy</span></div>
-      ${h.p ? '<div class="dc-day-row"><span class="medal gold" aria-hidden="true"></span> Perfect day</div>' : ""}
-      <div class="dc-day-row">Streak that day: <b>${chainLen} day${chainLen === 1 ? "" : "s"}</b></div>
-      ${played ? `<div class="dc-day-row">Played at <b>${played}</b></div>` : ""}
-      ${perQ ? `<ul class="dc-day-q">${perQ}</ul>` : ""}
+      <div class="dc-day-ring ${tone(acc)}" style="--p:${Math.max(0, Math.min(100, acc))}"><div class="dc-day-score"><b>${formatAccuracy(acc)}%</b><span>accuracy</span></div></div>
+      ${h.p ? '<div class="dc-day-perfect"><span class="medal gold" aria-hidden="true"></span>Perfect day</div>' : ""}
+      <div class="dc-day-chips">
+        <span class="dc-day-chip"><img src="icons/reactions/fire.webp" alt="" draggable="false"><b>${chainLen}</b> day${chainLen === 1 ? "" : "s"} streak</span>
+        ${played ? `<span class="dc-day-chip"><img src="icons/ui-stopwatch.webp" alt="" draggable="false">${played}</span>` : ""}
+      </div>
+      ${perQ2 ? `<ul class="dc-day-q">${perQ2}</ul>` : ""}
       <button type="button" class="dc-btn dc-alt" data-day-close>Close</button></div>`;
     ov.addEventListener("click", (ev) => { if (ev.target === ov || ev.target.closest("[data-day-close]")) ov.remove(); });
     document.body.appendChild(ov);
