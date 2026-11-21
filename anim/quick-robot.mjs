@@ -9,9 +9,21 @@ const REACTIONS = {
   soso: [["soso-shrug", 2], ["soso-scratch", 3], ["soso-meh", 2]],
   lose: [["lose-slump", 3], ["lose-spring", 3], ["lose-sink", 2]],
 };
-const IDLE = ["idle", 1]; // him standing with a small smile, fists on his hips
+const IDLE = ["idle", 1]; // him standing with a small smile, fists on his hips (the still pose, used for reduced motion)
+// While he waits he plays a little story of hand-drawn poses from one 12-pose sheet (quick-robot-idle-sheet.webp), then starts over.
+// [pose, how long it is held in ms]. Poses: 0 rest, 1 glance left, 2 glance right, 3 blink, 4 whistle lift, 5 whistle polish, 6 antenna left,
+// 7 antenna right, 8 arms left + foot tap, 9 arms right + foot tap, 10 small hop, 11 watches the papers.
+export const IDLE_STORY = [
+  [0, 1800], [3, 160], [0, 1100], [1, 750], [0, 250], [2, 750], [0, 1300], [3, 160], [0, 700],
+  [6, 420], [7, 420], [6, 420], [7, 420], [0, 1400],
+  [4, 900], [5, 1100], [4, 500], [0, 1500],
+  [11, 1700], [0, 900],
+  [8, 330], [9, 330], [8, 330], [9, 330], [0, 1100],
+  [10, 520], [0, 1600],
+];
+const IDLE_SHEET = ["idle-sheet", 12];
 const FRAME_MS = 260;
-const ART = (id) => `anim/mode-mascots/quick-robot-react-${id}.webp`;
+const ART = (id) => id === "idle-sheet" ? "anim/mode-mascots/quick-robot-idle-sheet.webp" : `anim/mode-mascots/quick-robot-react-${id}.webp`;
 
 export const robotTier = (accuracy) => accuracy >= 60 ? "win" : accuracy >= 40 ? "soso" : "lose";
 
@@ -24,7 +36,7 @@ export function pickRobotReaction(tier, last, random = Math.random) {
 // hud: the fixed game container the robot is added to (nothing in it clips, so he can overlap the question board).
 // cardFor(): your own score card element (or null). reduceMotion(): true when animation should be skipped.
 export function createQuickRobot({ hud, cardFor, reduceMotion = () => false }) {
-  let el = null, sprite = null, raf = 0, standKey = null, reactKey = null, last = null, stepTimer = 0, reactTimer = 0, held = false;
+  let el = null, sprite = null, raf = 0, standKey = null, reactKey = null, last = null, stepTimer = 0, idleTimer = 0, reactTimer = 0, held = false;
 
   function build() {
     el = document.createElement("div");
@@ -42,7 +54,19 @@ export function createQuickRobot({ hud, cardFor, reduceMotion = () => false }) {
     el.dataset.reaction = id;
     setFrame(0, frames);
   }
-  function stopFrames() { clearInterval(stepTimer); stepTimer = 0; }
+  function stopFrames() { clearInterval(stepTimer); clearTimeout(idleTimer); stepTimer = idleTimer = 0; }
+  // the waiting story: step through IDLE_STORY until his reaction starts (or he is hidden)
+  function playIdle(key) {
+    let i = 0;
+    const next = () => {
+      if (standKey !== key || reactKey === key) return;
+      const [pose, ms] = IDLE_STORY[i % IDLE_STORY.length];
+      setFrame(pose, IDLE_SHEET[1]);
+      i++;
+      idleTimer = setTimeout(next, ms);
+    };
+    idleTimer = setTimeout(next, 1300); // after he has slid in
+  }
 
   // Keep him on the card's top edge: the card moves while the scores re-sort and while the column scrolls, and he scrolls with it.
   function place() {
@@ -77,7 +101,7 @@ export function createQuickRobot({ hud, cardFor, reduceMotion = () => false }) {
     hide();
     standKey = key;
     if (!el) build();
-    setStrip(IDLE[0], IDLE[1]);
+    if (reduceMotion()) setStrip(IDLE[0], IDLE[1]); else { setStrip(IDLE_SHEET[0], IDLE_SHEET[1]); setFrame(0, IDLE_SHEET[1]); playIdle(key); }
     el.classList.remove("reacting", "on");
     held = !!hold;
     if (!held) { void el.offsetWidth; el.classList.add("on"); } // he slides in from the right once, when he first appears
