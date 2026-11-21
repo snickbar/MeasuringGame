@@ -4465,6 +4465,7 @@ if (location.protocol === "file:") {
 <link rel="stylesheet" href="anim/monthly-extras.css" />
 <link rel="stylesheet" href="anim/party-finale.css" />
 <link rel="stylesheet" href="anim/play-layout.css">
+<link rel="stylesheet" href="anim/player-tint.css">
 <link rel="stylesheet" href="anim/quick-robot.css">
 <link rel="stylesheet" href="anim/party-ant.css">
 </head>
@@ -18502,9 +18503,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   // ==================== Lobby / join flow ====================
 
-  // The picture for a hidden bot: a black person silhouette on a circle in the colour of that player's answer paper
-  // (frameIndex 1-10, the same colour their paper and score card use). It uses the avatar picture classes so every lobby layout sizes it like an avatar.
-  const MYSTERY_COLORS = ["#ba765c", "#d9b778", "#b89289", "#8b8f97", "#748574", "#87943d", "#cb757f", "#bea884", "#f05c61", "#cb9863"];
+  // The picture for a hidden bot: a black person silhouette on a circle in that player's card colour
+  // (frameIndex 1-10, the colour of their score card and lobby card). It uses the avatar picture classes so every lobby layout sizes it like an avatar.
+  const MYSTERY_COLORS = ["#dd9a79", "#f0c070", "#b9b2b4", "#5fb8e8", "#3fa89a", "#6cc83a", "#f070a8", "#8fd68f", "#f65d63", "#f5b84a"];
   function mysteryAvatarHtml(frameIndex) {
     const color = MYSTERY_COLORS[((Number(frameIndex) || 1) - 1 + 10) % 10];
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><clipPath id="c"><circle cx="50" cy="50" r="46"/></clipPath></defs><circle cx="50" cy="50" r="46" fill="${color}"/><g clip-path="url(#c)" fill="#000"><circle cx="50" cy="38" r="16"/><path d="M16 100 C16 70 32 58 50 58 C68 58 84 70 84 100 Z"/></g><circle cx="50" cy="50" r="46" fill="none" stroke="rgba(0,0,0,.3)" stroke-width="4"/></svg>`;
@@ -18556,6 +18557,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const party=!roomState.settings?.solo;
       // Every mode gets the same cream cards (self / host shading); Team vs Team keeps its colour dot.
       li.classList.add("lobby-player-card");
+      if (p.frameIndex) li.dataset.pc = String(((Number(p.frameIndex) || 1) - 1 + 10) % 10 + 1);   // player colour, see anim/player-tint.css
       if (id === currentPlayerId) li.classList.add("lobby-player-self");
       if (p.isHost) li.classList.add("lobby-player-host");
       const teamDot = (roomState.settings?.mode === "teamvteam" && p.team) ? `<span class="team-dot" style="--tc:${TEAM_COLOR_HEX[p.team]}"></span>` : "";
