@@ -26,6 +26,12 @@ export function buildObjectPicker({ loadAnim, objects }) {
   const motionNow = (id) => { const d = (drafts[id] || {}).motion; return d || savedEntrance(id) || "auto"; };
   const isChanged = (id) => !!drafts[id];
   const isNew = (id) => !savedOrient(id);
+  // Objects whose current draft was already exported (Copy choices / Save as file), so you can see what is still unsent.
+  let sent = {};
+  try { sent = JSON.parse(localStorage.getItem(KEY + "-sent") || "{}") || {}; } catch (e) { sent = {}; }
+  const isSent = (id) => !!drafts[id] && sent[id] === JSON.stringify(drafts[id]);
+  const markSent = () => { sent = {}; Object.keys(drafts).forEach((id) => { sent[id] = JSON.stringify(drafts[id]); }); try { localStorage.setItem(KEY + "-sent", JSON.stringify(sent)); } catch (e) { /* storage unavailable */ } fillSelect(); render(); };
+  const tag = (id) => (isChanged(id) ? (isSent(id) ? "✓ " : "● ") : isNew(id) ? "NEW " : "");
 
   let cur = sorted[0] && sorted[0].id, filter = "all", query = "";
   const last = (() => { try { return localStorage.getItem(KEY + "-last"); } catch (e) { return null; } })();
@@ -45,19 +51,20 @@ export function buildObjectPicker({ loadAnim, objects }) {
     return sorted.filter((o) => {
       if (filter === "new" && !isNew(o.id)) return false;
       if (filter === "changed" && !isChanged(o.id)) return false;
+      if (filter === "unsent" && !(isChanged(o.id) && !isSent(o.id))) return false;
       return !q || o.name.toLowerCase().includes(q) || o.id.includes(q);
     });
   }
   function fillSelect() {
     const list = visibleObjects(); select.textContent = "";
-    list.forEach((o) => { const op = el("option", "", (isChanged(o.id) ? "● " : isNew(o.id) ? "NEW " : "") + o.name); op.value = o.id; select.appendChild(op); });
+    list.forEach((o) => { const op = el("option", "", tag(o.id) + o.name); op.value = o.id; select.appendChild(op); });
     if (!list.some((o) => o.id === cur)) cur = list[0] ? list[0].id : null;
     if (cur) select.value = cur;
     const nNew = objects.filter((o) => isNew(o.id)).length, nChg = Object.keys(drafts).length;
-    [...filterSel.options].forEach((o) => { o.textContent = ({ all: `All objects (${objects.length})`, new: `New, never set (${nNew})`, changed: `My changes (${nChg})` })[o.value]; });
+    [...filterSel.options].forEach((o) => { o.textContent = ({ all: `All objects (${objects.length})`, new: `New, never set (${nNew})`, changed: `My changes (${nChg})`, unsent: `Changed, not sent yet (${Object.keys(drafts).filter((id) => !isSent(id)).length})` })[o.value]; });
     summary.textContent = `${list.length} shown · ${nChg} changed · ${nNew} new`;
   }
-  ["all", "new", "changed"].forEach((v) => { const o = el("option", "", v); o.value = v; filterSel.appendChild(o); });
+  ["all", "new", "changed", "unsent"].forEach((v) => { const o = el("option", "", v); o.value = v; filterSel.appendChild(o); });
 
   // ---- preview and controls ----
   const thumbBox = el("div"); thumbBox.style.cssText = "display:flex;gap:10px;align-items:flex-end;justify-content:center;background:#fff8ec;border-radius:10px;padding:10px;min-height:120px";
@@ -112,9 +119,9 @@ export function buildObjectPicker({ loadAnim, objects }) {
     leanL.value = s.leanL; leanR.value = s.leanR; entry.value = m;
     const lying = (side) => side === "cw" || side === "ccw", swap = { roll: "scoot", tumble: "skid" }[m];
     leanNote.textContent = swap && (lying(s.leanL) || lying(s.leanR)) ? `${m} can't be used while it swings up to stand, so it plays as ${swap}. Set "swings up" to "Stays as it is" on the side you want to see it.` : "";
-    status.textContent = isChanged(cur) ? "You changed this one (kept on this device until you copy and send it)." : isNew(cur) ? "New: nothing saved for this object yet, so it uses the default pose." : "Matches what is saved in the game.";
+    status.textContent = isChanged(cur) ? (isSent(cur) ? "You changed this one and already copied or saved it (✓). Change it again and it counts as unsent." : "You changed this one (kept on this device until you copy and send it).") : isNew(cur) ? "New: nothing saved for this object yet, so it uses the default pose." : "Matches what is saved in the game.";
     const label = select.querySelector(`option[value="${CSS.escape(cur)}"]`);
-    if (label) label.textContent = (isChanged(cur) ? "● " : isNew(cur) ? "NEW " : "") + o.name;
+    if (label) label.textContent = tag(cur) + o.name;
     const nChg = Object.keys(drafts).length;
     summary.textContent = summary.textContent.replace(/· \d+ changed/, `· ${nChg} changed`);
   }
@@ -123,6 +130,30 @@ export function buildObjectPicker({ loadAnim, objects }) {
   search.addEventListener("input", () => { query = search.value; fillSelect(); if (cur) go(cur); });
   filterSel.addEventListener("change", () => { filter = filterSel.value; fillSelect(); if (cur) go(cur); });
   const step = (d) => { const l = visibleObjects(), i = l.findIndex((o) => o.id === cur); if (!l.length) return; go(l[(i + d + l.length) % l.length].id); };
+
+  // Jump to the next object that has no saved pose and no draft of yours yet, wrapping round the whole list.
+  function nextUnset() {
+    const i = sorted.findIndex((o) => o.id === cur), n = sorted.length;
+    for (let k = 1; k <= n; k++) {
+      const o = sorted[(i + k + n) % n];
+      if (isNew(o.id) && !isChanged(o.id)) { filter = "all"; query = ""; search.value = ""; filterSel.value = "all"; fillSelect(); go(o.id); status.textContent = "Next object with nothing set yet."; return; }
+    }
+    status.textContent = "Every object has a saved pose or one of your changes.";
+  }
+  // Copy one object's pose and entrance, then paste it onto other similar objects.
+  let clip = null;
+  const pasteBtn = btn("Paste settings", () => {
+    if (!clip || !cur) return;
+    set((s) => { Object.assign(s, clip.orient); }); setMotion(clip.motion);
+    status.textContent = `Pasted the settings copied from ${clip.name}.`;
+  });
+  pasteBtn.disabled = true;
+  const copyBtn = btn("Copy these settings", () => {
+    const o = byId.get(cur); if (!o) return;
+    clip = { name: o.name, orient: { ...orientNow(cur) }, motion: motionNow(cur) };
+    pasteBtn.disabled = false; pasteBtn.textContent = `Paste ${o.name}'s settings`;
+    status.textContent = `Copied ${o.name}'s pose and entrance. Pick another object and press Paste.`;
+  });
 
   // ---- live test in the real reveal ----
   const partner = el("select", "dbg-input"); partner.style.width = "100%"; partner.setAttribute("aria-label", "Test against");
@@ -164,7 +195,7 @@ export function buildObjectPicker({ loadAnim, objects }) {
   async function copyChoices() {
     const text = JSON.stringify({ objectPickerChoices: 1, drafts }, null, 1);
     out.value = text; out.style.display = Object.keys(drafts).length ? "block" : "none";
-    try { await navigator.clipboard.writeText(text); status.textContent = `Copied ${Object.keys(drafts).length} object change(s). Paste them to Claude to lock them into the game. For a long list, use Save as file.`; }
+    try { await navigator.clipboard.writeText(text); markSent(); status.textContent = `Copied ${Object.keys(drafts).length} object change(s). Paste them to Claude to lock them into the game. For a long list, use Save as file.`; }
     catch (e) { out.focus(); out.select(); status.textContent = "Select the text below and copy it."; }
   }
   // Saves every choice as a file: the Android app shares it through the native sheet (Save to Files, Drive, email...),
@@ -178,12 +209,12 @@ export function buildObjectPicker({ loadAnim, objects }) {
       if (plugins.Filesystem && plugins.Share) {
         const f = await plugins.Filesystem.writeFile({ path: name, data: text, directory: "CACHE", encoding: "utf8" });
         await plugins.Share.share({ title: "Object choices", files: [f.uri], dialogTitle: "Save object choices" });
-        status.textContent = `Saved ${n} object change(s) as ${name}.`; return;
+        markSent(); status.textContent = `Saved ${n} object change(s) as ${name}.`; return;
       }
       const file = new File([text], name, { type: "application/json" });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: "Object choices" }); status.textContent = `Saved ${n} object change(s).`; return; }
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: "Object choices" }); markSent(); status.textContent = `Saved ${n} object change(s).`; return; }
       const a = document.createElement("a"); a.href = URL.createObjectURL(file); a.download = name; document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 4000); status.textContent = `Saved ${n} object change(s) as ${name}.`;
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000); markSent(); status.textContent = `Saved ${n} object change(s) as ${name}.`;
     } catch (e) {
       if (e && (e.name === "AbortError" || /cancel/i.test(String(e.message || e)))) return;
       out.value = text; out.style.display = "block"; status.textContent = "Couldn't save a file here. Use Copy choices instead.";
@@ -196,10 +227,12 @@ export function buildObjectPicker({ loadAnim, objects }) {
     el("p", "dbg-note", "Every object in the game is listed here, so new ones appear on their own. Stand each one the way you want it, pick how it enters, and press Test."),
     search, field("Show", filterSel), field("Object", select), summary,
     row(btn("◀ Prev", () => step(-1)), btn("Next ▶", () => step(1))),
+    row(btn("Next unset ▶▶", nextUnset)),
     thumbBox,
     field("Turn the picture", rotRow), row(flipBtn, mirBtn),
     field("Small: swings up", leanL), field("Big: swings up", leanR),
     field("How it enters", entry), leanNote, row(btn("▶ Watch it enter", test)),
+    row(copyBtn, pasteBtn),
     status,
     stage, testNote, field("Test against", partner),
     row(btn("Save as file", saveFile), btn("Copy choices", copyChoices), resetThis), out,
