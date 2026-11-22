@@ -4914,7 +4914,7 @@ if (location.protocol === "file:") {
 
   <div class="settings-card" id="settings-support-card">
     <div class="settings-about-row"><h3>Support the game</h3>
-    <button id="settings-tip-btn" type="button" class="settings-cream-btn">Tip jar</button></div>
+    <button id="settings-tip-btn" type="button" class="settings-cream-btn"><img class="tip-jar-art" src="icons/tip-jar.webp" alt=""><span>Tip jar</span><img class="tip-heart-art" src="icons/reactions/heart.webp" alt=""></button></div>
     <p class="settings-profile-hint settings-preset-hint">Enjoying Size Em Up? A tip keeps it growing and earns you a Supporter medal.</p>
   </div>
 
@@ -16713,8 +16713,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     setShopTab(tab || "coins");
   }
   // Offers is the first tab; until the Party unlock is owned the Shop always opens on it.
-  toolbarCoinBalanceEl.addEventListener("click", guardToolbarNav(() => openGachaScreen("hosting")));
-  toolbarCosmeticsBtn.addEventListener("click", guardToolbarNav(() => openGachaScreen(lastCosmTab)));
+  function toggleToolbarShopGroup(cosmetics) {
+    if (gachaScreen.classList.contains("active") && shopGroupWasCosm === cosmetics) {
+      closeOverlay();
+      return;
+    }
+    openGachaScreen(cosmetics ? lastCosmTab : "hosting");
+  }
+  toolbarCoinBalanceEl.addEventListener("click", guardToolbarNav(() => toggleToolbarShopGroup(false)));
+  toolbarCosmeticsBtn.addEventListener("click", guardToolbarNav(() => toggleToolbarShopGroup(true)));
   document.querySelectorAll("#shop-tabs [data-tab]").forEach((btn) => {
     btn.addEventListener("click", () => setShopTab(btn.dataset.tab));
   });
