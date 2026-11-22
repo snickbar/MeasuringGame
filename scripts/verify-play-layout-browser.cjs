@@ -439,11 +439,15 @@ for(const m of ['quick:many','teamvteam:many','party']){await evaluate('window._
     }
     if(process.env.PLAY_LAYOUT_NAV_ONLY){
      const backIds={worlds:'worlds-close-btn',daily:'daily-close-btn',monthly:'monthly-close-btn',survival:'survival-close-btn',whichbigger:'wb-close-btn'};
-     const routes={back:null,home:'toolbar-home-btn',shop:'toolbar-shop-btn',style:'toolbar-cosmetics-btn',stats:'toolbar-awards-btn',coins:'toolbar-coin-balance',settings:'menu-settings-btn',phoneBack:null};
+     const routes={back:null,home:'toolbar-home-btn',shop:'toolbar-coin-balance',style:'toolbar-cosmetics-btn',stats:'toolbar-awards-btn',coins:'toolbar-coin-balance',settings:'toolbar-settings-btn',phoneBack:null};
      for(const mode of Object.keys(backIds))for(const phase of ['question','reveal',...(['worlds','whichbigger'].includes(mode)?['result']:[])]){
       for(const route of (phase==='question'?Object.keys(routes):['back','phoneBack'])){
        await evaluate('window.__exitSetup('+JSON.stringify(mode)+','+JSON.stringify(phase)+')');
        const tap=route==='phoneBack'?"window.dispatchEvent(new PopStateEvent('popstate'))":"document.getElementById("+JSON.stringify(route==='back'?backIds[mode]:routes[route])+").click()";
+       if(route==='settings'){
+        await evaluate(tap);const state=await evaluate('window.__exitRead()');if(state.dialog||!state.run||!await evaluate("document.getElementById('settings-screen').classList.contains('peek')"))throw Error('Settings must peek without leaving '+JSON.stringify({mode,phase,state}));
+        await evaluate("document.getElementById('settings-back-game').click()");if(!await evaluate("!document.getElementById('settings-screen').classList.contains('peek')"))throw Error('Settings Back did not return to the game');continue;
+       }
        await evaluate(tap);let state=await evaluate('window.__exitRead()');if(!state.dialog||!state.run)throw Error('Missing leave confirmation '+JSON.stringify({mode,phase,route,state}));
        await evaluate("document.getElementById('exit-confirm-no-btn').click()");state=await evaluate('window.__exitRead()');if(state.dialog||!state.run)throw Error('Cancel left the run '+JSON.stringify({mode,phase,route,state}));
        await evaluate(tap);await evaluate("document.getElementById('exit-confirm-yes-btn').click();new Promise(r=>setTimeout(r,60))");state=await evaluate('window.__exitRead()');if(state.dialog||state.run)throw Error('Confirm did not leave '+JSON.stringify({mode,phase,route,state}));

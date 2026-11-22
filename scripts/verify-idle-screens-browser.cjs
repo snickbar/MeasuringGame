@@ -15,7 +15,7 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const BUDGET=12; // restyles a second; the repaired screens measure 0-1, an endless box-shadow or background animation measures 60
 const screens=[
  ['Home','document.getElementById("toolbar-home-btn").click()'],
- ['Shop','document.getElementById("toolbar-shop-btn").click()'],
+ ['Shop','document.getElementById("toolbar-coin-balance").click()'],
  ['Awards','document.getElementById("toolbar-awards-btn").click()'],
  ['Style','document.getElementById("toolbar-cosmetics-btn").click()'],
  ['Solo hub','document.getElementById("toolbar-home-btn").click();await wait(900);document.getElementById("home-solo-btn").click()'],
