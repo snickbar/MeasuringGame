@@ -94,7 +94,7 @@ window.__layoutRv=async n=>{
  return ids.length;
 };
 // Quick robot (anim/quick-robot.mjs): he waits on your card, then reacts (looping) to one accuracy. Reports where he stands.
-const robotSnap=()=>{const el=document.querySelector('.qr-robot'),card=scoreColEl.querySelector('.score-card[data-id="'+currentPlayerId+'"]'),hud=document.getElementById('hud').getBoundingClientRect();
+const robotSnap=()=>{const el=document.querySelector('.qr-robot'),card=scoreColEl.querySelector('.score-card'),hud=document.getElementById('hud').getBoundingClientRect();
  if(!el)return null;const r=el.getBoundingClientRect(),c=card?card.getBoundingClientRect():null,sp=el.querySelector('.qr-sprite'),board=document.querySelector('.question-prompt').getBoundingClientRect(),cs=getComputedStyle(el);
  return {reaction:el.dataset.reaction,visible:cs.visibility==='visible'&&cs.opacity!=='0',on:el.classList.contains('on'),off:el.classList.contains('off'),reacting:el.classList.contains('reacting'),image:getComputedStyle(sp).backgroundImage.includes('quick-robot-react-'),frames:getComputedStyle(sp).getPropertyValue('--n').trim(),pos:sp.style.backgroundPosition,
   rect:{l:Math.round(r.left),t:Math.round(r.top),r:Math.round(r.right),b:Math.round(r.bottom)},card:c&&{l:Math.round(c.left),t:Math.round(c.top),r:Math.round(c.right)},hud:{l:Math.round(hud.left),r:Math.round(hud.right)},boardTop:Math.round(board.top),boardBottom:Math.round(board.bottom)};};

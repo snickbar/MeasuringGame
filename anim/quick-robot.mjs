@@ -42,7 +42,7 @@ export function pickRobotReaction(tier, last, random = Math.random) {
 }
 
 // hud: the fixed game container the robot is added to (nothing in it clips, so he can overlap the question board).
-// cardFor(): your own score card element (or null). reduceMotion(): true when animation should be skipped.
+// cardFor(): the TOP score card element (or null). reduceMotion(): true when animation should be skipped.
 export function createQuickRobot({ hud, cardFor, reduceMotion = () => false }) {
   let el = null, sprite = null, raf = 0, standKey = null, reactKey = null, last = null, stepTimer = 0, idleTimer = 0, reactTimer = 0, held = false, seen = 0;
 
