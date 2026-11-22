@@ -22,7 +22,29 @@ export const PERSONALITY_IDS = Object.keys(PERSONALITIES);
 
 // A themed pick for avatars we have chosen by hand. Any avatar not listed gets a stable one from its id,
 // so a new avatar has a personality the moment it exists and the same one on every device.
-export const PERSONALITY_BY_AVATAR = {};
+export const PERSONALITY_BY_AVATAR = {
+  av01: "overshooter", av02: "lowballer", av03: "overthinker", av04: "speedster", av05: "lowballer", av06: "lowballer",
+  av07: "wildcard", av08: "lowballer", av09: "gambler", av10: "wildcard", av12: "overthinker", av13: "overshooter",
+  av14: "gambler", av15: "gambler", av16: "overthinker", av17: "overthinker", av18: "overshooter", av20: "wildcard",
+  av21: "gambler", av22: "gambler", av25: "cautious", av26: "wildcard", av29: "overshooter", av31: "wildcard",
+  av32: "cautious", av33: "gambler", av34: "overshooter", av35: "overshooter", av36: "gambler", av43: "cautious",
+  av44: "overthinker", av45: "wildcard", av46: "overthinker", av47: "speedster", av48: "wildcard", av49: "gambler",
+  av50: "speedster", av62: "wildcard", av64: "lowballer", av65: "overthinker", av69: "overshooter", av72: "gambler",
+  av75: "overthinker", av76: "cautious", av77: "cautious", av78: "gambler", av79: "overthinker", av81: "wildcard",
+  av83: "lowballer", av90: "lowballer", av93: "gambler", av96: "overshooter", av98: "gambler", av100: "overshooter",
+  av103: "cautious", av105: "cautious", av111: "cautious", av112: "overshooter", av114: "overthinker", av124: "wildcard",
+  av125: "speedster", av128: "cautious", av129: "gambler", av130: "speedster", av131: "overshooter", av132: "cautious",
+  av133: "wildcard", av142: "speedster", av143: "cautious", av144: "wildcard", av149: "speedster", av150: "speedster",
+  av151: "speedster", av152: "speedster", av153: "cautious", av154: "speedster", av155: "wildcard", av157: "gambler",
+  av161: "cautious", av163: "lowballer", av165: "cautious", av166: "cautious", av177: "lowballer", av180: "speedster",
+  av189: "gambler", av192: "gambler", av196: "wildcard", av232: "overshooter", av248: "gambler", av258: "cautious",
+  av262: "speedster", av269: "gambler", av282: "gambler", av301: "lowballer", av303: "overshooter", av307: "overthinker",
+  av309: "cautious", av311: "cautious", av312: "overthinker", av313: "gambler", av314: "lowballer", av315: "overthinker",
+  av317: "lowballer", av318: "overthinker", av319: "overthinker", av320: "speedster", av321: "overshooter", av322: "overthinker",
+  av323: "lowballer", av324: "overthinker", av325: "wildcard", av326: "lowballer", av327: "wildcard", av328: "lowballer",
+  av329: "speedster", av330: "gambler", av331: "cautious", av332: "speedster", av333: "wildcard", av334: "wildcard",
+  av335: "wildcard", av336: "gambler", av337: "overshooter", av338: "cautious",
+};
 
 function hash(text) { let h = 2166136261; for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
 
