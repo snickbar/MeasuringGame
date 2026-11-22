@@ -3470,7 +3470,7 @@ if (location.protocol === "file:") {
   .hl-sum-card .sv-heart { width: 56px; }
   .hl-sum-card .hl-sub { font-size: 16px; }
   .hl-sumplayer { grid-template-columns: auto minmax(0,1fr) auto; }
-  .hl-sum-mascot { width: 72px; height: 72px; object-fit: contain; transform: scaleX(-1); filter: drop-shadow(0 2px 2px rgba(74,44,18,.3)); }
+  .hl-sum-mascot { position: relative; display: block; width: 84px; height: 84px; transform: scaleX(-1); filter: drop-shadow(0 2px 2px rgba(74,44,18,.3)); }
   .hl-sum-stats span { font-size: 12px; font-weight: 700; color: #000; }
   .hl-br { text-align: center; }
   .hl-br-label { font-size: 14px; font-weight: 700; color: #000; }
@@ -23191,7 +23191,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const sLi = document.createElement("li");
       sLi.className = "summary-row tw-sum";
       const hlAvg = data.hlOffRounds ? data.hlOffSum / data.hlOffRounds : null;
-      const hlPlayer = (e) => e ? `<div class="dc-card dc-hot tw-sumrow hl-sumplayer"><span class="avatar">${avatarHtml((currentPlayers[e.playerId] || {}).avatar)}</span><span class="name hl-has-chip"><span class="hl-nm">${escapeHtml(e.name || "")}</span>${e.role ? hlChipHtml(e.role) : ""}</span>${e.role ? `<img class="hl-sum-mascot" src="anim/high-low-art/${e.role === "high" ? "bird" : "shark"}.webp" alt="" draggable="false">` : ""}</div>` : "";
+      const hlPlayer = (e) => e ? `<div class="dc-card dc-hot tw-sumrow hl-sumplayer"><span class="avatar">${avatarHtml((currentPlayers[e.playerId] || {}).avatar)}</span><span class="name hl-has-chip"><span class="hl-nm">${escapeHtml(e.name || "")}</span>${e.role ? hlChipHtml(e.role) : ""}</span>${e.role ? `<span class="hl-sum-mascot hl-sum-${e.role === "high" ? "bird" : "shark"}">${mascotMarkup(e.role === "high" ? "hlbird" : "hlshark", lostOne ? "lose" : "win", { key: data.gameId + ":" + data.round + ":" + e.role, delay: 500, still: prefersReducedMotion() })}</span>` : ""}</div>` : "";
       const bottlesNow = data.hlLives ?? (data.settings?.lives || HL_LIVES);
       const lostOne = (data.hlLast?.previousLives ?? bottlesNow) > bottlesNow;
       sLi.innerHTML = hlPlayer(entries[0])

@@ -10,11 +10,13 @@ export const MASCOT_POSES = {
   bigger:{count:8,idle:[0,1],win:[2,3,4],soso:[0,1],lose:[5,6,7]},
   worlds:{count:6,idle:[0,1],win:[2,3],soso:[4,1],lose:[5]},
   teamworlds:{count:8,idle:[0,1],win:[2,3],soso:[4,5],lose:[6,7]},
+  hlbird:{count:6,idle:[0,1],win:[2,3],soso:[0,1],lose:[4,5]},
+  hlshark:{count:6,idle:[0,1],win:[2,3],soso:[0,1],lose:[4,5]},
   pig:{count:6,idle:[1,2],win:[0,3],soso:[1,2],lose:[4,5]},
 };
 // The recent expansion has two drawn connecting frames for every target pose.
 // Older Survival/Which Is Bigger rigs are intentionally outside this atlas.
-const MOTION_MASCOTS = new Set(['ant','cats','dogs','rooster','squirrel','raccoon','worlds','teamworlds','pig']);
+const MOTION_MASCOTS = new Set(['ant','cats','dogs','rooster','squirrel','raccoon','worlds','teamworlds','pig','hlbird','hlshark']);
 const stripCount = id => MASCOT_POSES[id].count * (MOTION_MASCOTS.has(id) ? 3 : 1);
 const asset = id => new URL(`../icons/mascot-poses/${id}${MOTION_MASCOTS.has(id)?'-motion':''}.webp`, import.meta.url).href;
 let podiumArtReady;
