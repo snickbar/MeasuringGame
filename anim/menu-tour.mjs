@@ -1,9 +1,10 @@
 const STEPS=[
  ['home-btn-row','Pick how to play','Solo to play on your own, Party to host friends, and Join to enter a friend\'s room.'],
  ['toolbar-awards-btn','Stats and Awards','Track your progress here. A red dot means a reward is waiting for you.'],
- ['toolbar-shop-btn','Shop','Spend the coins you earn in games on packs and extras.'],
+ ['toolbar-coin-balance','Shop and coins','Your pouch shows your coin balance. Tap it for offers, coins and capsules.'],
  ['toolbar-cosmetics-btn','Style','Choose your avatars, reactions, flairs, boards and scenes.'],
- ['toolbar-settings-btn','Menu','Settings, sound and How to Play live here. Replay this tour from Settings any time.'],
+ ['toolbar-settings-btn','Settings','Adjust sound, animation and other preferences. Replay this tour from Settings any time.'],
+ ['toolbar-menu-btn','Menu','Open How to Play or exit from this menu.'],
 ];
 
 export function createMenuTour({owner,canOffer,canReplay,goHome,storage}){

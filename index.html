@@ -4483,7 +4483,7 @@ if (location.protocol === "file:") {
 <div id="app-toolbar">
   <button id="toolbar-home-btn" class="toolbar-badge-btn" type="button" aria-label="Home"><img src="icons/toolbar-home.webp" alt=""></button>
   <div id="toolbar-center">
-    <button id="toolbar-coin-balance" type="button" data-no-autofit aria-label="Coins: open coin shop"><span id="toolbar-coin-picture" aria-hidden="true"><img id="toolbar-coin-icon" src="icons/coin-pouch/idle.webp" alt=""><img id="toolbar-coin-plus" src="icons/coin-pouch/plus.webp" alt=""></span><span id="toolbar-coin-box"><span id="toolbar-coin-count">0</span></span></button>
+    <button id="toolbar-coin-balance" class="toolbar-badge-btn coin-shop-btn" type="button" data-no-autofit aria-label="Shop and coin balance"><span id="toolbar-coin-picture" aria-hidden="true"><img id="toolbar-coin-icon" src="icons/coin-pouch/idle.webp" alt=""><img id="toolbar-coin-cart" src="icons/coin-pouch/cart.webp" alt=""></span><span id="toolbar-coin-box"><span id="toolbar-coin-count">0</span></span></button>
     <span id="toolbar-boost-tag" hidden></span>
     <script id="restore-visible-coins">
       // Restore presentation before the module/auth downloads can paint a temporary zero.
@@ -4497,15 +4497,14 @@ if (location.protocol === "file:") {
   </div>
   <div id="toolbar-right-group">
     <button id="toolbar-awards-btn" class="toolbar-badge-btn" type="button" aria-label="Stats"><img src="icons/toolbar-stats.webp" alt=""></button>
-    <button id="toolbar-shop-btn" class="toolbar-badge-btn" type="button" aria-label="Shop"><img src="icons/toolbar-shop.webp" alt=""></button>
     <button id="toolbar-cosmetics-btn" class="toolbar-badge-btn" type="button" aria-label="Style"><img src="icons/toolbar-cosmetics.webp" alt=""></button>
-    <button id="toolbar-settings-btn" class="toolbar-badge-btn" type="button" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><img src="icons/toolbar-menu.webp" alt=""></button>
+    <button id="toolbar-settings-btn" class="toolbar-badge-btn" type="button" aria-label="Settings"><img src="icons/toolbar-settings.webp" alt=""></button>
+    <button id="toolbar-menu-btn" class="toolbar-badge-btn" type="button" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><img src="icons/toolbar-menu.webp" alt=""></button>
   </div>
 </div>
 <div id="toolbar-menu" hidden role="menu">
   <button id="menu-tab" type="button" aria-label="Close menu"><img src="icons/toolbar-menu.webp" alt=""></button>
   <div id="menu-profile"><span id="menu-profile-avatar"></span><span class="menu-profile-text"><b id="menu-profile-name">Player</b><small id="menu-profile-rank"></small></span></div>
-  <button id="menu-settings-btn" class="menu-row" type="button" role="menuitem"><img src="icons/toolbar-settings.webp" alt=""><span>Settings</span></button>
   <button id="menu-howto-btn" class="menu-row" type="button" role="menuitem"><img src="icons/watch-play.webp" alt=""><span>How to play</span></button>
   <button id="toolbar-exit-btn" class="menu-row menu-row-exit" type="button" role="menuitem"><img src="icons/toolbar-exit.webp" alt=""><span>Exit</span></button>
   <div id="menu-version"></div>
@@ -6591,7 +6590,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function renderFreePullStar() {
     // Banked pulls are kept, but the star only shows while there is still something left to pull.
     const on = gachaFreePulls('any') > 0 && gachaAnyRemaining();
-    document.getElementById("toolbar-shop-btn")?.classList.toggle("has-free-pull", on);
+    document.getElementById("toolbar-coin-balance")?.classList.toggle("has-free-pull", on);
     document.querySelectorAll('.cosm-tab-btn[data-tab="capsules"]').forEach((b) => b.classList.toggle("has-free-pull", on));
   }
   const BOOSTER_MAX = 60;
@@ -10142,9 +10141,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const recentRoomsSection = document.getElementById("recent-rooms-section");
   const recentRoomsListEl = document.getElementById("recent-rooms-list");
   const toolbarHomeBtn = document.getElementById("toolbar-home-btn");
-  const toolbarShopBtn = document.getElementById("toolbar-shop-btn");
-  const toolbarCosmeticsBtn = document.getElementById("toolbar-cosmetics-btn");
   const toolbarSettingsBtn = document.getElementById("toolbar-settings-btn");
+  const toolbarCosmeticsBtn = document.getElementById("toolbar-cosmetics-btn");
+  const toolbarMenuBtn = document.getElementById("toolbar-menu-btn");
   const settingsHowtoBtn = document.getElementById("settings-howto-btn");
   document.getElementById("settings-privacy-btn").addEventListener("click", () => window.open("/privacy.html", "_blank", "noopener"));
   const toolbarExitBtn = document.getElementById("toolbar-exit-btn");
@@ -12165,7 +12164,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       } catch (e) {}
     }
     if (open) {
-      const r = toolbarSettingsBtn.getBoundingClientRect(), gap = 6;
+      const r = toolbarMenuBtn.getBoundingClientRect(), gap = 6;
       toolbarMenuEl.style.top = (r.bottom + gap) + "px";
       toolbarMenuEl.style.right = Math.max(0, innerWidth - (r.right + 5)) + "px";
       toolbarMenuEl.hidden = false;
@@ -12177,9 +12176,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     document.body.classList.toggle("menu-open", open);
     toolbarMenuEl.hidden = !open;
-    toolbarSettingsBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    toolbarMenuBtn.setAttribute("aria-expanded", open ? "true" : "false");
   }
-  toolbarSettingsBtn.addEventListener("click", (e) => { e.stopPropagation(); setToolbarMenu(toolbarMenuEl.hidden); });
+  toolbarMenuBtn.addEventListener("click", (e) => { e.stopPropagation(); setToolbarMenu(toolbarMenuEl.hidden); });
   document.addEventListener("click", (e) => { if (!toolbarMenuEl.hidden && !toolbarMenuEl.contains(e.target)) setToolbarMenu(false); });
   // Settings while a game is on: open it as a layer over the running game (the game keeps going underneath); Settings again, or
   // "Back to game", closes it. Covers the room games and the solo runs (their screens stay as they are underneath).
@@ -12201,12 +12200,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   settingsBackGameBtn.addEventListener("click", () => setSettingsOverGame(false));
   // If the game ends or you leave it while Settings is up, there is nothing to go back to.
   setInterval(() => { if (settingsOverGameOpen() && !canPeekSettings()) setSettingsOverGame(false); }, 400);
-  document.getElementById("menu-settings-btn").addEventListener("click", () => {
+  function openToolbarSettings() {
     setToolbarMenu(false);
     if (settingsOverGameOpen()) { setSettingsOverGame(false); return; }
     if (canPeekSettings()) { setSettingsOverGame(true); return; }
     guardToolbarNav(() => openOverlay(settingsScreen))();
-  });
+  }
+  toolbarSettingsBtn.addEventListener("click", openToolbarSettings);
   document.getElementById("menu-tab").addEventListener("click", (e) => { e.stopPropagation(); setToolbarMenu(false); });
   document.getElementById("howto-replay-tour-btn").addEventListener("click", () => document.getElementById("settings-menu-tour-btn").click());
   document.getElementById("menu-howto-btn").addEventListener("click", () => {
@@ -16707,8 +16707,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     setShopTab(tab || "coins");
   }
   // Offers is the first tab; until the Party unlock is owned the Shop always opens on it.
-  toolbarShopBtn.addEventListener("click", guardToolbarNav(() => openGachaScreen(myProfile.hostUnlocked ? lastShopTab : "hosting")));
-  toolbarCoinBalanceEl.addEventListener("click", guardToolbarNav(() => openGachaScreen("coins")));
+  toolbarCoinBalanceEl.addEventListener("click", guardToolbarNav(() => openGachaScreen("hosting")));
   toolbarCosmeticsBtn.addEventListener("click", guardToolbarNav(() => openGachaScreen(lastCosmTab)));
   document.querySelectorAll("#shop-tabs [data-tab]").forEach((btn) => {
     btn.addEventListener("click", () => setShopTab(btn.dataset.tab));
