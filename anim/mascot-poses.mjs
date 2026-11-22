@@ -12,7 +12,11 @@ export const MASCOT_POSES = {
   teamworlds:{count:8,idle:[0,1],win:[2,3],soso:[4,5],lose:[6,7]},
   pig:{count:6,idle:[1,2],win:[0,3],soso:[1,2],lose:[4,5]},
 };
-const asset = id => new URL(`../icons/mascot-poses/${id}.webp`, import.meta.url).href;
+// The recent expansion has two drawn connecting frames for every target pose.
+// Older Survival/Which Is Bigger rigs are intentionally outside this atlas.
+const MOTION_MASCOTS = new Set(['ant','cats','dogs','rooster','squirrel','raccoon','worlds','teamworlds','pig']);
+const stripCount = id => MASCOT_POSES[id].count * (MOTION_MASCOTS.has(id) ? 3 : 1);
+const asset = id => new URL(`../icons/mascot-poses/${id}${MOTION_MASCOTS.has(id)?'-motion':''}.webp`, import.meta.url).href;
 let podiumArtReady;
 export function preloadPodiumMascots(){
   if(typeof Image==='undefined')return Promise.resolve();
@@ -28,7 +32,7 @@ export function pickMascotReaction(id,mood,key='',random=Math.random){
   const spec=MASCOT_POSES[id];if(!spec)throw Error('Unknown mascot '+id);
   const signature=id+':'+mood+':'+key;
   if(reactionChoices.has(signature))return reactionChoices.get(signature);
-  const pool=spec[mood]||spec.idle,last=lastChoices.get(id+':'+mood),fresh=pool.filter(pose=>pose!==last),options=fresh.length?fresh:pool;
+  const pool=mood==='idle'&&MOTION_MASCOTS.has(id)?spec.idle.slice(1):spec[mood]||spec.idle,last=lastChoices.get(id+':'+mood),fresh=pool.filter(pose=>pose!==last),options=fresh.length?fresh:pool;
   const choice=options[Math.min(options.length-1,Math.floor(random()*options.length))];
   reactionChoices.set(signature,choice);lastChoices.set(id+':'+mood,choice);
   if(reactionChoices.size>1000)reactionChoices.delete(reactionChoices.keys().next().value);
@@ -39,6 +43,20 @@ export function mascotFrame(id,mood,age,key='',still=false) {
   const spec=MASCOT_POSES[id];if(!spec)throw Error('Unknown mascot '+id);
   const selected=pickMascotReaction(id,mood,key);
   if(still)return mood==='idle'?spec.idle[0]:selected;
+  if(MOTION_MASCOTS.has(id)) {
+    if(age<0)return spec.idle[0];
+    const rest=spec.idle[0],a=spec.count+selected*2,b=a+1;
+    // One selected gesture per answer, with a quiet beat between repetitions.
+    // The return path uses the same drawings in reverse, avoiding a snap to rest.
+    const beat=age%3600;
+    if(beat<650)return rest;
+    if(beat<770)return a;
+    if(beat<890)return b;
+    if(beat<2190)return selected;
+    if(beat<2310)return b;
+    if(beat<2430)return a;
+    return rest;
+  }
   const beat=Math.max(0,age)%4200;
   if(mood==='idle')return beat<2300?spec.idle[0]:beat<3300?selected:spec.idle[0];
   // Repeat this answer's chosen gesture; another answer gets a fresh random choice.
@@ -49,13 +67,13 @@ export function configureMascot(el,id,mood='idle',{key='',delay=0,still=false}={
   el.classList.add('mp-sprite');el.dataset.mascotId=id;el.dataset.mascotMood=mood;el.dataset.mascotKey=key;
   el.dataset.mascotDelay=String(delay);el.dataset.mascotStill=String(still);
   el.style.backgroundImage=`url("${asset(id)}")`;
-  el.style.backgroundSize=`${spec.count*100}% 100%`;
-  el.style.backgroundPosition=`${mascotFrame(id,mood,0,key,still)/(spec.count-1)*100}% 0`;
+  el.style.backgroundSize=`${stripCount(id)*100}% 100%`;
+  el.style.backgroundPosition=`${mascotFrame(id,mood,0,key,still)/(stripCount(id)-1)*100}% 0`;
 }
 export function mascotMarkup(id,mood='idle',{key='',delay=0,still=false,cls=''}={}) {
   const spec=MASCOT_POSES[id];if(!spec)throw Error('Unknown mascot '+id);
   const frame=mascotFrame(id,mood,0,key,still);
-  return `<span class="mp-sprite ${esc(cls)}" data-mascot-id="${id}" data-mascot-mood="${esc(mood)}" data-mascot-key="${esc(key)}" data-mascot-delay="${delay}" data-mascot-still="${still}" aria-hidden="true" style="background-image:url('${asset(id)}');background-size:${spec.count*100}% 100%;background-position:${frame/(spec.count-1)*100}% 0"></span>`;
+  return `<span class="mp-sprite ${esc(cls)}" data-mascot-id="${id}" data-mascot-mood="${esc(mood)}" data-mascot-key="${esc(key)}" data-mascot-delay="${delay}" data-mascot-still="${still}" aria-hidden="true" style="background-image:url('${asset(id)}');background-size:${stripCount(id)*100}% 100%;background-position:${frame/(stripCount(id)-1)*100}% 0"></span>`;
 }
 export function installMascotPoses({root=document,reducedMotion=()=>false,paused=()=>false}={}) {
   void preloadPodiumMascots();
@@ -74,8 +92,8 @@ export function installMascotPoses({root=document,reducedMotion=()=>false,paused
     const still=reducedMotion()||el.dataset.mascotStill==='true';
     if((doc.hidden||paused())&&!still)continue;
     const frame=mascotFrame(id,el.dataset.mascotMood,now-state.start-Number(el.dataset.mascotDelay||0),el.dataset.mascotKey,still);
-    if(frame!==state.frame){el.style.backgroundPosition=`${frame/(spec.count-1)*100}% 0`;el.dataset.pose=String(frame);state.frame=frame;}
-  }if(states.size)timer=setTimeout(tick,120);}
+    if(frame!==state.frame){el.style.backgroundPosition=`${frame/(stripCount(id)-1)*100}% 0`;el.dataset.pose=String(frame);state.frame=frame;}
+  }if(states.size)timer=setTimeout(tick,40);}
   const observer=new MutationObserver(scan);observer.observe(root,{childList:true,subtree:true,attributes:true,attributeFilter:['data-mascot-id','data-mascot-mood','data-mascot-key','data-mascot-still']});scan();
   return {refresh:scan,destroy(){clearTimeout(timer);observer.disconnect();states.clear();starts.clear();}};
 }
