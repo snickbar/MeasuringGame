@@ -4471,6 +4471,7 @@ if (location.protocol === "file:") {
 <link rel="stylesheet" href="anim/party-ant.css">
 <link rel="stylesheet" href="anim/coin-pouch.css">
 <link rel="stylesheet" href="anim/mascot-poses.css">
+<link rel="stylesheet" href="anim/learning-tutorials.css">
 </head>
 <body>
 
@@ -4944,6 +4945,10 @@ if (location.protocol === "file:") {
     <button id="play-tutorial-btn" type="button">Play tutorial</button>
   </section>
 
+  <section class="tutorial-learning" aria-label="Scoring and Style tutorials"><h2>Learn the basics</h2>
+    <button type="button" class="learning-launch" data-learning-tutorial="scoring" data-no-autofit><img src="icons/toolbar-stats.webp" alt=""><span>Scoring &amp; percentages<small>See the examples, then try a quick quiz</small></span></button>
+    <button type="button" class="learning-launch" data-learning-tutorial="style" data-no-autofit><img src="icons/toolbar-cosmetics.webp" alt=""><span>Style &amp; unlocks<small>Practice equipping and learn how to unlock more</small></span></button>
+  </section>
   <section class="tutorial-modes" aria-label="Game mode tutorials"><h2>Mode tutorials</h2><div id="tutorial-mode-list"></div><button id="howto-replay-tour-btn" type="button" class="tutorial-replay">Replay menu tour</button></section>
 
   <details class="howto-section"><summary>Solo Game</summary><div class="howto-body">
@@ -5479,6 +5484,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { setText } from "./anim/set-text.mjs";
   import { createPolish, applyMenuBanner, MENU_BANNERS, bannerMascot } from "./anim/game-polish.mjs";
   import { recentDiscoveries, recentlySeen, discoveryTiles, createDiscoveryPresentation } from "./anim/discoveries.mjs";
+  import { createLearningTutorials } from "./anim/learning-tutorials.mjs";
   import { createTutorial } from "./anim/tutorial.mjs";
   import { createMenuTour } from "./anim/menu-tour.mjs";
   import { styleSelectedIds, styleSelectionPatch } from "./anim/style-selection.mjs";
@@ -25076,6 +25082,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     canOffer:()=>!menuTourUI?.blocksPractice&&walletProfileOwner===deviceId&&walletAuthReady&&homeScreen.classList.contains('active')&&!document.hidden&&!document.querySelector('dialog[open]')&&!document.body.classList.contains('collecting-game-reward')&&!gameRewards?.pending,
   });
   document.getElementById('play-tutorial-btn').addEventListener('click',()=>tutorialUI.open());
+  createLearningTutorials({location:()=>ALL_SCREEN_ELS.find(el=>el.classList.contains('active'))?.id||''});
   modeTutorialUI = createModeTutorial({
     owner:()=>deviceId,
     sample:()=>({meter:(avg,sky)=>worldProgressBarHtml(avg,sky),unit:OBJECT_BY_ID.get('pencil'),target:OBJECT_BY_ID.get('door'),prompt:(()=>{try{return measurementQuestionPrompt(OBJECT_BY_ID.get('pencil'),OBJECT_BY_ID.get('door'));}catch(e){return '';}})(),answer:OBJECT_BY_ID.get('door').mm/OBJECT_BY_ID.get('pencil').mm,
