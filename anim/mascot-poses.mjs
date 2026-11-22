@@ -14,7 +14,7 @@ export const MASCOT_POSES = {
 };
 // The recent expansion has two drawn connecting frames for every target pose.
 // Older Survival/Which Is Bigger rigs are intentionally outside this atlas.
-const MOTION_MASCOTS = new Set(['ant','cats','dogs','rooster','squirrel','raccoon','worlds','teamworlds','pig']);
+const MOTION_MASCOTS = new Set(['ant','cats','dogs','rooster','squirrel','raccoon','worlds','pig']); // Team Worlds monkeys: no connecting strip yet (the old one had rocket ships)
 const stripCount = id => MASCOT_POSES[id].count * (MOTION_MASCOTS.has(id) ? 3 : 1);
 const asset = id => new URL(`../icons/mascot-poses/${id}${MOTION_MASCOTS.has(id)?'-motion':''}.webp`, import.meta.url).href;
 let podiumArtReady;

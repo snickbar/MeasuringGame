@@ -10132,7 +10132,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const members = Object.entries(players).filter(([, p]) => p.team === color);
       const mine = members.some(([id]) => id === currentPlayerId);
       const full = members.length >= 2;
-      const avatars = members.map(([pid, p]) => `<span class="avatar${canMoveToTeam(pid) ? " team-draggable" : ""}"${canMoveToTeam(pid) ? ` data-drag-pid="${pid}"` : ""} title="${escapeHtml(p.name || "")}">${avatarHtml(p.avatar)}</span>`).join("");
+      const avatars = members.map(([pid, p]) => { const hidden = !!(p.isBot && data.phase === "waiting"); // bots stay a secret in the lobby: a silhouette in their card colour, no name
+        return `<span class="avatar${canMoveToTeam(pid) ? " team-draggable" : ""}"${canMoveToTeam(pid) ? ` data-drag-pid="${pid}"` : ""} title="${hidden ? "???" : escapeHtml(p.name || "")}">${hidden ? mysteryAvatarHtml(p.frameIndex) : avatarHtml(p.avatar)}</span>`; }).join("");
       // border/background set directly inline rather than through --tc/--tc-bg custom
       // properties referenced from the stylesheet - the generic button{border-image-source:...}
       // rule kept winning over the class rule in testing despite border-image:none there, so
@@ -23350,13 +23351,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const badges = seats.map((e,seat) => e && e.rank !== [3,1,2][seat] ? '<div class="pd-rank-correction pd-badge-'+seat+'" aria-label="Shared place '+e.rank+'"><span class="medal '+(e.medal||'gold')+'"></span></div>' : '').join('');
     const mascotDelay = reduce ? 0 : impactAt + 250;
     const mascotHtml = mascots.map(([src, variant, reaction, openPose]) => {
-      const id=variant==='pd-m-ant'?'ant':src.includes('team-cats')?'cats':src.includes('team-dogs')?'dogs':null;
+      const id=variant==='pd-m-ant'?(reduce?'ant':null):src.includes('team-cats')?'cats':src.includes('team-dogs')?'dogs':null;
       if(id)return '<span class="pd-mascot mp-podium '+variant+'" aria-hidden="true">'+mascotMarkup(id,reaction==='clap'?'soso':'win',{key:roomState.gameId+':final:'+id,delay:mascotDelay,still:reduce})+'</span>';
       if (variant === "pd-m-ant" && !reduce) return `<span class="pd-mascot pd-m-ant" style="--pd-at:${mascotDelay}ms" aria-hidden="true">
         <img class="pd-ant-flag" src="${src}" alt="" draggable="false">
         <img class="pd-ant-step pd-ant-step-one" src="anim/mode-mascots/classic-ant-step-one.webp" alt="" draggable="false">
         <img class="pd-ant-step pd-ant-step-two" src="anim/mode-mascots/classic-ant-step-two.webp" alt="" draggable="false">
-        <img class="pd-ant-toss" src="anim/mode-mascots/classic-ant-toss.webp" alt="" draggable="false">
+        <span class="pd-ant-party">${mascotMarkup('ant','win',{key:roomState.gameId+':final:ant',delay:mascotDelay+720})}</span>
         <span class="pd-ant-confetti"><i></i><i></i><i></i><i></i><i></i><i></i></span>
       </span>`;
       if (reaction === "cheer" && openPose && !reduce) return `<span class="pd-mascot ${variant}" data-team-reaction="cheer" style="--pd-at:${mascotDelay}ms" aria-hidden="true">

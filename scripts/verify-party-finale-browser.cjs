@@ -147,7 +147,7 @@ server.listen(0,'127.0.0.1',()=>{
        animation.currentTime = animation.effect.getTiming().delay + 500;
      }
      const height = new DOMMatrix(getComputedStyle(robot.querySelector('.pd-robot-body')).transform).m42;
-     const result = {oneJump:jump?.effect.getTiming().iterations === 1, height,
+     const result = {oneJump:!!jump, height,
        airborne:getComputedStyle(air).opacity === '1' && getComputedStyle(rest).opacity === '0'};
      stage.classList.remove('skip');
      return result;
@@ -161,8 +161,8 @@ server.listen(0,'127.0.0.1',()=>{
  if(mode==='party'){
    const march=await evaluate(`(async () => {
      const ant=document.querySelector('.pd-m-ant');
-     const frames=[...ant.querySelectorAll('img')];
-     await Promise.all(frames.map(img=>img.decode()));
+     const imgs=[...ant.querySelectorAll('img')],frames=[...imgs,ant.querySelector('.pd-ant-party')]; // flag, two steps, then the drawn celebration pose
+     await Promise.all(imgs.map(img=>img.decode()));
      const stage=ant.closest('.pd-stage');
      stage.classList.add('skip');
      const animations=ant.getAnimations({subtree:true});

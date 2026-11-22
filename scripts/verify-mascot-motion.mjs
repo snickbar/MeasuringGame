@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { MASCOT_POSES, mascotFrame, pickMascotReaction, mascotMarkup } from '../anim/mascot-poses.mjs';
 
-const ids=['ant','cats','dogs','rooster','squirrel','raccoon','worlds','teamworlds','pig'];
+const ids=['ant','cats','dogs','rooster','squirrel','raccoon','worlds','pig'];
 for(const id of ids)for(const mood of ['idle','win','soso','lose']) {
   const spec=MASCOT_POSES[id],key=`verify:${id}:${mood}`;
   const selected=pickMascotReaction(id,mood,key,()=>.4),rest=spec.idle[0];
@@ -18,4 +18,4 @@ for(const id of ids)for(const mood of ['idle','win','soso','lose']) {
 }
 assert(!mascotMarkup('survival','win').includes('survival-motion'));
 assert(!mascotMarkup('bigger','win').includes('bigger-motion'));
-console.log('Nine recent mascot sets: connecting frames, reverse path, stable choices, delay and reduced motion verified. Older rigs retain their existing assets.');
+console.log('Eight recent mascot sets: connecting frames, reverse path, stable choices, delay and reduced motion verified. Older rigs retain their existing assets.');
