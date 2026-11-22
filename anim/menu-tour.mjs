@@ -4,7 +4,7 @@ const STEPS=[
  ['toolbar-coin-balance','Shop and coins','Your pouch shows your coin balance. Tap it for offers, coins and capsules.'],
  ['toolbar-cosmetics-btn','Style','Choose your avatars, reactions, flairs, boards and scenes.'],
  ['toolbar-settings-btn','Settings','Adjust sound, animation and other preferences. Replay this tour from Settings any time.'],
- ['toolbar-menu-btn','Menu','Open How to Play or exit from this menu.'],
+ ['toolbar-menu-btn','Menu','Open How to Play & Tutorials or exit from this menu.'],
 ];
 
 export function createMenuTour({owner,canOffer,canReplay,goHome,storage}){
