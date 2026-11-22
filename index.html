@@ -23137,7 +23137,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return `<i style="left:${x}%;top:${y}%;--star-size:${size}px;--twinkle-speed:${speed.toFixed(2)}s;--twinkle-offset:-${phase.toFixed(2)}s"></i>`;
     }).join("");
     return `<div class="tw-space${final ? " tw-space--final" : ""}" data-mood="${mood}" aria-hidden="true">
-      <div class="tw-space-stars">${stars}</div><div class="tw-space-planet"></div>
+      <div class="tw-space-stars"><div class="tw-space-set">${stars}</div><div class="tw-space-set">${stars}</div></div><div class="tw-space-planet"></div>${final ? '<i class="tw-space-shoot"></i>' : ""}
       <div class="tw-space-flight"><div class="tw-space-float">
         ${mascotMarkup("teamworlds",mood==="up"?"win":mood==="down"?"lose":"soso",{key:reactionKey||String(final)+":"+mood,delay:650,still:reduced})}
         ${!reduced && mood === "up" ? '<i class="tw-space-spark"></i>' : ""}
@@ -23147,6 +23147,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function twSpaceScene(row) {
     const scene = row.querySelector(".tw-space"), pose = scene.querySelector(".tw-space-reaction");
     if (pose) pose.decode().then(() => scene.classList.add("pose-ready"), () => {});
+    // Final results: an occasional shooting star at a random spot and time.
+    const shoot = scene.querySelector(".tw-space-shoot");
+    if (shoot && !prefersReducedMotion()) {
+      const fire = () => {
+        if (!scene.isConnected) return;
+        shoot.style.setProperty("--sx", (5 + Math.random() * 55).toFixed(1) + "%");
+        shoot.style.setProperty("--sy", (6 + Math.random() * 45).toFixed(1) + "%");
+        shoot.classList.remove("go"); void shoot.offsetWidth; shoot.classList.add("go");
+        setTimeout(fire, 3500 + Math.random() * 6500);
+      };
+      setTimeout(fire, 1500 + Math.random() * 3000);
+    }
     return scene;
   }
   let twSummarySig = null;

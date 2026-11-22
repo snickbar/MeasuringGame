@@ -65,7 +65,7 @@ window.__monkeyRoundPreview = accuracy => {
  withoutCareerSave(()=>{applyPhase(roomState);renderSummary(roomState);});
 };
 window.__checkSpaceStars = (scene, count) => {
- const field=scene.querySelector('.tw-space-stars');
+ const field=scene.querySelector('.tw-space-set');
  const stars=[...field.children], styles=stars.map(star=>getComputedStyle(star));
  return stars.length===count && getComputedStyle(field).backgroundImage==='none' &&
    new Set(stars.map(star=>star.style.left+','+star.style.top)).size>count-2 &&
