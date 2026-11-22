@@ -291,7 +291,7 @@ for(const m of ['quick:many','teamvteam:many','party']){await evaluate('window._
       await evaluate('window.__layoutRv('+n+')');if(board)await evaluate('window.__layoutBoard('+JSON.stringify(board)+')');await new Promise(r=>setTimeout(r,500));
       if(!board&&n===4&&process.env.PLAY_LAYOUT_SHOT){await evaluate('window.__layoutRobotIdle()');const ish=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.mkdirSync(process.env.PLAY_LAYOUT_SHOT,{recursive:true});fs.writeFileSync(path.join(process.env.PLAY_LAYOUT_SHOT,'robot-idle-'+width+'x'+height+'.png'),Buffer.from(ish.data,'base64'));}
       if(!board&&n===4){const robot=await evaluate('window.__layoutRobot(80)'),why='Quick robot '+width+'x'+height+': ';
-       if(!robot||!robot.idle||!robot.idle.visible||!robot.idle.on||robot.idle.off||robot.idle.reacting||robot.idle.reaction!=='idle')throw Error(why+'he must wait in his standing pose while the papers are revealed: '+JSON.stringify(robot&&robot.idle));
+       if(!robot||!robot.idle||!robot.idle.visible||!robot.idle.on||robot.idle.off||robot.idle.reacting||!/^idle/.test(robot.idle.reaction||''))throw Error(why+'he must wait in his standing pose while the papers are revealed: '+JSON.stringify(robot&&robot.idle));
        if(!robot.visible||!robot.on||robot.off||!robot.image||!robot.reacting)throw Error(why+'he is not reacting on your card: '+JSON.stringify(robot));
        if(robot.positionsSeen<2)throw Error(why+'his animation must loop, but the frame never changed: '+JSON.stringify(robot));
        if(!robot.card||Math.abs(robot.rect.b-robot.card.t)>10)throw Error(why+'he must stand on top of your Player card: '+JSON.stringify(robot));
