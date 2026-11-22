@@ -13,6 +13,15 @@ export const MASCOT_POSES = {
   pig:{count:6,idle:[1,2],win:[0,3],soso:[1,2],lose:[4,5]},
 };
 const asset = id => new URL(`../icons/mascot-poses/${id}.webp`, import.meta.url).href;
+let podiumArtReady;
+export function preloadPodiumMascots(){
+  if(typeof Image==='undefined')return Promise.resolve();
+  return podiumArtReady ||= Promise.all([
+    ...['ant','cats','dogs'].map(asset),
+    new URL('./mode-mascots/quick-robot-landing.webp',import.meta.url).href,
+    new URL('./mode-mascots/quick-robot-airborne.webp',import.meta.url).href,
+  ].map(src=>{const image=new Image();image.src=src;return image.decode().catch(()=>{});}));
+}
 const esc = value => String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const seed = key => {let n=0;for(const c of String(key))n=(Math.imul(n,31)+c.charCodeAt(0))>>>0;return n;};
 export const mascotMood = accuracy => accuracy>=60?'win':accuracy>=40?'soso':'lose';
@@ -40,6 +49,7 @@ export function mascotMarkup(id,mood='idle',{key='',delay=0,still=false,cls=''}=
   return `<span class="mp-sprite ${esc(cls)}" data-mascot-id="${id}" data-mascot-mood="${esc(mood)}" data-mascot-key="${esc(key)}" data-mascot-delay="${delay}" data-mascot-still="${still}" aria-hidden="true" style="background-image:url('${asset(id)}');background-size:${spec.count*100}% 100%;background-position:${frame/(spec.count-1)*100}% 0"></span>`;
 }
 export function installMascotPoses({root=document,reducedMotion=()=>false,paused=()=>false}={}) {
+  void preloadPodiumMascots();
   const doc=root.ownerDocument||root,states=new Map(),starts=new Map();let timer=0;
   const scan=()=>{
     const live=new Set(root.querySelectorAll('[data-mascot-id]'));
