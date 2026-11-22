@@ -1036,9 +1036,11 @@ function timelineFor(R, bigLean, smLean, styledFirst = false, cameraLed = false)
     const starts = [];
     const tLeanStart = bigLean ? BIG_WALK : BIG_S;
     const tLeanEnd = bigLean ? BIG_WALK + BIG_LEAN : BIG_S;
-    let tZ0 = tLeanEnd + BIG_HOLD;
-    let tZ1 = tZ0 + 0.75;
-    let tt = cameraLed ? tZ0 : tZ1 - 0.1;
+    const tZ0 = tLeanEnd + BIG_HOLD;
+    const tZ1 = tZ0 + (cameraLed ? 1.15 : 0.75);
+    // A large comparison's overview can make a single small object sub-pixel-sized.
+    // Finish the preview camera move before any small objects start entering.
+    let tt = cameraLed ? tZ1 + .06 : tZ1 - .1;
     const whole = Math.floor(R + 1e-9);
     const nHop = Math.min(K_MAX, whole);
     const durs = [];
@@ -1058,14 +1060,6 @@ function timelineFor(R, bigLean, smLean, styledFirst = false, cameraLed = false)
       gapLast = Math.max(0.07, 0.36 * Math.pow(0.86, i));
       // While the first few come along the ground the next one waits until this one starts to jump.
       tt += i < GROUND_N ? (i === 0 ? dur * 0.8 : approachOf(i) * 0.85 + 0.12) : gapLast;
-    }
-    if(cameraLed && nHop >= 4){
-      // Let the first three copies land before the camera moves. Subsequent arrivals wait
-      // until the move has finished; this timeline is requested only by the Debug viewer.
-      tZ0=starts[2]+durs[2]+.25;
-      tZ1=tZ0+1.15;
-      const delay=Math.max(0,tZ1+.08-starts[3]);
-      for(let i=3;i<nHop;i++)starts[i]+=delay;
     }
     const lastLand = starts[nHop - 1] + durs[nHop - 1];
 
@@ -1929,6 +1923,7 @@ export function createStackAnimation(container, options = {}) {
         return { ...targetFrame(t, { ...cam, sx0: stackX, c: cam.c * zoom }), stackX, floorY: cam.sy0, groundScale: groundScaleFor(cam.c, cEnd) }; },
       cameraMotion: cameraLed ? 'camera-led' : 'current',
       cameraPhases: cameraLed ? { moveInStart: tZ0*PLAYBACK_TIME_SCALE, moveInEnd: tZ1*PLAYBACK_TIME_SCALE,
+        firstArrival: starts[0]*PLAYBACK_TIME_SCALE, firstLanding: (starts[0]+durs[0])*PLAYBACK_TIME_SCALE,
         pullbackStart: tHoldEnd*PLAYBACK_TIME_SCALE } : undefined,
       duration: tEnd * PLAYBACK_TIME_SCALE,
       cues: cues.map(cue => ({ ...cue, t: cue.t * PLAYBACK_TIME_SCALE })),
