@@ -49,6 +49,6 @@ strip = s1 + [f for p in range(8) for f in between[p]]
 def write(frames, name):
     sheet = Image.new("RGBA", (CELL * len(frames), CELL), (0, 0, 0, 0))
     for i, f in enumerate(frames): sheet.alpha_composite(f, (i * CELL, 0))
-    sheet.save(root / "icons/mascot-poses" / name, quality=92)
+    sheet.save(root / "icons/mascot-poses" / name, quality=80, method=6)
     print(name, sheet.size)
 write(s1, "teamworlds.webp"); write(strip, "teamworlds-motion.webp")
