@@ -23,16 +23,25 @@ export function preloadPodiumMascots(){
   ].map(src=>{const image=new Image();image.src=src;return image.decode().catch(()=>{});}));
 }
 const esc = value => String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const seed = key => {let n=0;for(const c of String(key))n=(Math.imul(n,31)+c.charCodeAt(0))>>>0;return n;};
+const reactionChoices=new Map(),lastChoices=new Map();
+export function pickMascotReaction(id,mood,key='',random=Math.random){
+  const spec=MASCOT_POSES[id];if(!spec)throw Error('Unknown mascot '+id);
+  const signature=id+':'+mood+':'+key;
+  if(reactionChoices.has(signature))return reactionChoices.get(signature);
+  const pool=spec[mood]||spec.idle,last=lastChoices.get(id+':'+mood),fresh=pool.filter(pose=>pose!==last),options=fresh.length?fresh:pool;
+  const choice=options[Math.min(options.length-1,Math.floor(random()*options.length))];
+  reactionChoices.set(signature,choice);lastChoices.set(id+':'+mood,choice);
+  if(reactionChoices.size>1000)reactionChoices.delete(reactionChoices.keys().next().value);
+  return choice;
+}
 export const mascotMood = accuracy => accuracy>=60?'win':accuracy>=40?'soso':'lose';
 export function mascotFrame(id,mood,age,key='',still=false) {
   const spec=MASCOT_POSES[id];if(!spec)throw Error('Unknown mascot '+id);
-  const pool=spec[mood]||spec.idle, offset=seed(id+':'+key), cycle=Math.floor(Math.max(0,age)/4200);
-  const selected=pool[(offset+cycle)%pool.length];
-  if(still)return mood==='idle'?spec.idle[0]:pool[offset%pool.length];
+  const selected=pickMascotReaction(id,mood,key);
+  if(still)return mood==='idle'?spec.idle[0]:selected;
   const beat=Math.max(0,age)%4200;
-  if(mood==='idle')return beat<2300?spec.idle[0]:beat<3300?pool[(offset+cycle)%pool.length]:spec.idle[0];
-  // A beat of anticipation, the new reaction, a brief resting transition, then replay.
+  if(mood==='idle')return beat<2300?spec.idle[0]:beat<3300?selected:spec.idle[0];
+  // Repeat this answer's chosen gesture; another answer gets a fresh random choice.
   return beat<450?spec.idle[0]:beat<2900?selected:beat<3300?spec.idle[0]:selected;
 }
 export function configureMascot(el,id,mood='idle',{key='',delay=0,still=false}={}) {

@@ -92,8 +92,7 @@ export function createPartyAnt({ hud, cardFor, reduceMotion = () => false }) {
     calmTimer = setTimeout(() => {
       if (standKey !== key) return;
       replay(name);
-      // after a reaction he goes back to waiting, except the winner's celebration, which he keeps through the summary
-      if (name !== "win") calmTimer = setTimeout(() => { if (standKey === key) replay("idle"); }, 3600);
+      // Keep this answer’s chosen reaction looping until the next answer is revealed.
     }, 300); // `revealIndex` only counts papers that are completely revealed, flair included; a short beat, then he reacts
   }
 

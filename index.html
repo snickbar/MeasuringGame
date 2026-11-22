@@ -12569,7 +12569,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function soloScoreMascotHtml(art, reaction, { animate = true, sunriseStep = null, foreground = "" } = {}) {
     const sunrise = sunriseStep !== null, id=sunrise?'rooster':'squirrel';
     const mood=reaction==='cheer'||reaction==='pleased'?'win':reaction==='deflated'?'lose':'soso';
-    const key=sunrise?(daily?.date+':'+sunriseStep):(mo?.key+':'+mo?.level+':'+mo?.guesses?.length);
+    const key=sunrise?(daily?.date+':'+sunriseStep):((mo?.runId||mo?.key)+':'+mo?.level+':'+mo?.guesses?.length);
     return '<div class="solo-score-mascot '+(sunrise?'dc-rooster':'mo-squirrel')+' solo-score-'+reaction+'" aria-hidden="true">'+
       (sunrise?'<span class="dc-rooster-sun" style="--dc-sun-height:'+([24,34,44,55][sunriseStep])+'%"></span>':'')+
       '<span class="solo-score-pose">'+mascotMarkup(id,mood,{key,delay:550,still:prefersReducedMotion()})+'</span>'+foreground+'</div>';
@@ -14080,7 +14080,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   const WORLD_LEVELS = 5, WORLD_Q = 5, WORLD_STAR_AT = [60, 75, 90], WORLD_STAR_COINS = 5;
   const WORLD_LEVEL_NAMES = ["Warm-up", "Getting there", "Tricky", "Tough", "Expert"];
-  const WORLD_ICON = { tiny: "ant", home: "refrigerator", gadgets: "hammer", bedroom: "queen-size-bed", wild: "lion", "birds-bugs": "owl", food: "donut", town: "traffic-light", critters: "domestic-cat", wheels: "fighter-jet", landmarks: "eiffel-tower", "under-the-sea": "seahorse", "toy-box": "action-figure", "make-believe": "unicorn", "holiday-mix": "christmas-tree" };
+  const WORLD_ICON = { retro: "arcade-machine", tiny: "ant", home: "refrigerator", gadgets: "hammer", bedroom: "queen-size-bed", wild: "lion", "birds-bugs": "owl", food: "donut", town: "traffic-light", critters: "domestic-cat", wheels: "fighter-jet", landmarks: "eiffel-tower", "under-the-sea": "seahorse", "toy-box": "action-figure", "make-believe": "unicorn", "holiday-mix": "christmas-tree" };
   // Monthly/holiday objects that can also show up in a World, but ONLY while available to the player (this month's pack,
   // a pack they own, or the sampler). They are extras: they never count toward a World's own object totals.
   const WORLD_EXTRAS = {
@@ -14227,6 +14227,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return `<div class="cozy-panel"><div class="cs-tiles">${statTile(data.best||0,'Best run')}${statTile(data.runs||0,'Runs finished')}${noAvg?'':statTile(stats.answered?formatAccuracy(stats.accuracyTotal/stats.answered)+'%':'—','Average accuracy')}</div>${history.length?'<h3>Recent runs</h3><div class="sv-runs">'+history.map((r,i)=>{const top=Math.max(data.best||0,...history.map(x=>x.survived||0),1),isBest=(r.survived||0)>0&&r.survived>=(data.best||0);return '<div class="sv-run'+(isBest?' best':'')+(i===0?' latest':'')+'"><img class="sv-run-ic" src="icons/life-heart-full.webp" alt="" draggable="false"><span class="sv-run-n"><b>'+r.survived+'</b> survived</span><span class="sv-run-bar"><i style="width:'+Math.max(6,Math.round((r.survived||0)/top*100))+'%"></i></span><span class="sv-run-acc">'+formatAccuracy(r.accuracy)+'%</span>'+(isBest?'<em class="sv-run-tag">Best</em>':i===0?'<em class="sv-run-tag new">Latest</em>':'')+'</div>';}).join('')+'</div>':''}</div>`;
   }
   function worldStop() { if (wlAnim) { try { wlAnim.destroy(); } catch (e) {} wlAnim = null; } }
+  function worldIconSrc(world) {
+    const object=OBJECT_BY_ID.get(WORLD_ICON[world.id]) || (world.ids||[]).map(id=>OBJECT_BY_ID.get(id)).find(Boolean);
+    return object?.image || 'items/hot-air-balloon.webp';
+  }
   function openWorlds() {
     wl.phase = "list";
     const fromHub = soloScreenEl.classList.contains("active");
@@ -14276,7 +14280,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         WORLDS.map((x, i) => {
           const open = worldUnlocked(i), st = worldStarsOf(x.id);
           const sub = open ? worldMeterHtml(x.id) : (x.unlockCount ? `Locked: ${Math.min(unlockedFantasyIds().length, x.unlockCount)} of ${x.unlockCount} creatures unlocked` : x.unlockHolidays ? `Locked: finish ${x.unlockHolidays} holiday Monthly Challenges (${Math.min(holidayMonthsPlayed().length, x.unlockHolidays)} of ${x.unlockHolidays})` : `Locked: get 2 stars on Level 5 of ${WORLDS[i - 1].name}`);
-          return worldCard("wl-world-" + i, OBJECT_BY_ID.get(WORLD_ICON[x.id]).image, x.name, sub, { disabled: !open, isNew: worldIsNew(i), saved: wlSaved && wlSaved.wi === i, hot: open && st === 0 && (i === 0 || x.unlockCount || x.unlockHolidays || worldStarsOf(WORLDS[i - 1].id) > 0) });
+          return worldCard("wl-world-" + i, worldIconSrc(x), x.name, sub, { disabled: !open, isNew: worldIsNew(i), saved: wlSaved && wlSaved.wi === i, hot: open && st === 0 && (i === 0 || x.unlockCount || x.unlockHolidays || worldStarsOf(WORLDS[i - 1].id) > 0) });
         }).join("");
       worldProgressPolish.apply(el, null);
       return;
@@ -14543,7 +14547,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<h2 class="dc-title">Team Worlds</h2>${tourBtn('teamworlds')}` +
         WORLDS.map((x, i) => {
           const open = worldUnlocked(i);
-          return worldCard("tw-world-" + i, OBJECT_BY_ID.get(WORLD_ICON[x.id]).image, x.name, open ? "Play it together" : (x.unlockHolidays ? "Finish 2 holiday Monthly Challenges first" : "Unlock this World in Solo first"), { disabled: !open });
+          return worldCard("tw-world-" + i, worldIconSrc(x), x.name, open ? "Play it together" : (x.unlockHolidays ? "Finish 2 holiday Monthly Challenges first" : "Unlock this World in Solo first"), { disabled: !open });
         }).join("") + `<h3 class="cs-h">Your best team games</h3>${teamWorldsOverallBestHtml()}`;
       return;
     }
@@ -23076,7 +23080,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const p = currentPlayers[id] || {};
     return `<div class="dc-card dc-hot tw-sumrow"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name || "Player")}</span><span class="tw-sumrow-said">no answer</span><b class="tw-sumrow-pct">0%</b>${markSvg(0)}</div>`;
   }
-  function twSpaceHtml(mood, reduced, final = false) {
+  function twSpaceHtml(mood, reduced, final = false, reactionKey = "") {
     const pose = mood === "up" ? "happy" : mood === "down" ? "sad" : "calm";
     const image = (name, cls) => `<img class="${cls}" src="anim/mode-mascots/teamworlds-monkeys-${name}.webp" width="560" height="469" alt="" draggable="false">`;
     const stars = Array.from({ length: final ? 40 : 25 }, (_, i) => {
@@ -23088,7 +23092,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return `<div class="tw-space${final ? " tw-space--final" : ""}" data-mood="${mood}" aria-hidden="true">
       <div class="tw-space-stars">${stars}</div><div class="tw-space-planet"></div>
       <div class="tw-space-flight"><div class="tw-space-float">
-        ${mascotMarkup("teamworlds",mood==="up"?"win":mood==="down"?"lose":"soso",{key:String(final)+":"+mood,delay:650,still:reduced})}
+        ${mascotMarkup("teamworlds",mood==="up"?"win":mood==="down"?"lose":"soso",{key:reactionKey||String(final)+":"+mood,delay:650,still:reduced})}
         ${!reduced && mood === "up" ? '<i class="tw-space-spark"></i>' : ""}
       </div></div>
     </div>`;
@@ -23167,7 +23171,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     li.className = "summary-row tw-sum tw-sum-space";
     li.innerHTML = twQTopHtml(q, ans)
       + (twSumSlot(entries, 0, data)) + `<div class="dc-card dc-hot tw-avg"><div class="tw-avg-label">Your average this game</div><div class="tw-avg-num">${formatAccuracy(runningAvg == null ? roundAccuracyPct : (startAvg == null ? runningAvg : startAvg))}%</div>${worldProgressBarHtml(startAvg, true)}</div>`
-      + twSumSlot(entries, 1, data) + twSpaceHtml(mood, reduced);
+      + twSumSlot(entries, 1, data) + twSpaceHtml(mood, reduced, false, data.gameId+":"+data.round);
     summaryListEl.appendChild(li);
     if (runningAvg == null || reduced) return;
     const scene = twSpaceScene(li);
@@ -23642,7 +23646,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <span class="tw-fin-world">${escapeHtml(w?.name || "")}</span>
         ${gain ? `<span class="tw-fin-coins">+${gain} coins</span>` : ""}
       </div>
-      ${twSpaceHtml(stars > 0 ? "up" : "down", reduced, true)}
+      ${twSpaceHtml(stars > 0 ? "up" : "down", reduced, true, roomState.gameId+":final")}
     `;
     finalListEl.appendChild(li);
     const scene = twSpaceScene(li);
@@ -25282,4 +25286,5 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 </script>
 </body>
 </html>
+
 
