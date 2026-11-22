@@ -9,8 +9,10 @@ export function cameraLedFraming({phase,progress,width,gutter,initialStackX,init
   const climbStackX=Math.max(gutter+closeStackWidth/2,rightAnchor-targetWidthWorld-closeStackWidth/2-clearance);
   let stackX,gap;
   if(phase==='in'){
-    gap=mix(targetGapWorld*initialScale,stackWidth/2+clearance,progress);
-    stackX=Math.max(gutter+stackWidth/2,rightAnchor-targetWidthWorld*scale-gap);
+    // Interpolate both endpoints together. Re-solving the packing every frame can
+    // reverse direction when a very wide target first touches the viewport edge.
+    stackX=mix(initialStackX,climbStackX,progress);
+    gap=mix(targetGapWorld*initialScale,closeStackWidth/2+clearance,progress);
   }else if(phase==='out'){
     stackX=mix(climbStackX,initialStackX,progress);
     gap=mix(stackWidth/2+clearance,targetGapWorld*scale,progress);
