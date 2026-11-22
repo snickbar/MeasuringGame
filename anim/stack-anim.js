@@ -1245,6 +1245,9 @@ export function createStackAnimation(container, options = {}) {
   container.append(guessEl);
 
   let raf = 0;
+  // Live clock for the scenery (skaters, water, lights): it runs from the first frame and keeps running while the final picture is held,
+  // instead of following the (clamped) scene time, which sat still for the lead-in and froze at the end. null = use the scene time.
+  let sceneryClock = null;
   let runId = 0;
   let destroyed = false;
 
@@ -1723,7 +1726,7 @@ export function createStackAnimation(container, options = {}) {
       ctx.fillStyle = sky;
       ctx.fillRect(0, 0, W, stageH);
       drawSceneryLayers(ctx, kit, { width: W, height: stageH, floorY, shiftY: sy0 - floorY,
-        shiftX: cam.sx0 - colCenterX, dark, time: t, reduced: reduceMotion, groundScale, anchorX: colCenterX, pass: 'background', climbPx });
+        shiftX: cam.sx0 - colCenterX, dark, time: sceneryClock ?? t, reduced: reduceMotion, groundScale, anchorX: colCenterX, pass: 'background', climbPx });
       const span = stageH + 160;
       const cloudScale = clamp(Math.pow(c, 0.12), 0.7, 1);
       if (kit.config.clouds && cloudImg.complete && cloudImg.naturalWidth) {
@@ -1739,7 +1742,7 @@ export function createStackAnimation(container, options = {}) {
         ctx.globalAlpha = 1;
       }
       drawSceneryLayers(ctx, kit, { width: W, height: stageH, floorY, shiftY: sy0 - floorY,
-        shiftX: cam.sx0 - colCenterX, dark, time: t, reduced: reduceMotion, groundScale, anchorX: colCenterX, pass: 'foreground', climbPx,
+        shiftX: cam.sx0 - colCenterX, dark, time: sceneryClock ?? t, reduced: reduceMotion, groundScale, anchorX: colCenterX, pass: 'foreground', climbPx,
         behindFloor: { floorY: sy0, shiftY: sy0 - floorY, shiftX: colCenterX - cam.sx0, anchorX: colCenterX } });
       const sceneryFloorY = sy0;
       if (!kit.config.avenue && !kit.config.rooftop && !kit.config.coast && !kit.config.square && !kit.config.town && !kit.config.fittedFloor && !kit.config.floorBehind && sceneryFloorY < stageH) {
@@ -1759,7 +1762,7 @@ export function createStackAnimation(container, options = {}) {
         }
       }
       if (kit.config.floor && !kit.config.floorBehind) drawSceneryFloor(ctx, kit, FLOOR_DATA[kit.config.floor], {
-        width: W, height: stageH, floorY: sceneryFloorY, shiftY: sy0 - floorY, shiftX: colCenterX - cam.sx0, groundScale, anchorX: colCenterX, dark, time: t, reduced: reduceMotion,
+        width: W, height: stageH, floorY: sceneryFloorY, shiftY: sy0 - floorY, shiftX: colCenterX - cam.sx0, groundScale, anchorX: colCenterX, dark, time: sceneryClock ?? t, reduced: reduceMotion,
       });
 
       // The dashed line at the big object's height.
@@ -2174,7 +2177,7 @@ export function createStackAnimation(container, options = {}) {
       ctx.fillRect(0, 0, W, stageH);
       const pan = (cam.cx - W / 2) * cam.s;
       drawSceneryLayers(ctx, kit, { width: W, height: stageH, floorY, shiftY: 0, shiftX: -pan * 0.3,
-        dark, time: t, reduced: reduceMotion, groundScale, anchorX: W / 2, pass: 'background' });
+        dark, time: sceneryClock ?? t, reduced: reduceMotion, groundScale, anchorX: W / 2, pass: 'background' });
       if (kit.config.clouds && cloudImg.complete && cloudImg.naturalWidth) {
         ctx.globalAlpha = isNight(kit.config, dark) ? cloudAlpha * .28 : cloudAlpha;
         const span = stageH + 160;
@@ -2187,7 +2190,7 @@ export function createStackAnimation(container, options = {}) {
         ctx.globalAlpha = 1;
       }
       drawSceneryLayers(ctx, kit, { width: W, height: stageH, floorY, shiftY: 0, shiftX: -pan * 0.3,
-        dark, time: t, reduced: reduceMotion, groundScale, anchorX: W / 2, pass: 'foreground',
+        dark, time: sceneryClock ?? t, reduced: reduceMotion, groundScale, anchorX: W / 2, pass: 'foreground',
         behindFloor: { floorY, shiftX: pan, anchorX: W / 2 } });
       if (!kit.config.avenue && !kit.config.rooftop && !kit.config.coast && !kit.config.square && !kit.config.town && !kit.config.fittedFloor && !kit.config.floorBehind) {
         ctx.fillStyle = groundCol;
@@ -2202,7 +2205,7 @@ export function createStackAnimation(container, options = {}) {
         for (let gx = x0; gx < W; gx += grassW) ctx.drawImage(grassImg, gx, gTop, grassW + 1, gh);
       }
       if (kit.config.floor && !kit.config.floorBehind) drawSceneryFloor(ctx, kit, FLOOR_DATA[kit.config.floor], {
-        width: W, height: stageH, floorY, shiftX: pan, groundScale, anchorX: W / 2, dark, time: t, reduced: reduceMotion,
+        width: W, height: stageH, floorY, shiftX: pan, groundScale, anchorX: W / 2, dark, time: sceneryClock ?? t, reduced: reduceMotion,
       });
 
       // The second object (behind the first in draw order only when it is the bigger one, so it never hides the pick).
@@ -2308,14 +2311,16 @@ export function createStackAnimation(container, options = {}) {
       return;
     }
     let last = now();
+    const clock0 = last;
     const cues = scene.cues || [];
-    let cueAt = 0;
+    let cueAt = 0, doneCalled = false;
     function frame() {
       if (destroyed || my !== runId) return;
       const clockNow = now();
       const t = Math.min(scene.duration, (clockNow - startAt) / 1000);
       const dt = Math.max(0, (clockNow - last) / 1000);
       last = clockNow;
+      sceneryClock = (clockNow - clock0) / 1000;
       scene.render(t, dt);
       if (opts.onFrame) opts.onFrame(t, scene.getShown());
       // Sound cues: each fires once as the clock passes it. Ones that are already well behind
@@ -2325,13 +2330,18 @@ export function createStackAnimation(container, options = {}) {
         if (opts.onCue && t - c.t < 0.3) opts.onCue(c);
       }
       if (t < scene.duration) raf = requestAnimationFrame(frame);
-      else done();
+      else {
+        if (!doneCalled) { doneCalled = true; done(); }
+        // Hold on the final picture, but keep the scenery moving.
+        if (!destroyed && my === runId && canvas.isConnected) raf = requestAnimationFrame(frame);
+      }
     }
     raf = requestAnimationFrame(frame);
   }
 
   function stop() {
     runId++;
+    sceneryClock = null;
     cancelAnimationFrame(raf);
   }
 
