@@ -1,33 +1,7 @@
-// Classic Party ant: stands on top of the TOP score card (the leader's, not yours) for the whole round result and reacts to EVERY
-// answer as its paper is revealed (worst first, winner last). Four reactions by finishing place: lose, soso, close (2nd), win.
-// Temporary art: one existing ant picture per reaction + a small code wobble. When the hand-drawn sheets arrive, give a reaction
-// a `frames` count and a new `src` (strip, frames side by side) and the stepper below plays it; nothing else has to change.
-const ART = (f) => `anim/mode-mascots/${f}.webp`;
-// One set of five poses per mascot: the Party ant, and the Team vs Team cat pair / dog pair (one set per round, swapped by use()).
-const POSE_SETS = {
-  ant: {
-    idle: { src: "classic-ant-flag", wobble: "idle" },
-    lose: { src: "classic-ant-step-two", wobble: "wince" },
-    soso: { src: "classic-ant-step-one", wobble: "sway" },
-    close: { src: "party-ant-tutorial", wobble: "tilt" },
-    win: { src: "party-ant-banner", wobble: "hop" },
-  },
-  cats: {
-    idle: { src: "team-cats-clap", wobble: "idle" },
-    lose: { src: "team-cats-clap-open", wobble: "wince" },
-    soso: { src: "team-cats-clap", wobble: "sway" },
-    close: { src: "team-cats-clap-open", wobble: "tilt" },
-    win: { src: "team-cats-cheer", wobble: "hop" },
-  },
-  dogs: {
-    idle: { src: "team-dogs-clap", wobble: "idle" },
-    lose: { src: "team-dogs-clap-open", wobble: "wince" },
-    soso: { src: "team-dogs-clap", wobble: "sway" },
-    close: { src: "team-dogs-clap-open", wobble: "tilt" },
-    win: { src: "team-dogs-cheer", wobble: "hop" },
-  },
-};
-const FRAME_MS = 260;
+import { configureMascot } from './mascot-poses.mjs';
+// Party and team mascots follow the top score card and react to each revealed paper.
+// The shared pose controller handles the hand-drawn idle and outcome loops.
+const POSE_SETS={ant:true,cats:true,dogs:true};
 
 // Finishing place of the paper at `index` of `order` (order is worst first, winner last).
 export function antTier(index, count) {
@@ -48,14 +22,11 @@ export function createPartyAnt({ hud, cardFor, reduceMotion = () => false }) {
     img = el.querySelector(".pa-sprite");
     hud.appendChild(el);
   }
-  function setPose(name, frames = 1) {
-    const p = POSE_SETS[setName][name];
-    img.style.setProperty("--n", String(frames));
-    img.style.backgroundImage = `url(${ART(p.src)})`;
-    el.dataset.reaction = name;
-    el.dataset.set = setName; // the CSS sizes the cat and dog pairs wider than the single ant
-    img.dataset.wobble = reduceMotion() ? "none" : p.wobble;
-    img.style.backgroundPosition = "0 0";
+  function setPose(name) {
+    const mood = name === 'win' || name === 'close' ? 'win' : name === 'lose' ? 'lose' : name === 'soso' ? 'soso' : 'idle';
+    img.dataset.wobble='none';
+    configureMascot(img,setName,mood,{key:standKey+':'+seen,still:reduceMotion()});
+    el.dataset.reaction=name;el.dataset.set=setName;
   }
   function replay(name) { // restart the wobble even when the same reaction plays twice in a row
     img.dataset.wobble = "none"; void img.offsetWidth;
@@ -122,7 +93,7 @@ export function createPartyAnt({ hud, cardFor, reduceMotion = () => false }) {
       if (standKey !== key) return;
       replay(name);
       // after a reaction he goes back to waiting, except the winner's celebration, which he keeps through the summary
-      if (name !== "win") calmTimer = setTimeout(() => { if (standKey === key) replay("idle"); }, 1500);
+      if (name !== "win") calmTimer = setTimeout(() => { if (standKey === key) replay("idle"); }, 3600);
     }, 300); // `revealIndex` only counts papers that are completely revealed, flair included; a short beat, then he reacts
   }
 
