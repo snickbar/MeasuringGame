@@ -4469,6 +4469,7 @@ if (location.protocol === "file:") {
 <link rel="stylesheet" href="anim/player-tint.css">
 <link rel="stylesheet" href="anim/quick-robot.css">
 <link rel="stylesheet" href="anim/party-ant.css">
+<link rel="stylesheet" href="anim/coin-pouch.css">
 </head>
 <body>
 
@@ -4481,7 +4482,7 @@ if (location.protocol === "file:") {
 <div id="app-toolbar">
   <button id="toolbar-home-btn" class="toolbar-badge-btn" type="button" aria-label="Home"><img src="icons/toolbar-home.webp" alt=""></button>
   <div id="toolbar-center">
-    <button id="toolbar-coin-balance" type="button" data-no-autofit><img id="toolbar-coin-icon" src="icons/toolbar-coin.webp" alt=""><span id="toolbar-coin-box"><span id="toolbar-coin-count">0</span></span></button>
+    <button id="toolbar-coin-balance" type="button" data-no-autofit aria-label="Coins: open coin shop"><span id="toolbar-coin-picture" aria-hidden="true"><img id="toolbar-coin-icon" src="icons/coin-pouch/idle.webp" alt=""><img id="toolbar-coin-plus" src="icons/coin-pouch/plus.webp" alt=""></span><span id="toolbar-coin-box"><span id="toolbar-coin-count">0</span></span></button>
     <span id="toolbar-boost-tag" hidden></span>
     <script id="restore-visible-coins">
       // Restore presentation before the module/auth downloads can paint a temporary zero.
@@ -5465,6 +5466,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { mountHighLowReveal, HL_REVEAL_STEP_MS } from "./anim/high-low-reveal.mjs";
   import { HL_MESSAGE_BOTTLE, HL_EMPTY_BOTTLE, highLowBottlePieces } from "./anim/high-low-bottles.mjs";
   import { createPlayLayout, fitRevealStage } from "./anim/play-layout.mjs";
+  import { createCoinPouch } from "./anim/coin-pouch.mjs";
   import { createQuickRobot } from "./anim/quick-robot.mjs";
   import { createPartyAnt } from "./anim/party-ant.mjs";
   import { installHomeScene } from "./anim/home-scene.mjs";
@@ -10161,6 +10163,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const howtoCloseBtn = document.getElementById("howto-close-btn");
   const toolbarCoinBalanceEl = document.getElementById("toolbar-coin-balance");
   const toolbarCoinCountEl = document.getElementById("toolbar-coin-count");
+  const coinPouch = createCoinPouch(toolbarCoinBalanceEl, { reducedMotion: prefersReducedMotion });
   const watchAdBtn = document.getElementById("watch-ad-btn");
   const watchAdStatusEl = document.getElementById("watch-ad-status");
   const coinPackBtns = document.querySelectorAll(".coin-pack-buy-btn");
@@ -16770,7 +16773,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     let phase = "idle";        // idle | waiting | flying | counting
     let gainPending = 0, waitSince = 0, rafId = 0, waitTimer = 0;
     const show = (n) => { shown = n; setText(toolbarCoinCountEl, formatCoinDisplay(n)); };
-    const settleNow = () => { phase = "idle"; gainPending = 0; clearTimeout(waitTimer); cancelAnimationFrame(rafId); show(target); };
+    const settleNow = () => { coinPouch.reset(); phase = "idle"; gainPending = 0; clearTimeout(waitTimer); cancelAnimationFrame(rafId); show(target); };
     const lvlOpen = () => { try { return levelUpOpen; } catch (e) { return false; } };
     function held() { const waited = performance.now() - waitSince; try { return coinHolds.some((h) => waited < h.maxMs && h.fn()); } catch (e) { return false; } }
     function begin() {
@@ -16814,7 +16817,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           const wasIdle = phase === "idle";
           gainPending += gain;
           if (wasIdle) { waitSince = performance.now(); shown = bal - gain; tryStart(); }
-          else if (phase === "counting") { gainPending = 0; count(gain, 0); } // more coins landed mid-count: keep counting up to the new total
+          else if (phase === "counting") { gainPending = 0; const fx = flyCoinsToToolbar(gain); count(gain, fx ? fx.remaining() : 0); } // more coins landed mid-count: keep counting up to the new total
           return;
         }
         if (phase === "idle") show(bal);
@@ -16853,7 +16856,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let earlyFly = null;
   function flyCoinsToToolbar(gain, opts) {
     try {
-      if (!(gain > 0)) return null;
+      if (!(gain > 0) || prefersReducedMotion()) return null;
       if (!(opts && opts.early) && earlyFly && earlyFly.gain === gain && performance.now() - earlyFly.t0 < 6000) {
         const e = earlyFly; earlyFly = null;
         return { firstLand: Math.max(0, e.firstEnd - (performance.now() - e.t0)), remaining: () => Math.max(0, e.lastEnd - (performance.now() - e.t0)) };
@@ -16862,7 +16865,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const tr = target.getBoundingClientRect();
       if (!tr.width || !tr.height) return null;
       const { x: ox, y: oy } = coinOrigin();
-      const tx = tr.left + tr.width / 2, ty = tr.top + tr.height / 2;
+      const tx = tr.left + tr.width / 2, ty = tr.top + tr.height * 0.22;
       const n = Math.max(5, Math.min(14, 5 + Math.round(gain / 12)));
       const layer = document.createElement("div");
       layer.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:99999;overflow:hidden";
@@ -16870,7 +16873,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       let done = 0, lastEnd = 0, firstEnd = Infinity;
       for (let i = 0; i < n; i++) {
         const c = document.createElement("img");
-        c.src = "icons/coin-v2.webp"; c.alt = "";
+        c.src = "icons/coin-pouch/coin.webp"; c.alt = "";
         c.style.cssText = "position:absolute;left:0;top:0;width:26px;height:26px;opacity:0;will-change:transform";
         layer.appendChild(c);
         const ang = Math.random() * Math.PI * 2, r = 20 + Math.random() * 50;
@@ -16883,9 +16886,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           { transform: `translate(${tx - 13}px,${ty - 13}px) scale(.55)`, opacity: 1, offset: 0.92 },
           { transform: `translate(${tx - 13}px,${ty - 13}px) scale(.3)`, opacity: 0, offset: 1 },
         ], { duration: dur, delay, easing: "ease-in-out", fill: "both" });
-        anim.onfinish = () => { if (++done === n) layer.remove(); };
+        anim.onfinish = () => { coinPouch.land(); if (++done === n) layer.remove(); };
       }
       setTimeout(() => layer.remove(), 3500);
+      coinPouch.arrival(firstEnd, lastEnd);
       const t0 = performance.now();
       if (opts && opts.early) earlyFly = { gain, t0, firstEnd, lastEnd };
       return { firstLand: firstEnd, remaining: () => Math.max(0, lastEnd - (performance.now() - t0)) };
