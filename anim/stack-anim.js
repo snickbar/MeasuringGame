@@ -1311,7 +1311,7 @@ export function createStackAnimation(container, options = {}) {
   function buildScene(unit, target, hMax, minStageH, kit, guess, cameraMotion) {
     const R = target.mm / unit.mm;
     const cameraLed = cameraMotion === 'camera-led' && R >= 8;
-    const bigObjectOnly = cameraMotion === 'big-object-only' && R >= 8;
+    const bigObjectOnly = (cameraMotion == null || cameraMotion === 'big-object-only') && R >= 8;
     const aBig = aspectFor(target, !flipFacing);
     const aSm = aspectFor(unit, flipFacing);
     const stripW = clamp(STRIP_LEN * aSm, STRIP_W_MIN, STRIP_W);   // width of the stack when it is shown as a strip
@@ -1561,6 +1561,48 @@ export function createStackAnimation(container, options = {}) {
         width: Tw * cam.c, height: Hw * cam.c, clipLeft: 0, clipBottom: cam.sy0 };
     }
 
+    // One source of drawing dimensions for rendering and ground-plane checks.
+    function stackDrawingAt(t,cam=cameraAt(t)){
+      const c=cam.c,sy0=cam.sy0,eOut=pullbackEase(t),objectZoom=1+(finaleScale-1)*eOut;
+      const count = stackCount(t);
+      const baseWidth = Math.max(tw * c, stripMin * eOut) * objectZoom;
+      const Ls = baseWidth / aSm;
+      // Keep the stack readable independently of the scenery camera. Space the
+      // larger sprites from the visible tip, easing back to the full-height layout.
+      const readable = fast && R >= 100;
+      // Applied straight away (it only grows as the camera zooms out), so the objects settle at their
+      // readable size without first shrinking and then growing back.
+      const boosted = (ls) => ls + Math.max(0, Math.min(30, ls * 3) - ls);
+      let pitch = readable ? boosted(Ls) : Ls;
+      if (readable && eOut > 0) {
+        // On the way back out, go straight from the stack's size to the final size, never dipping in between.
+        const c0 = cameraAt(tHoldEnd).c, cZ = cameraAt(tEnd).c;
+        const from = boosted(tw * c0 / aSm), to = Math.max(tw * cZ, stripMin) * finaleScale / aSm;
+        pitch = Math.max(Ls, Math.exp(Math.log(from) + (Math.log(to) - Math.log(from)) * eOut));
+      }
+      const stackBase = sy0 + count * (pitch - Ls);
+      const stackWidth = pitch * aSm;
+      return {count,baseWidth,Ls,pitch,stackBase,stackWidth};
+    }
+    const groundSettle=(()=>{
+      if(!bigObjectOnly || !fast || R<100)return null;
+      let lo=tHoldEnd,hi=tEnd;
+      if(cameraAt(hi).sy0>stageH)return null;
+      for(let i=0;i<40;i++){const mid=(lo+hi)/2;if(cameraAt(mid).sy0>stageH)lo=mid;else hi=mid;}
+      const finish=hi,start=Math.max(tHoldEnd,finish-.55/PLAYBACK_TIME_SCALE);
+      const drawing=stackDrawingAt(start),offset=drawing.stackBase-cameraAt(start).sy0;
+      // Reindex identical copies by whole pitches. Their visible positions do not jump.
+      // Then settle the remaining fraction of one pitch while the foot is still off-screen.
+      const phase=((offset/drawing.pitch)%1+1)%1;
+      return {start,finish,phase};
+    })();
+    function stackBaseAt(t,cam,drawing){
+      if(!groundSettle || t<groundSettle.start)return drawing.stackBase;
+      const span=groundSettle.finish-groundSettle.start;
+      const e=span>0?smootherCameraEase((t-groundSettle.start)/span):1;
+      return cam.sy0+groundSettle.phase*drawing.pitch*(1-e);
+    }
+
     // ---- Canvas ----
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     container.style.height = stageH + 'px';
@@ -1622,24 +1664,9 @@ export function createStackAnimation(container, options = {}) {
       const sx0 = W / 2 + (cam.sx0 - W / 2) * objectZoom;
       const climbPx = Math.max(0, cameraAt(tHoldEnd).sy0 - floorY); // how far the scene scrolls, so indoor walls end at the top
       // A stack too thin to see is drawn wider, but only as the final zoom out settles.
-      const count = stackCount(t);
-      const baseWidth = Math.max(tw * c, stripMin * eOut) * objectZoom;
-      const Ls = baseWidth / aSm;
-      // Keep the stack readable independently of the scenery camera. Space the
-      // larger sprites from the visible tip, easing back to the full-height layout.
-      const readable = fast && R >= 100;
-      // Applied straight away (it only grows as the camera zooms out), so the objects settle at their
-      // readable size without first shrinking and then growing back.
-      const boosted = (ls) => ls + Math.max(0, Math.min(30, ls * 3) - ls);
-      let pitch = readable ? boosted(Ls) : Ls;
-      if (readable && eOut > 0) {
-        // On the way back out, go straight from the stack's size to the final size, never dipping in between.
-        const c0 = cameraAt(tHoldEnd).c, cZ = cameraAt(tEnd).c;
-        const from = boosted(tw * c0 / aSm), to = Math.max(tw * cZ, stripMin) * finaleScale / aSm;
-        pitch = Math.max(Ls, Math.exp(Math.log(from) + (Math.log(to) - Math.log(from)) * eOut));
-      }
-      const stackBase = sy0 + count * (pitch - Ls);
-      const stackWidth = pitch * aSm;
+      const drawing=stackDrawingAt(t,cam);
+      const {count,baseWidth,Ls,pitch,stackWidth}=drawing;
+      const stackBase=stackBaseAt(t,cam,drawing);
 
       // Background: sky, clouds that drift down gently as the camera climbs, and the ground.
       const sky = ctx.createLinearGradient(0, 0, 0, stageH);
@@ -1946,6 +1973,9 @@ export function createStackAnimation(container, options = {}) {
         const zoom = 1 + (finaleScale - 1) * pullbackEase(t);
         const stackX = W / 2 + (cam.sx0 - W / 2) * zoom;
         return { ...targetFrame(t, { ...cam, sx0: stackX, c: cam.c * zoom }), stackX, floorY: cam.sy0, groundScale: groundScaleFor(cam.c, cEnd) }; },
+      getStackLayout(seconds){const t=clamp(seconds/PLAYBACK_TIME_SCALE,0,tEnd),cam=cameraAt(t),drawing=stackDrawingAt(t,cam);
+        return {baseY:stackBaseAt(t,cam,drawing),groundY:cam.sy0,pitch:drawing.pitch,
+          settlesBefore:groundSettle?groundSettle.finish*PLAYBACK_TIME_SCALE:null};},
       cameraMotion: bigObjectOnly ? 'big-object-only' : cameraLed ? 'camera-led' : 'current',
       cameraPhases: cameraLed ? { moveInStart: tZ0*PLAYBACK_TIME_SCALE, moveInEnd: tZ1*PLAYBACK_TIME_SCALE,
         firstArrival: starts[0]*PLAYBACK_TIME_SCALE, firstLanding: (starts[0]+durs[0])*PLAYBACK_TIME_SCALE,

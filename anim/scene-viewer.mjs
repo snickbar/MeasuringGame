@@ -35,7 +35,7 @@ export function buildSceneViewer({ loadAnim, objects }) {
   [["day", "Day"], ["night", "Night"]].forEach(([v, t]) => { const o = el("option", "", t); o.value = v; look.appendChild(o); });
   const count = el("input", "dbg-input"); count.type = "number"; count.min = "1"; count.max = "5000"; count.placeholder = "auto"; count.inputMode = "numeric";
   const cameraMotion=el('select','dbg-input');cameraMotion.style.width='100%';cameraMotion.setAttribute('aria-label','Camera motion');
-  [['big-object-only','Move big object only (preview)'],['current','Current reveal'],['camera-led','Earlier camera-led preview']].forEach(([value,label])=>{const option=el('option','',label);option.value=value;cameraMotion.appendChild(option);});
+  [['big-object-only','Move big object only (standard)'],['current','Original reveal (comparison)'],['camera-led','Earlier camera-led preview']].forEach(([value,label])=>{const option=el('option','',label);option.value=value;cameraMotion.appendChild(option);});
   cameraMotion.value=saved.cameraMotion==='current'?'current':'big-object-only';
   look.value = saved.look === "night" ? "night" : "day"; if (saved.count) count.value = saved.count;
   const remember = () => { try { localStorage.setItem(KEY, JSON.stringify({ scene: scene.value, small: small.value, big: big.value, look: look.value, count: count.value, cameraMotion: cameraMotion.value })); } catch (e) { /* storage unavailable */ } };
@@ -88,7 +88,7 @@ export function buildSceneViewer({ loadAnim, objects }) {
       stage.style.width = "100%";
       const sc = await ctl.prepare(unit, target, { hMax: 330, minStageH: 700, cameraMotion: cameraMotion.value });
       if (my !== token) return;
-      const motionLabel=sc.cameraMotion==='big-object-only'?'Move big object only':sc.cameraMotion==='camera-led'?'Earlier camera-led preview':cameraMotion.value!=='current'?'Current framing (short stack)':'Current reveal';
+      const motionLabel=sc.cameraMotion==='big-object-only'?'Move big object only':sc.cameraMotion==='camera-led'?'Earlier camera-led preview':cameraMotion.value!=='current'?'Standard framing (short stack)':'Original reveal';
       note.textContent = `${u.plural || u.name} vs ${b.name}: ${n.toLocaleString()} stacked · scene ${scene.value ? sceneLabel(scene.value) : "Auto"} · ${look.value} · ${motionLabel}`;
       curScene = sc; pos = 0; lastReal = performance.now(); setPaused(false);
       timeline.max = String(sc.duration || 20); timeline.value = "0"; timeLabel.textContent = "0.00 s";
