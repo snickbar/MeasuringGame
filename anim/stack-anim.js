@@ -1311,6 +1311,7 @@ export function createStackAnimation(container, options = {}) {
   function buildScene(unit, target, hMax, minStageH, kit, guess, cameraMotion) {
     const R = target.mm / unit.mm;
     const cameraLed = cameraMotion === 'camera-led' && R >= 8;
+    const bigObjectOnly = cameraMotion === 'big-object-only' && R >= 8;
     const aBig = aspectFor(target, !flipFacing);
     const aSm = aspectFor(unit, flipFacing);
     const stripW = clamp(STRIP_LEN * aSm, STRIP_W_MIN, STRIP_W);   // width of the stack when it is shown as a strip
@@ -1377,6 +1378,10 @@ export function createStackAnimation(container, options = {}) {
 
     const { starts, durs, nHop, gapLast, tLeanStart, tLeanEnd, tZ0, tZ1, tB0, tB1, tHoldEnd, tEnd, TB, M, G_TABLE } =
       timelineFor(R, bigLean, smLean, smKind !== 'slide', cameraLed);
+    // Preserve the complete original entry sequence. Only the target can move after
+    // the first four ground arrivals have landed; the camera and stack never change.
+    const lastGround=Math.min(GROUND_N,nHop)-1;
+    const moveBigStart=starts[lastGround]+durs[lastGround]+.12;
 
     const streamG = (x) => {
       const pos = clamp(x, 0, 1) * (G_TABLE.length - 1);
@@ -1532,7 +1537,27 @@ export function createStackAnimation(container, options = {}) {
         stackWidth:previewStackWidth(cam.c),closeStackWidth:previewStackWidth(1)})};
     }
     function targetFrame(t, cam) {
-      return { x: cam.sx0 + (cam.targetGap ?? bigLeftWorld) * cam.c, y: cam.sy0 - Hw * cam.c,
+      let x=cam.sx0+(cam.targetGap??bigLeftWorld)*cam.c;
+      if(bigObjectOnly && t>moveBigStart && t<tEnd){
+        const eOut=pullbackEase(t),zoom=1+(finaleScale-1)*eOut;
+        const base=Math.max(tw*cam.c,stripMin*eOut*zoom);
+        let stackWidth=fast&&R>=100?Math.max(base,Math.min(aSm*30,base*3)):base;
+        if(fast&&R>=100&&eOut>0){
+          const c0=cameraAt(tHoldEnd).c,cZ=cameraAt(tEnd).c;
+          const ls0=tw*c0/aSm,from=ls0+Math.max(0,Math.min(30,ls0*3)-ls0);
+          const to=Math.max(tw*cZ,stripMin)*finaleScale/aSm;
+          stackWidth=Math.max(base,Math.exp(Math.log(from)+(Math.log(to)-Math.log(from))*eOut)*aSm);
+        }
+        const clearance=Math.max(28,Math.min(36,W*.075));
+        const closest=cam.sx0+stackWidth/2+clearance;
+        const desired=Math.max(closest,Math.min(x,W-G-Tw*cam.c));
+        const amount=smootherCameraEase((t-moveBigStart)/1.25)*(1-eOut);
+        // If the target is entirely off-screen, start its visible approach just outside
+        // the viewport instead of spending the whole move crossing invisible space.
+        const from=Math.min(x,W+24);
+        x=from+(Math.min(x,desired)-from)*amount;
+      }
+      return { x, y: cam.sy0 - Hw * cam.c,
         width: Tw * cam.c, height: Hw * cam.c, clipLeft: 0, clipBottom: cam.sy0 };
     }
 
@@ -1921,10 +1946,12 @@ export function createStackAnimation(container, options = {}) {
         const zoom = 1 + (finaleScale - 1) * pullbackEase(t);
         const stackX = W / 2 + (cam.sx0 - W / 2) * zoom;
         return { ...targetFrame(t, { ...cam, sx0: stackX, c: cam.c * zoom }), stackX, floorY: cam.sy0, groundScale: groundScaleFor(cam.c, cEnd) }; },
-      cameraMotion: cameraLed ? 'camera-led' : 'current',
+      cameraMotion: bigObjectOnly ? 'big-object-only' : cameraLed ? 'camera-led' : 'current',
       cameraPhases: cameraLed ? { moveInStart: tZ0*PLAYBACK_TIME_SCALE, moveInEnd: tZ1*PLAYBACK_TIME_SCALE,
         firstArrival: starts[0]*PLAYBACK_TIME_SCALE, firstLanding: (starts[0]+durs[0])*PLAYBACK_TIME_SCALE,
-        pullbackStart: tHoldEnd*PLAYBACK_TIME_SCALE } : undefined,
+        pullbackStart: tHoldEnd*PLAYBACK_TIME_SCALE } : bigObjectOnly ? {
+          moveInStart:tZ0*PLAYBACK_TIME_SCALE,moveInEnd:tZ1*PLAYBACK_TIME_SCALE,
+          moveBigStart:moveBigStart*PLAYBACK_TIME_SCALE,pullbackStart:tHoldEnd*PLAYBACK_TIME_SCALE } : undefined,
       duration: tEnd * PLAYBACK_TIME_SCALE,
       cues: cues.map(cue => ({ ...cue, t: cue.t * PLAYBACK_TIME_SCALE })),
       render,
