@@ -34,9 +34,12 @@ export function buildSceneViewer({ loadAnim, objects }) {
   const look = el("select", "dbg-input"); look.style.width = "100%"; look.setAttribute("aria-label", "Day or night");
   [["day", "Day"], ["night", "Night"]].forEach(([v, t]) => { const o = el("option", "", t); o.value = v; look.appendChild(o); });
   const count = el("input", "dbg-input"); count.type = "number"; count.min = "1"; count.max = "5000"; count.placeholder = "auto"; count.inputMode = "numeric";
+  const cameraMotion=el('select','dbg-input');cameraMotion.style.width='100%';cameraMotion.setAttribute('aria-label','Camera motion');
+  [['camera-led','Camera-led transition (preview)'],['current','Current reveal']].forEach(([value,label])=>{const option=el('option','',label);option.value=value;cameraMotion.appendChild(option);});
+  cameraMotion.value=saved.cameraMotion==='current'?'current':'camera-led';
   look.value = saved.look === "night" ? "night" : "day"; if (saved.count) count.value = saved.count;
-  const remember = () => { try { localStorage.setItem(KEY, JSON.stringify({ scene: scene.value, small: small.value, big: big.value, look: look.value, count: count.value })); } catch (e) { /* storage unavailable */ } };
-  [small, big, scene, look, count].forEach((c) => c.addEventListener("change", remember));
+  const remember = () => { try { localStorage.setItem(KEY, JSON.stringify({ scene: scene.value, small: small.value, big: big.value, look: look.value, count: count.value, cameraMotion: cameraMotion.value })); } catch (e) { /* storage unavailable */ } };
+  [small, big, scene, look, count, cameraMotion].forEach((c) => c.addEventListener("change", remember));
   const stage = el("div", "scene-viewer-stage"); stage.style.cssText = "width:100%;min-height:80px;border-radius:10px;overflow:hidden;background:#fff8ec";
   const note = el("p", "dbg-note", "Pick a scene and press Play. Leave the count on auto to use the real size ratio, or type a number of small objects to make the stack taller.");
   const buttons = el("div", "dbg-row");
@@ -83,9 +86,10 @@ export function buildSceneViewer({ loadAnim, objects }) {
       const n = Math.max(1, Math.min(5000, Math.round(+count.value || (b.mm / u.mm))));
       const unit = { ...u }, target = { ...b, mm: u.mm * n, sceneryOverride: scene.value || undefined };
       stage.style.width = "100%";
-      const sc = await ctl.prepare(unit, target, { hMax: 330, minStageH: 700 });
+      const sc = await ctl.prepare(unit, target, { hMax: 330, minStageH: 700, cameraMotion: cameraMotion.value });
       if (my !== token) return;
-      note.textContent = `${u.plural || u.name} vs ${b.name}: ${n.toLocaleString()} stacked · scene ${scene.value ? sceneLabel(scene.value) : "Auto"} · ${look.value}`;
+      const motionLabel=sc.cameraMotion==='camera-led'?'Camera-led transition':cameraMotion.value==='camera-led'?'Current framing (short stack)':'Current reveal';
+      note.textContent = `${u.plural || u.name} vs ${b.name}: ${n.toLocaleString()} stacked · scene ${scene.value ? sceneLabel(scene.value) : "Auto"} · ${look.value} · ${motionLabel}`;
       curScene = sc; pos = 0; lastReal = performance.now(); setPaused(false);
       timeline.max = String(sc.duration || 20); timeline.value = "0"; timeLabel.textContent = "0.00 s";
       startOpts = { startAt: 0, now: clock,
@@ -115,9 +119,9 @@ export function buildSceneViewer({ loadAnim, objects }) {
   mkBtn("◀ Prev scene", () => { tour = false; prevScene(); });
   mkBtn("Next scene ▶", () => { tour = false; nextScene(false); });
   buttons.appendChild(tourBtn);
-  [scene, look].forEach((s) => s.addEventListener("change", () => { tour = false; play(); }));
+  [scene, look, cameraMotion].forEach((s) => s.addEventListener("change", () => { tour = false; play(); }));
   setup();
-  [field("Scene", scene), field("Small object", small), field("Big object", big), field("Count", count), field("Look", look)].forEach((f) => wrap.appendChild(f));
+  [field("Scene", scene), field("Small object", small), field("Big object", big), field("Count", count), field("Look", look), field("Camera motion",cameraMotion)].forEach((f) => wrap.appendChild(f));
   const scrubber = el("div", "dbg-row");
   scrubber.style.cssText = "display:grid;grid-template-columns:minmax(0,1fr) 7ch;align-items:center;gap:8px";
   timeline.style.minWidth = "0";

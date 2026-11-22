@@ -22,11 +22,12 @@
 // module loads. Native loads have no query string and retain bundled paths.
 const moduleRetry = new URL(import.meta.url).search;
 const [{ ORIENT }, { landingStyleFor, landingPose }, { landingSurfaceFor, drawLandingEffect },
-  { loadScenery, drawSceneryLayers, drawSceneryFloor, groundScaleFor, isNight }, { FLOOR_DATA }, { entryPose, entryKindFor, landingEffectFor }, { drawStackEffect, drawSettleEffect }] = await Promise.all([
+  { loadScenery, drawSceneryLayers, drawSceneryFloor, groundScaleFor, isNight }, { FLOOR_DATA }, { entryPose, entryKindFor, landingEffectFor }, { drawStackEffect, drawSettleEffect }, { cameraLedFraming, smootherCameraEase }] = await Promise.all([
   import('./orient-data.js' + moduleRetry), import('./reveal-style.mjs' + moduleRetry),
   import('./landing-effects.mjs' + moduleRetry), import('./scenery.mjs' + moduleRetry),
   import('./scenery-data.mjs' + moduleRetry), import('./entry-styles.mjs' + moduleRetry),
   import('./entry-effects.mjs' + moduleRetry),
+  import('./reveal-camera.mjs' + moduleRetry),
 ]);
 
 // The old hand-set list below is no longer used: the pictures are now turned from ORIENT (saved with the
@@ -1031,13 +1032,13 @@ function poseOf(img, st, mirrorExtra) {
 // The timeline (in seconds) depends only on the two objects and how many times the small one fits,
 // never on the screen size. So the host can work out how long the animation lasts, and every
 // player's screen plays it on the same clock.
-function timelineFor(R, bigLean, smLean, styledFirst = false) {
+function timelineFor(R, bigLean, smLean, styledFirst = false, cameraLed = false) {
     const starts = [];
     const tLeanStart = bigLean ? BIG_WALK : BIG_S;
     const tLeanEnd = bigLean ? BIG_WALK + BIG_LEAN : BIG_S;
-    const tZ0 = tLeanEnd + BIG_HOLD;
-    const tZ1 = tZ0 + 0.75;
-    let tt = tZ1 - 0.1;
+    let tZ0 = tLeanEnd + BIG_HOLD;
+    let tZ1 = tZ0 + 0.75;
+    let tt = cameraLed ? tZ0 : tZ1 - 0.1;
     const whole = Math.floor(R + 1e-9);
     const nHop = Math.min(K_MAX, whole);
     const durs = [];
@@ -1057,6 +1058,14 @@ function timelineFor(R, bigLean, smLean, styledFirst = false) {
       gapLast = Math.max(0.07, 0.36 * Math.pow(0.86, i));
       // While the first few come along the ground the next one waits until this one starts to jump.
       tt += i < GROUND_N ? (i === 0 ? dur * 0.8 : approachOf(i) * 0.85 + 0.12) : gapLast;
+    }
+    if(cameraLed && nHop >= 4){
+      // Let the first three copies land before the camera moves. Subsequent arrivals wait
+      // until the move has finished; this timeline is requested only by the Debug viewer.
+      tZ0=starts[2]+durs[2]+.25;
+      tZ1=tZ0+1.15;
+      const delay=Math.max(0,tZ1+.08-starts[3]);
+      for(let i=3;i<nHop;i++)starts[i]+=delay;
     }
     const lastLand = starts[nHop - 1] + durs[nHop - 1];
 
@@ -1302,11 +1311,12 @@ export function createStackAnimation(container, options = {}) {
     let target = targetIn;
     if (unit.mm > target.mm) { [unit, target] = [target, unit]; }
     const [kit] = await Promise.all([loadScenery(target, sceneryBase + 'scenery/'), loadPicture(unit), loadPicture(target), originalSceneryReady]);
-    return buildScene(unit, target, sizing.hMax || H_MAX, sizing.minStageH || 0, kit, sizing.guess);
+    return buildScene(unit, target, sizing.hMax || H_MAX, sizing.minStageH || 0, kit, sizing.guess, sizing.cameraMotion);
   }
 
-  function buildScene(unit, target, hMax, minStageH, kit, guess) {
+  function buildScene(unit, target, hMax, minStageH, kit, guess, cameraMotion) {
     const R = target.mm / unit.mm;
+    const cameraLed = cameraMotion === 'camera-led' && R >= 8;
     const aBig = aspectFor(target, !flipFacing);
     const aSm = aspectFor(unit, flipFacing);
     const stripW = clamp(STRIP_LEN * aSm, STRIP_W_MIN, STRIP_W);   // width of the stack when it is shown as a strip
@@ -1372,7 +1382,7 @@ export function createStackAnimation(container, options = {}) {
     const finaleScale = clamp((floorY - stageH * .10) / H, 1, (W - 2 * G) / pairW);
 
     const { starts, durs, nHop, gapLast, tLeanStart, tLeanEnd, tZ0, tZ1, tB0, tB1, tHoldEnd, tEnd, TB, M, G_TABLE } =
-      timelineFor(R, bigLean, smLean, smKind !== 'slide');
+      timelineFor(R, bigLean, smLean, smKind !== 'slide', cameraLed);
 
     const streamG = (x) => {
       const pos = clamp(x, 0, 1) * (G_TABLE.length - 1);
@@ -1487,11 +1497,15 @@ export function createStackAnimation(container, options = {}) {
       const b = cTable[k + 1];
       return Math.exp(Math.log(a) + (Math.log(b) - Math.log(a)) * (x - k));
     }
-    function cameraAt(t) {
+    const pullbackEase=t=>{
+      const u=clamp((t-tHoldEnd)/ZOOM_S,0,1);
+      return cameraLed?smootherCameraEase(u):.5-.5*Math.cos(Math.PI*u);
+    };
+    function baseCameraAt(t) {
       if (t < tZ0) return { c: cEnd, sx0: colCenterX, sy0: floorY };
       if (t < tZ1) {
         const u = (t - tZ0) / (tZ1 - tZ0);
-        const e = 0.5 - 0.5 * Math.cos(Math.PI * u);
+        const e = cameraLed ? smootherCameraEase(u) : 0.5 - 0.5 * Math.cos(Math.PI * u);
         return {
           c: Math.exp(Math.log(cEnd) * (1 - e)),
           sx0: colCenterX + (axClimb - colCenterX) * e,
@@ -1503,15 +1517,28 @@ export function createStackAnimation(container, options = {}) {
         return { c, sx0: axClimb, sy0: Math.max(floorStartY, ay + climbTop(t) * c) };
       }
       const u = clamp((t - tHoldEnd) / ZOOM_S, 0, 1);
-      const e = 0.5 - 0.5 * Math.cos(Math.PI * u);
+      const e = pullbackEase(t);
       const c0 = climbScale(tHoldEnd);
       const c = Math.exp(Math.log(c0) + (Math.log(cEnd) - Math.log(c0)) * e);
       const topY = ay + (padTop - ay) * e;
       return { c, sx0: axClimb + (colCenterX - axClimb) * e, sy0: topY + Hw * c };
     }
 
+    function previewStackWidth(c){
+      const w=tw*c;
+      return fast && R>=100 ? Math.max(w,Math.min(aSm*30,w*3)) : w;
+    }
+    function cameraAt(t){
+      const cam=baseCameraAt(t);
+      if(!cameraLed || t<tZ0)return cam;
+      const phase=t<tZ1?'in':t<tHoldEnd?'climb':'out';
+      const progress=phase==='in'?smootherCameraEase((t-tZ0)/(tZ1-tZ0)):phase==='out'?pullbackEase(t):1;
+      return {...cam,...cameraLedFraming({phase,progress,width:W,gutter:G,initialStackX:colCenterX,
+        initialScale:cEnd,targetGapWorld:bigLeftWorld,targetWidthWorld:Tw,scale:cam.c,
+        stackWidth:previewStackWidth(cam.c),closeStackWidth:previewStackWidth(1)})};
+    }
     function targetFrame(t, cam) {
-      return { x: cam.sx0 + bigLeftWorld * cam.c, y: cam.sy0 - Hw * cam.c,
+      return { x: cam.sx0 + (cam.targetGap ?? bigLeftWorld) * cam.c, y: cam.sy0 - Hw * cam.c,
         width: Tw * cam.c, height: Hw * cam.c, clipLeft: 0, clipBottom: cam.sy0 };
     }
 
@@ -1571,7 +1598,7 @@ export function createStackAnimation(container, options = {}) {
       const c = cam.c;
       const groundScale = groundScaleFor(c, cEnd);
       const sy0 = cam.sy0;
-      const eOut = t < tHoldEnd ? 0 : 0.5 - 0.5 * Math.cos(Math.PI * clamp((t - tHoldEnd) / ZOOM_S, 0, 1));
+      const eOut = pullbackEase(t);
       const objectZoom = 1 + (finaleScale - 1) * eOut;
       const sx0 = W / 2 + (cam.sx0 - W / 2) * objectZoom;
       const climbPx = Math.max(0, cameraAt(tHoldEnd).sy0 - floorY); // how far the scene scrolls, so indoor walls end at the top
@@ -1897,10 +1924,12 @@ export function createStackAnimation(container, options = {}) {
     return {
       unit, target, R, fast, stageH, width: W, scenery,
       getFraming(seconds) { const t = clamp(seconds / PLAYBACK_TIME_SCALE, 0, tEnd), cam = cameraAt(t);
-        const progress = clamp((t - tHoldEnd) / ZOOM_S, 0, 1);
-        const zoom = 1 + (finaleScale - 1) * (0.5 - 0.5 * Math.cos(Math.PI * progress));
+        const zoom = 1 + (finaleScale - 1) * pullbackEase(t);
         const stackX = W / 2 + (cam.sx0 - W / 2) * zoom;
         return { ...targetFrame(t, { ...cam, sx0: stackX, c: cam.c * zoom }), stackX, floorY: cam.sy0, groundScale: groundScaleFor(cam.c, cEnd) }; },
+      cameraMotion: cameraLed ? 'camera-led' : 'current',
+      cameraPhases: cameraLed ? { moveInStart: tZ0*PLAYBACK_TIME_SCALE, moveInEnd: tZ1*PLAYBACK_TIME_SCALE,
+        pullbackStart: tHoldEnd*PLAYBACK_TIME_SCALE } : undefined,
       duration: tEnd * PLAYBACK_TIME_SCALE,
       cues: cues.map(cue => ({ ...cue, t: cue.t * PLAYBACK_TIME_SCALE })),
       render,
