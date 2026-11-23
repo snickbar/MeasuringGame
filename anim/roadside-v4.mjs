@@ -1,5 +1,5 @@
 import { DINER_REWORK_IMAGES, drawDinerRoadside } from './diner-roadside-v4.mjs';
-// Comparison scenes: every truck and scenic plane has its own depth, not a painted row.
+// Approved roadside scenes: every truck and scenic plane has its own depth, not a painted row.
 import { foodGround, drawPark, parkLife } from './food-park-v4.mjs';
 const food = name => 'food-v4-' + name;
 const diner = name => 'diner-v4-' + name;
@@ -14,9 +14,9 @@ const DINER_IMAGES = DINER_REWORK_IMAGES;
 export function installRoadsideV4(settings, variants) {
   settings.foodtrucks = { roadsideV4: 'food', floor: food('ground'), floorBehind: true, fittedFloor: true,
     sky: ['#168fe9','#80c6f8'], nightSky: ['#101c3d','#3e7291'], night: 'dark', parallax: [] };
-  settings['diner-v4'] = { roadsideV4: 'diner', floor: 'diner-v4-lot-v2', floorBehind: true, fittedFloor: true,
+  settings.diner = { roadsideV4: 'diner', floor: 'diner-v4-lot-v2', floorBehind: true, fittedFloor: true,
     sky: ['#3448ae','#f6aa7b'], night: true, parallax: [] };
-  delete settings['foodtrucks-v4']; delete variants['foodtrucks-v4']; variants['diner-v4'] = 'diner';
+  for (const id of ['foodtrucks-v4','diner-v4']) { delete settings[id]; delete variants[id]; }
 }
 export function roadsideV4Images(scene) { return scene === 'food' ? FOOD_IMAGES : scene === 'diner' ? DINER_IMAGES : []; }
 

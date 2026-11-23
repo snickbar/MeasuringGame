@@ -3,7 +3,7 @@
 // Move a scene to the front when its artwork or layout changes. Scenes without
 // a recent revision appear alphabetically after this list.
 const recentScenes = [
-  "diner-v4", "diner", "foodtrucks", "drivein", "retro", "restaurant", "workshop", "library", "tabletop", "kitchen", "living", "enchanted", "town", "city", "beach", "rooftop", "stadium", "boardwalk", "blossom", "cave", "space", "fair", "mountain", "jungle", "grass", "farm",
+  "diner", "foodtrucks", "drivein", "retro", "restaurant", "workshop", "library", "tabletop", "kitchen", "living", "enchanted", "town", "city", "beach", "rooftop", "stadium", "boardwalk", "blossom", "cave", "space", "fair", "mountain", "jungle", "grass", "farm",
   "volcano",
   "desert",
   "underwater", "snow", "forest",
@@ -67,7 +67,7 @@ export function buildSceneViewer({ loadAnim, objects }) {
       const rank = id => { const i = recentScenes.indexOf(id); return i < 0 ? recentScenes.length : i; };
       return rank(a) - rank(b);
     });
-    ids = [...new Set(['foodtrucks', ...drafts.flatMap((id) => [id, id.slice(0, -3)]), ...base])];
+    ids = [...new Set(['diner', 'foodtrucks', ...drafts.flatMap((id) => [id, id.slice(0, -3)]), ...base])];
     const auto = el("option", "", "Auto (follows the big object)"); auto.value = ""; scene.appendChild(auto);
     ids.forEach((id) => { const o = el("option", "", sceneLabel(id)); o.value = id; scene.appendChild(o); });
     if (saved.scene && !ids.includes(saved.scene) && /-v[234]$/.test(saved.scene) && ids.includes(saved.scene.slice(0,-3))) saved.scene = saved.scene.slice(0,-3);
