@@ -1,3 +1,4 @@
+import { DINER_REWORK_IMAGES, drawDinerRoadside } from './diner-roadside-v4.mjs';
 // Comparison scenes: every truck and scenic plane has its own depth, not a painted row.
 import { foodGround, drawPark, parkLife } from './food-park-v4.mjs';
 const food = name => 'food-v4-' + name;
@@ -9,11 +10,11 @@ export const V4_TRUCKS = [
   { name: 'taco', side: -1, depth: .82 }, { name: 'coffee', side: 1, depth: .82 },
 ];
 const FOOD_IMAGES = [...['sky','ground','city-skyline','park-treeline','tree-left','tree-right','lamp','bench','flowers-pink','flowers-white','menu','cafe','bunting','clouds','fountain-loop','path-connector','bush-left','bush-right','bush-back', ...V4_TRUCKS.map(t => 'truck-' + t.name)].map(food), '../../items/butterfly'];
-const DINER_IMAGES = ['sky','asphalt','building','neon-sign','highway','distant-town','treeline','water-tower','car-left','car-right','lamp','pole-sign','flowerbed','flowers','neon-on','neon-off','cloud-small','cloud-long'].map(diner);
+const DINER_IMAGES = DINER_REWORK_IMAGES;
 export function installRoadsideV4(settings, variants) {
   settings['foodtrucks-v4'] = { roadsideV4: 'food', floor: food('ground'), floorBehind: true, fittedFloor: true,
     sky: ['#168fe9','#80c6f8'], nightSky: ['#101c3d','#3e7291'], night: 'dark', parallax: [] };
-  settings['diner-v4'] = { roadsideV4: 'diner', floor: diner('asphalt'), floorBehind: true, fittedFloor: true,
+  settings['diner-v4'] = { roadsideV4: 'diner', floor: 'diner-v4-lot-v2', floorBehind: true, fittedFloor: true,
     sky: ['#3448ae','#f6aa7b'], night: true, parallax: [] };
   variants['foodtrucks-v4'] = 'foodtrucks'; variants['diner-v4'] = 'diner';
 }
@@ -96,20 +97,7 @@ export function drawRoadsideV4(ctx,kit,options) {
     for(const side of [-1,1]){const q=p.at(.98,side);sprite(ctx,images[food(side<0?'flowers-white':'flowers-pink')],q.x+side*width*.03,q.y,width*.13);}
     parkLife(ctx,images,{width,height,projection:p,cityBase,time:t,reduced});
   }else{
-    sprite(ctx,images[diner('distant-town')],width*.5,h+width*.06+shiftY*.10,width*1.17);
-    sprite(ctx,images[diner('water-tower')],width*.86,h+width*.09+shiftY*.14,width*.13);
-    sprite(ctx,images[diner('treeline')],width*.5,h+width*.19+shiftY*.23,width*1.2);
-    const highway=sprite(ctx,images[diner('highway')],width*.5,h+width*.22+shiftY*.30,width*1.18);
-    if(highway&&!reduced){ctx.save();ctx.strokeStyle='#fff1b2';ctx.lineWidth=1.3;
-      for(let i=0;i<3;i++){const x=((t*.055+i/3)%1)*width;ctx.beginPath();ctx.moveTo(x,highway.y+highway.h*.36);ctx.lineTo(x+width*.022,highway.y+highway.h*.36);ctx.stroke();}ctx.restore();}
-    ground(ctx,images[diner('asphalt')],{width,height,floorY,shiftY},scene);
-    const b=p.at(.54),building=sprite(ctx,images[diner('building')],width*.5,b.y,width*1.01);
-    if(building){const pulse=reduced?1:.95+.05*Math.sin(t*2.5);ctx.save();ctx.globalAlpha=pulse;
-      sprite(ctx,images[diner('neon-sign')],width*.48,building.y+building.h*.055,width*.43);ctx.restore();
-      for(const x of [.19,.42])sprite(ctx,images[diner('flowerbed')],width*x,b.y+width*.008,width*.23);}
-    const lamp=p.at(.55);sprite(ctx,images[diner('lamp')],width*.055,lamp.y,width*.16);
-    sprite(ctx,images[diner('pole-sign')],width*.92,lamp.y,width*.13);
-    for(const [side,key]of[[-1,'car-left'],[1,'car-right']]){const q=p.at(.70,side);sprite(ctx,images[diner(key)],width*(side<0?.025:.975),q.y,width*.28);}
+    drawDinerRoadside(ctx,kit,{width,height,floorY,shiftY,time,reduced},sprite);
   }
   ctx.restore();
 }
