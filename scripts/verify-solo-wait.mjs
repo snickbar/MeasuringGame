@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { chooseHost } from '../anim/room-safety.mjs';
 import { SOLO_WAIT_MS, soloWaitState, startSoloWait, clearSoloWait, holdForLobby, lobbyReady, takeLobbyHost, clearLobbyHold } from '../anim/solo-wait.mjs';
 const room = (over = {}, a = true, b = true) => ({ phase: 'question', settings: {}, players: {
   h1: { name: 'A', isHost: true, connected: a }, h2: { name: 'B', connected: b }, bot: { name: 'Bot', isBot: true, connected: true } }, ...over });
@@ -29,4 +30,9 @@ const hostAway = { ...held, players: { ...held.players, h1: { ...held.players.h1
 const taken = takeLobbyHost(hostAway, 'h2'); assert.equal(taken.players.h2.isHost, true); assert.equal(taken.players.h1.isHost, false); assert.equal(taken.hostOriginal, 'h1');
 assert.equal(takeLobbyHost(held, 'h1'), undefined); assert.equal(takeLobbyHost(held, 'h2'), undefined, 'host is here');
 assert.equal(clearLobbyHold(held).lobbyHold, null);
+// lobby host switch: host -> a human who is here, lobby only
+const lobby = { phase: 'waiting', hostOriginal: 'x', players: { h1: { isHost: true, connected: true }, h2: { connected: true }, bot: { isBot: true, connected: true }, h3: { connected: false } } };
+const sw = chooseHost(lobby, 'h1', 'h2'); assert.equal(sw.players.h2.isHost, true); assert.equal(sw.players.h1.isHost, false); assert.equal(sw.hostOriginal, null);
+for (const [f, t] of [['h2', 'h1'], ['h1', 'bot'], ['h1', 'h3'], ['h1', 'h1'], ['h1', 'nobody']]) assert.equal(chooseHost(lobby, f, t), undefined);
+assert.equal(chooseHost({ ...lobby, phase: 'question' }, 'h1', 'h2'), undefined, 'only before the game starts');
 console.log('Last-human-standing wait: timer, freeze, lobby readiness, host takeover verified.');

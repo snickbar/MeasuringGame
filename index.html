@@ -4235,6 +4235,14 @@ if (location.protocol === "file:") {
   .paused-players li.away { opacity: .6; }
   .paused-players .pp-state { margin-left: auto; font-size: 13px; font-weight: 700; }
   .paused-players li.here .pp-state { color: #2f8a2a; } .paused-players li.away .pp-state { color: #a0521d; }
+  /* Lobby: the host taps a player's card for a small menu (make host / remove). */
+  #player-list li.lobby-tappable { cursor: pointer; }
+  #host-menu { position: fixed; z-index: 80; display: none; min-width: 210px; background: #fffdf6; border: 3px solid #b98a45; border-radius: 16px; box-shadow: 0 8px 20px #0005; overflow: hidden; font: 700 19px Fredoka, sans-serif; color: #4a2c12; }
+  #host-menu.show { display: block; }
+  #host-menu button { display: flex; width: 100%; align-items: center; gap: 10px; padding: 13px 18px; border: 0; background: transparent; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+  #host-menu button + button { border-top: 2px solid #eadbbd; }
+  #host-menu button.danger { color: #c0392b; }
+  #host-menu button:active { filter: brightness(.94); }
   #solo-wait-bar { position: fixed; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 84px); z-index: 50; display: none; max-width: min(92vw, 420px); padding: 8px 16px; border-radius: 999px;
     background: #fff4d6; border: 2px solid #d9a441; color: #5a3410; font: 700 15px Fredoka, sans-serif; box-shadow: 0 3px 10px #0003; pointer-events: none; text-align: center; }
   #solo-wait-bar.show { display: block; }
@@ -5451,6 +5459,7 @@ if (location.protocol === "file:") {
 </div>
 
 <div id="solo-wait-bar" role="status" aria-live="polite"></div>
+<div id="host-menu" role="menu"></div>
 <div id="paused-overlay">
   <section class="exit-card" role="dialog" aria-labelledby="paused-title" aria-describedby="paused-msg">
     <div class="exit-icon exit-hero" aria-hidden="true"><img src="icons/pause-medallion.webp" alt=""></div>
@@ -5566,7 +5575,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   var debugTools;
   import { enforceSingleScreen } from "./anim/screen-visibility.mjs";
   import * as HS from "./anim/high-stakes.mjs";
-  import { electedHost, transferHost, returnHost, admitPlayer, soloRepair, roomCapacity, commitHsState, hsRoundRecord, roomGameFinished, finishRoomDeparture } from "./anim/room-safety.mjs";
+  import { electedHost, transferHost, returnHost, admitPlayer, soloRepair, roomCapacity, commitHsState, hsRoundRecord, roomGameFinished, finishRoomDeparture, chooseHost } from "./anim/room-safety.mjs";
   import { SOLO_WAIT_MS, soloWaitState, lastHumanStanding, startSoloWait, clearSoloWait, holdForLobby, lobbyReady, takeLobbyHost, clearLobbyHold } from "./anim/solo-wait.mjs";
   var careerLedger;
   var gameRewards;
@@ -18658,6 +18667,34 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       update(ref(db, `rooms/${currentRoomCode}/players/${id}`), { avatar, name }).catch(() => {});
     });
   }
+  // Host: tap a human's card in the lobby for "Make host" / "Remove". Works the same in every mode.
+  const hostMenuEl = document.getElementById("host-menu");
+  const closeHostMenu = () => hostMenuEl.classList.remove("show");
+  playerList.addEventListener("click", (e) => {
+    const li = e.target.closest("li.lobby-player-card"); if (!li || !isHost || roomState.phase !== "waiting") return;
+    if (e.target.closest("button, .lobby-drag, .bot-row-ctl")) return;
+    const id = li.dataset.pid, p = id && currentPlayers[id];
+    if (!p || p.isBot || id === currentPlayerId) return;
+    const name = escapeHtml(p.name || "Player"), canHost = p.connected !== false;
+    hostMenuEl.innerHTML = (canHost ? `<button type="button" data-act="host">\u{1F451} Make ${name} host</button>` : "") + `<button type="button" class="danger" data-act="kick">\u2716 Remove ${name}</button>`;
+    hostMenuEl.dataset.pid = id;
+    const r = li.getBoundingClientRect();
+    hostMenuEl.classList.add("show");
+    const w = hostMenuEl.offsetWidth, h = hostMenuEl.offsetHeight;
+    hostMenuEl.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.right - w - 8)) + "px";
+    hostMenuEl.style.top = (r.bottom + h + 8 > innerHeight ? Math.max(8, r.top - h - 6) : r.bottom + 4) + "px";
+    e.stopPropagation();
+  });
+  hostMenuEl.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-act]"); if (!btn) return;
+    const id = hostMenuEl.dataset.pid, code = currentRoomCode, me = currentPlayerId;
+    closeHostMenu();
+    if (btn.dataset.act === "host") { playSound("select"); runTransaction(ref(db, `rooms/${code}`), (cur) => chooseHost(cur, me, id), { applyLocally: false }).catch((err) => console.warn("[choose host]", err)); }
+    else kickPlayer(id);
+  });
+  document.addEventListener("click", (e) => { if (!e.target.closest("#host-menu")) closeHostMenu(); });
+  document.addEventListener("scroll", closeHostMenu, true);
+
   function renderPlayerList() {
     rerollClashingBots();
     const isFirstRender = renderedPlayerListIds.size === 0;
@@ -18684,7 +18721,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       nameSpan.className='lobby-player-identity';
       const party=!roomState.settings?.solo;
       // Every mode gets the same cream cards (self / host shading); Team vs Team keeps its colour dot.
-      li.classList.add("lobby-player-card");
+      li.classList.add("lobby-player-card"); li.dataset.pid = id;
+      if (isHost && !p.isBot && id !== currentPlayerId && roomState.phase === "waiting") li.classList.add("lobby-tappable");
       if (p.frameIndex) li.dataset.pc = String(((Number(p.frameIndex) || 1) - 1 + 10) % 10 + 1);   // player colour, see anim/player-tint.css
       if (id === currentPlayerId) li.classList.add("lobby-player-self");
       if (p.isHost) li.classList.add("lobby-player-host");
@@ -19667,6 +19705,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function maybeReassignHost(data, roomCode) {
     const wasHost = isHost;
     isHost = !!data.players?.[currentPlayerId]?.isHost && data.players[currentPlayerId].connected !== false;
+    if (wasHost && !isHost && data.players?.[currentPlayerId] && !data.players[currentPlayerId].isHost) onDisconnect(ref(db, `rooms/${roomCode}/pendingHostReclaim`)).cancel().catch(() => {}); // handed the room over on purpose: do not reclaim it later
     if (isHost && !wasHost) rearmHostDuties(data, roomCode);
     if (data.hostOriginal === currentPlayerId && !hostTransfers.has(roomCode)) {
       // The real host is back: take the host seat back from whoever covered for them.

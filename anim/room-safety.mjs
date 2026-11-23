@@ -37,6 +37,14 @@ export function transferHost(room, id, now = Date.now()) {
   const oldHost = Object.entries(room.players || {}).find(([pid, p]) => p.isHost && pid !== id)?.[0];
   return { ...room, hostOriginal: room.hostOriginal || oldHost || null, players: Object.fromEntries(Object.entries(room.players).map(([pid, p]) => [pid, { ...p, isHost: pid === id }])) };
 }
+// The host hands the room to another human from the lobby. Only the current host can do it, only to a human who is here,
+// and only before the game starts. Nobody takes the seat back automatically afterwards (hostOriginal is cleared).
+export function chooseHost(room, fromId, toId) {
+  if (room === null) return null;
+  const from = room?.players?.[fromId], to = room?.players?.[toId];
+  if (!room || room.phase !== 'waiting' || !from?.isHost || !to || to.isBot || to.connected === false || fromId === toId) return undefined;
+  return { ...room, hostOriginal: null, pendingHostReclaim: null, players: Object.fromEntries(Object.entries(room.players).map(([pid, p]) => [pid, { ...p, isHost: pid === toId }])) };
+}
 // The original host is back online: they take the host seat back from whoever was covering for them.
 export function returnHost(room, id) {
   if (room === null) return null;
