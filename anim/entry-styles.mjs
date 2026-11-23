@@ -93,8 +93,8 @@ export function entryPose(kind, uIn, { thick = 40, dist = 200, dir = 1 } = {}) {
 const RULES = [
   // Batch 3 (retro + everyday objects), chosen per object.
   ['tumble', /^(sugar-cube|retro-game-system|pruning-shears|portable-cassette-player|drawing-screen-toy|handheld-game-system|videotape|tv-dinner|plastic-food-container|calculator-watch|combo-video-player|video-rental-card|disposable-camera|graphing-calculator|comic-book)$/],
-  ['scoot', /^(double-cheeseburger|hay-bale|baggy-pants|coil-spring-toy|bean-bag-chair|pet-rock|slap-bracelet|photo-booth-strip)$/],
-  ['slide', /^(weed-whacker|leaf-blower|wall-payphone|cat-wall-clock|floor-jukebox|three-ring-binder|quarter-gumball-machine|school-folder|pump-water-blaster|plasma-globe|worlds-fair-globe)$/],
+  ['scoot', /^(dumpling-squishy|double-cheeseburger|hay-bale|baggy-pants|coil-spring-toy|bean-bag-chair|pet-rock|slap-bracelet|photo-booth-strip)$/],
+  ['slide', /^(harp|roadside-diner|weed-whacker|leaf-blower|wall-payphone|cat-wall-clock|floor-jukebox|three-ring-binder|quarter-gumball-machine|school-folder|pump-water-blaster|plasma-globe|worlds-fair-globe)$/],
   ['waddle', /^(gallon-of-milk|recycling-bin|yarn-hair-doll|fashion-doll|potato-toy|stuffed-bean-toy)$/],
   ['drive', /^(classic-bug-car|red-toy-wagon)$/],
   ['roll', /^(rubber-wristband|fortune-ball|smiley-pin|mood-ring)$/],
