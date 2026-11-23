@@ -82,9 +82,9 @@ export function drawRoadsideV4(ctx,kit,options) {
   if(scene==='food'){
     const cityBase=foodCityBase(width,p,shiftY);
     foodGround(ctx,images[food('ground')],{width,height,shiftY,projection:p,cityBase});
-    // One fixed distant hedge bridges the lifted skyline to the finite garden below.
-    sprite(ctx,images[food('bush-back')],width*.5,cityBase+width*.12,width*1.15);
     sprite(ctx,images[food('city-skyline')],width*.5,cityBase,width*1.12);
+    // The foreground hedge goes in front of the city's flat base, preserving its leafy silhouette.
+    sprite(ctx,images[food('bush-back')],width*.5,cityBase+width*.12,width*1.15);
     drawPark(ctx,images,{width,projection:p,cityBase,time:t,reduced,sprite});
     const trees=p.at(.27);
     sprite(ctx,images[food('tree-left')],width*-.025,trees.y,width*.47);

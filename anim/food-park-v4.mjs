@@ -9,6 +9,15 @@ function grassTexture(image) {
   textures.set(image,tile);return tile;
 }
 const polygon=(ctx,pts,fill)=>{ctx.beginPath();pts.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.fillStyle=fill;ctx.fill();};
+export function avenueEdge(width,depth,side,outer=false) {
+  return width/2+side*width*((outer?.15:.055)+(outer?.45:.24)*depth);
+}
+export function parkPathJoin(width,front,side) {
+  const inner=avenueEdge(width,.18,side),outer=avenueEdge(width,.18,side,true);
+  // Measured from the artwork's flat entrance: its opening occupies 61.81% of the sprite width.
+  const mouthRatio=.6181,mouthCenter=.3104,w=Math.abs(outer-inner)/mouthRatio;
+  return {x:(inner+outer)/2-side*(.5-mouthCenter)*w,bottom:front+1,w,flip:side>0};
+}
 export function foodGround(ctx,image,{width,height,shiftY=0,projection,cityBase}) {
   const start=cityBase-width*.04;if(start>=height)return;
   ctx.save();ctx.beginPath();ctx.rect(0,Math.max(0,start),width,height-Math.max(0,start));ctx.clip();
@@ -17,7 +26,7 @@ export function foodGround(ctx,image,{width,height,shiftY=0,projection,cityBase}
   pattern.setTransform(new DOMMatrix().translate(0,shiftY*.8));ctx.fillStyle=pattern;ctx.fillRect(0,start,width,height-start);
   const wash=ctx.createLinearGradient(0,start,0,Math.max(start+1,projection.at(1).y));
   wash.addColorStop(0,'#456b3ba8');wash.addColorStop(.25,'#8ab52c30');wash.addColorStop(1,'#b6cc3d10');ctx.fillStyle=wash;ctx.fillRect(0,start,width,height-start);
-  const at=(d,side,outer=false)=>[width/2+side*width*((outer?.15:.055)+(outer?.45:.24)*d),projection.at(d).y];
+  const at=(d,side,outer=false)=>[avenueEdge(width,d,side,outer),projection.at(d).y];
   // Converging paths and curbs cover the whole visible plane, including below the object baseline.
   const end=Math.max(1.4,(height-projection.at(0).y)/Math.max(1,projection.at(1).y-projection.at(0).y)+.1);
   for(const side of [-1,1]){
@@ -40,11 +49,9 @@ export function drawPark(ctx,images,{width,projection,cityBase,time=0,reduced=fa
   for(const [row,offset] of [-.12,-.055,.015].entries()){const y=front+width*offset;
     const w=width*(.32+row*.01),outside=-width*.015;
     sprite(ctx,img('bush-left'),outside,y,w);sprite(ctx,img('bush-right'),width-outside,y,w);}
+  // Match each avenue entrance exactly, then let the circle hide the far end of each join.
+  for(const side of [-1,1]){const q=parkPathJoin(width,front,side);sprite(ctx,img('path-connector'),q.x,q.bottom,q.w,q.flip);}
   const f=sprite(ctx,img('fountain-loop'),width*.5,at(.15).y,width*.50);
-  // Small painted join pieces overlap the loop's curb and the avenue's two ends.
-  ctx.save();ctx.beginPath();ctx.rect(0,front-width*.075,width,ctx.canvas.height);ctx.clip();
-  for(const side of [-1,1])sprite(ctx,img('path-connector'),width*(side<0?.35:.65),front+width*.006,width*.17,side>0);
-  ctx.restore();
   for(const side of [-1,1]){
     flutterBunting(ctx,img('bunting'),width*(side<0?.22:.78),at(.04).y,width*.16,t,reduced);
     sprite(ctx,img('cafe'),width*(side<0?.22:.78),at(.07).y,width*.16);
