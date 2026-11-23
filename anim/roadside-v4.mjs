@@ -1,4 +1,5 @@
 // Comparison scenes: every truck and scenic plane has its own depth, not a painted row.
+import { foodGround, drawPark, flutterBunting, parkLife } from './food-park-v4.mjs';
 const food = name => 'food-v4-' + name;
 const diner = name => 'diner-v4-' + name;
 export const V4_TRUCKS = [
@@ -7,7 +8,7 @@ export const V4_TRUCKS = [
   { name: 'pizza', side: -1, depth: .59 }, { name: 'pretzel', side: 1, depth: .59 },
   { name: 'taco', side: -1, depth: .82 }, { name: 'coffee', side: 1, depth: .82 },
 ];
-const FOOD_IMAGES = ['sky','ground','city-skyline','park-treeline','tree-left','tree-right','lamp','bench','flowers-pink','flowers-white','menu','cafe','bunting','clouds', ...V4_TRUCKS.map(t => 'truck-' + t.name)].map(food);
+const FOOD_IMAGES = [...['sky','ground','city-skyline','park-treeline','tree-left','tree-right','lamp','bench','flowers-pink','flowers-white','menu','cafe','bunting','clouds', ...V4_TRUCKS.map(t => 'truck-' + t.name)].map(food), '../../items/town-fountain', '../../items/butterfly'];
 const DINER_IMAGES = ['sky','asphalt','building','neon-sign','highway','distant-town','treeline','water-tower','car-left','car-right','lamp','pole-sign','flowerbed','flowers','neon-on','neon-off','cloud-small','cloud-long'].map(diner);
 export function installRoadsideV4(settings, variants) {
   settings['foodtrucks-v4'] = { roadsideV4: 'food', floor: food('ground'), floorBehind: true, fittedFloor: true,
@@ -74,19 +75,22 @@ export function drawRoadsideV4(ctx,kit,options) {
   const p=roadsideProjection(width,floorY,shiftY,scene),h=p.horizon;
   ctx.save();if(dark&&scene==='food')ctx.filter='brightness(.63) saturate(.85)';
   if(scene==='food'){
-    sprite(ctx,images[food('city-skyline')],width*.5,h+width*.04+shiftY*.11,width*1.12);
+    const cityBase=h+width*.04+shiftY*.11;
+    foodGround(ctx,images[food('ground')],{width,height,shiftY,projection:p,cityBase});
+    sprite(ctx,images[food('city-skyline')],width*.5,cityBase,width*1.12);
     sprite(ctx,images[food('park-treeline')],width*.5,h+width*.11+shiftY*.24,width*1.22);
-    ground(ctx,images[food('ground')],{width,height,floorY,shiftY},scene);
+    drawPark(ctx,images,{width,projection:p,cityBase,time:t,reduced,sprite});
     const trees=p.at(.27);
     sprite(ctx,images[food('tree-left')],width*-.025,trees.y,width*.47);
     sprite(ctx,images[food('tree-right')],width*1.025,trees.y,width*.47);
     for(const side of [-1,1]){const q=p.at(.23,side);sprite(ctx,images[food('bench')],q.x+side*width*.12,q.y,width*.18);
       const l=p.at(.47,side);sprite(ctx,images[food('lamp')],l.x+side*width*.16,l.y,width*.073);}
-    const bunting=p.at(.11);sprite(ctx,images[food('bunting')],width/2,bunting.y,width*.28);
+    const bunting=p.at(.20);flutterBunting(ctx,images[food('bunting')],width/2,bunting.y,width*.28,t,reduced);
     for(const truck of V4_TRUCKS){const q=p.at(truck.depth,truck.side),w=width*(.16+.42*truck.depth);
       const box=sprite(ctx,images[food('truck-'+truck.name)],q.x,q.y,w);
-      if(box&&(truck.name==='ramen'||truck.name==='coffee'))steam(ctx,q.x-truck.side*w*.15,box.y+box.h*.51,width*.05,t+truck.depth*4,reduced);}
+      if(box&&['ramen','coffee','pizza','taco'].includes(truck.name))steam(ctx,q.x-truck.side*w*.15,box.y+box.h*.51,width*.065,t+truck.depth*4,reduced);}
     for(const side of [-1,1]){const q=p.at(.98,side);sprite(ctx,images[food(side<0?'flowers-white':'flowers-pink')],q.x+side*width*.03,q.y,width*.13);}
+    parkLife(ctx,images,{width,height,projection:p,cityBase,time:t,reduced});
   }else{
     sprite(ctx,images[diner('distant-town')],width*.5,h+width*.06+shiftY*.10,width*1.17);
     sprite(ctx,images[diner('water-tower')],width*.86,h+width*.09+shiftY*.14,width*.13);
