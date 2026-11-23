@@ -48,6 +48,8 @@ export function mascotFrame(id,mood,age,key='',still=false) {
   if(MOTION_MASCOTS.has(id)) {
     if(age<0)return spec.idle[0];
     const rest=spec.idle[0],a=spec.count+selected*2,b=a+1;
+    // The squirrel throws his nut once; after that his hands stay empty (no nut popping back in) until the next answer.
+    if(id==='squirrel'&&(selected===3||selected===5)&&age>=2190)return spec.idle[2];
     // One selected gesture per answer, with a quiet beat between repetitions.
     // The return path uses the same drawings in reverse, avoiding a snap to rest.
     const beat=age%3600;
