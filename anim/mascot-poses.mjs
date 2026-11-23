@@ -44,10 +44,13 @@ export const mascotMood = accuracy => accuracy>=60?'win':accuracy>=40?'soso':'lo
 export function mascotFrame(id,mood,age,key='',still=false) {
   const spec=MASCOT_POSES[id];if(!spec)throw Error('Unknown mascot '+id);
   const selected=pickMascotReaction(id,mood,key);
-  if(still)return mood==='idle'?spec.idle[0]:selected;
+  // The fox's balloon never deflates and refills: a lost round shows his worried face with the balloon still full (frame 16).
+  const sad=id==='worlds'&&selected===5?16:null;
+  if(still)return mood==='idle'?spec.idle[0]:sad??selected;
   if(MOTION_MASCOTS.has(id)) {
     if(age<0)return spec.idle[0];
     const rest=spec.idle[0],a=spec.count+selected*2,b=a+1;
+    if(sad!==null){const beat=age%3600;return beat<650||beat>=2430?rest:sad;}
     // The squirrel throws his nut once; after that his hands stay empty (no nut popping back in) until the next answer.
     if(id==='squirrel'&&(selected===3||selected===5)&&age>=2190)return spec.idle[2];
     // One selected gesture per answer, with a quiet beat between repetitions.
