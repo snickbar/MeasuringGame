@@ -253,6 +253,9 @@ server.listen(0,'127.0.0.1',()=>{
      await evaluate('window.__layoutAudit("whichbigger")');await evaluate('window.__layoutWbResult()');await shot('whichbigger-result');
      process.exit(0);
     }
+    if(process.env.PLAY_LAYOUT_EVAL){ // run one page expression after loading a mode (PLAY_LAYOUT_EVAL_MODE) and print its result; for quick checks
+     try{await evaluate('window.__layoutAudit('+JSON.stringify(process.env.PLAY_LAYOUT_EVAL_MODE||'quick')+')');const samples=[];for(let i=0;i<14;i++){samples.push(await evaluate(process.env.PLAY_LAYOUT_EVAL));await new Promise(r=>setTimeout(r,120));}fs.writeFileSync(process.env.PLAY_LAYOUT_EVAL_OUT||'/tmp/layout-eval.txt',JSON.stringify(samples));}catch(e){fs.writeFileSync(process.env.PLAY_LAYOUT_EVAL_OUT||'/tmp/layout-eval.txt','ERROR '+e.message);}process.exit(0);
+    }
     if(process.env.PLAY_LAYOUT_QSHOTS){ // review pictures of each mode's question screen (visual pass); writes PNGs and stops
      const dir=process.env.PLAY_LAYOUT_QSHOTS;fs.mkdirSync(dir,{recursive:true});
      for(const mode of ['quick','teamvteam','worlds','daily','monthly','survival','whichbigger','highlow','highstakes','highstakes:bet','bluff','bluff:vote','bluff:summary','quick:many']){

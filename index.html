@@ -13596,6 +13596,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let hsRenderedAnimating = false, hsAnimEl = null, hsAnimCtl = null, hsAnimKey = null;
   let hsOverArrKey = null, hsFinalSig = null, hsPrevShown = null, hsPrevGame = null, hsCelebrated = null, hsRecorded = null, hsTurnAlerted = null, hsBetsToastKey = null, hsFooledKey = null, hsActSent = null;
   let hsPigRoundKey = null, hsPigStartedAt = 0;
+  let hsAnteKey = null;
   const HS_PIG_IDLE = 'anim/mode-mascots/highstakes-pig-tutorial.webp';
   // The pig reacts to EVERY player's result, worst first (lose / so-so / win by thirds of the table), then settles on yours.
   // Local only: nothing is written to the database. hsPigSeq.mood overrides the pig's own-result mood while the walk-through runs.
@@ -13786,6 +13787,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     else if (hsAnimCtl && hsAnimKey) { try { hsAnimCtl.stop(); } catch (e) { /* already stopped */ } hsAnimKey = null; }
     // coins: whoever's shown total dropped paid into the pot; whoever's rose is being paid out of it
     const shown = hsShownChips(hs, animating), potEl = hsContentEl.querySelector("#hs-pot");
+    // A new round: everyone's ante flies from their card into the pot (same coins as a bet), once per round, even for round 1.
+    const anteKey = `${data.gameId}:${hs.round}`;
+    if (hs.stage === "pick" && !animating && potEl && hsAnteKey !== anteKey) {
+      hsAnteKey = anteKey;
+      let anted = false;
+      hs.seats.forEach((id) => {
+        const put = (hs.startChips?.[id] ?? 0) - (hs.chips[id] ?? 0);
+        if (put <= 0) return;
+        hsFly(hsContentEl.querySelector(`[data-hs-pl="${id}"]`), potEl, Math.min(4, Math.max(2, Math.ceil(put / Math.max(1, hs.ante || 5)) + 1)));
+        anted = true;
+      });
+      if (anted) potEl.animate([{ transform: "scale(1)" }, { transform: "scale(1.08)" }, { transform: "scale(1)" }], { duration: 420, delay: 500, easing: "ease-out" });
+      hsPrevShown = shown; hsPrevGame = data.gameId; // the ante is already shown above, so the change check below must not fly it twice
+    }
     if (hsPrevGame === data.gameId && hsPrevShown && potEl) {
       let paid = false;
       hs.seatsAll.forEach((id) => {
