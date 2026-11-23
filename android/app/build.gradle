@@ -16,6 +16,9 @@ def gitCommitCount = {
     }
 }
 
+// Keep an explicit opt-out for repeatable size comparisons; normal release builds are optimized.
+def shrinkRelease = !providers.gradleProperty('unshrunkReleaseForSizeAudit').getOrElse('false').toBoolean()
+
 android {
     namespace = "com.snickbar.sizeemup"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -34,8 +37,9 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            minifyEnabled shrinkRelease
+            shrinkResources shrinkRelease
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }
