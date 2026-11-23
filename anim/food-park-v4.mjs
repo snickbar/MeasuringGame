@@ -21,32 +21,37 @@ export function foodGround(ctx,image,{width,height,shiftY=0,projection,cityBase}
   // Converging paths and curbs cover the whole visible plane, including below the object baseline.
   const end=Math.max(1.4,(height-projection.at(0).y)/Math.max(1,projection.at(1).y-projection.at(0).y)+.1);
   for(const side of [-1,1]){
-    polygon(ctx,[at(0,side),at(end,side),at(end,side,true),at(0,side,true)],'#edc28e');
+    const stop=.18;
+    polygon(ctx,[at(stop,side),at(end,side),at(end,side,true),at(stop,side,true)],'#edc28e');
     ctx.save();ctx.strokeStyle='#b2835980';ctx.lineWidth=.7;
-    for(let z=0;z<28;z++){const d=1/(.7+z*.55),a=at(d,side),b=at(d,side,true);ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...b);ctx.stroke();}
-    for(const t of [.33,.66]){const a=at(0,side),b=at(0,side,true),c=at(end,side),d=at(end,side,true);ctx.beginPath();ctx.moveTo(a[0]+(b[0]-a[0])*t,a[1]);ctx.lineTo(c[0]+(d[0]-c[0])*t,c[1]);ctx.stroke();}
-    ctx.strokeStyle='#fae1b6';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(...at(0,side));ctx.lineTo(...at(end,side));ctx.stroke();ctx.restore();
+    for(let z=0;z<28;z++){const d=1/(.7+z*.55);if(d<stop)continue;const a=at(d,side),b=at(d,side,true);ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...b);ctx.stroke();}
+    for(const t of [.33,.66]){const a=at(stop,side),b=at(stop,side,true),c=at(end,side),d=at(end,side,true);ctx.beginPath();ctx.moveTo(a[0]+(b[0]-a[0])*t,a[1]);ctx.lineTo(c[0]+(d[0]-c[0])*t,c[1]);ctx.stroke();}
+    ctx.strokeStyle='#fae1b6';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(...at(stop,side));ctx.lineTo(...at(end,side));ctx.stroke();ctx.restore();
   }
   ctx.restore();
 }
 export function drawPark(ctx,images,{width,projection,cityBase,time=0,reduced=false,sprite}) {
   const img=name=>images['food-v4-'+name],at=projection.at,t=reduced?0:time;
-  const near=at(.19).y,far=cityBase+width*.015;
-  // A real garden occupies the space between the avenue and the city, even during a tall climb.
-  ctx.save();ctx.strokeStyle='#d9b98a';ctx.lineWidth=width*.055;ctx.lineCap='round';
-  for(const side of [-1,1]){ctx.beginPath();ctx.moveTo(width*.5,near);ctx.bezierCurveTo(width*.5,near-width*.06,width*(side<0?.30:.70),far+width*.07,width*(side<0?.14:.79),far);ctx.stroke();}
-  ctx.restore();
+  const front=at(.18).y,back=cityBase+width*.025;
+  // Separate hedge rows fill the depth to the city; side banks leave a genuine opening in the middle.
+  const backEnd=Math.max(back+width*.055,at(.15).y-width*.17);
+  const backRows=Math.min(16,Math.max(2,Math.ceil((backEnd-back)/(width*.065))+1));
+  for(let row=0;row<backRows;row++)sprite(ctx,img('bush-back'),width*(.5+.012*Math.sin(row*2)),back+(backEnd-back)*row/(backRows-1),width*(row%2?1.12:1.18));
+  const rows=Math.min(24,Math.max(3,Math.ceil((front-back)/(width*.085))));
+  for(let row=0;row<rows;row++){const u=(row+.5)/rows,y=back+(front-back)*u;
+    const w=width*(.34+.04*u),outside=width*(.09-.01*u);
+    sprite(ctx,img('bush-left'),outside,y,w);sprite(ctx,img('bush-right'),width-outside,y,w);}
+  const f=sprite(ctx,img('fountain-loop'),width*.5,at(.15).y,width*.50);
   for(const side of [-1,1]){
-    const y=at(.08).y,x=width*(side<0?.16:.84);
-    sprite(ctx,img('cafe'),x,y,width*.16);
-    sprite(ctx,img('flowers-pink'),width*(side<0?.08:.92),at(.15).y,width*.09);
-    sprite(ctx,img('bench'),width*(side<0?.29:.78),at(.03).y,width*.12);
-    sprite(ctx,img('flowers-white'),width*(side<0?.25:.82),at(.015).y,width*.07);
+    flutterBunting(ctx,img('bunting'),width*(side<0?.17:.83),at(.04).y,width*.16,t,reduced);
+    sprite(ctx,img('cafe'),width*(side<0?.16:.84),at(.07).y,width*.16);
+    // Both the bench and its neighboring flowers are nearer than their table, never perched behind it.
+    sprite(ctx,img('bench'),width*(side<0?.12:.88),at(.17).y,width*.14);
+    sprite(ctx,img('flowers-white'),width*(side<0?.035:.965),at(.17).y,width*.06);
   }
-  const f=sprite(ctx,images['../../items/town-fountain'],width*.62,at(.09).y,width*.15);
   if(f&&!reduced){ctx.save();ctx.strokeStyle='#d6fdff';ctx.lineWidth=1.25;
-    for(let i=0;i<3;i++){const k=(t*.45+i/3)%1;ctx.globalAlpha=(1-k)*.7;ctx.beginPath();ctx.ellipse(f.x+f.w*.5,f.y+f.h*.72,f.w*(.08+.25*k),f.h*(.025+.04*k),0,0,Math.PI*2);ctx.stroke();}
-    for(const side of [-1,1]){const k=(t*.8+(side<0?.2:.7))%1;ctx.globalAlpha=.85;ctx.fillStyle='#efffff';ctx.beginPath();ctx.arc(f.x+f.w*(.5+side*(.08+.28*k)),f.y+f.h*(.16+.55*k*k),1.2,0,Math.PI*2);ctx.fill();}ctx.restore();}
+    for(let i=0;i<3;i++){const k=(t*.45+i/3)%1;ctx.globalAlpha=(1-k)*.7;ctx.beginPath();ctx.ellipse(f.x+f.w*.5,f.y+f.h*.45,f.w*(.03+.09*k),f.h*(.008+.018*k),0,0,Math.PI*2);ctx.stroke();}
+    for(const side of [-1,1]){const k=(t*.8+(side<0?.2:.7))%1;ctx.globalAlpha=.85;ctx.fillStyle='#efffff';ctx.beginPath();ctx.arc(f.x+f.w*(.5+side*(.025+.08*k)),f.y+f.h*(.07+.38*k*k),1,0,Math.PI*2);ctx.fill();}ctx.restore();}
 }
 export function flutterBunting(ctx,image,x,bottom,width,time,reduced) {
   const h=width*image.naturalHeight/image.naturalWidth,top=bottom-h;
