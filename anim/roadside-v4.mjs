@@ -12,11 +12,11 @@ export const V4_TRUCKS = [
 const FOOD_IMAGES = [...['sky','ground','city-skyline','park-treeline','tree-left','tree-right','lamp','bench','flowers-pink','flowers-white','menu','cafe','bunting','clouds','fountain-loop','path-connector','bush-left','bush-right','bush-back', ...V4_TRUCKS.map(t => 'truck-' + t.name)].map(food), '../../items/butterfly'];
 const DINER_IMAGES = DINER_REWORK_IMAGES;
 export function installRoadsideV4(settings, variants) {
-  settings['foodtrucks-v4'] = { roadsideV4: 'food', floor: food('ground'), floorBehind: true, fittedFloor: true,
+  settings.foodtrucks = { roadsideV4: 'food', floor: food('ground'), floorBehind: true, fittedFloor: true,
     sky: ['#168fe9','#80c6f8'], nightSky: ['#101c3d','#3e7291'], night: 'dark', parallax: [] };
   settings['diner-v4'] = { roadsideV4: 'diner', floor: 'diner-v4-lot-v2', floorBehind: true, fittedFloor: true,
     sky: ['#3448ae','#f6aa7b'], night: true, parallax: [] };
-  variants['foodtrucks-v4'] = 'foodtrucks'; variants['diner-v4'] = 'diner';
+  delete settings['foodtrucks-v4']; delete variants['foodtrucks-v4']; variants['diner-v4'] = 'diner';
 }
 export function roadsideV4Images(scene) { return scene === 'food' ? FOOD_IMAGES : scene === 'diner' ? DINER_IMAGES : []; }
 
