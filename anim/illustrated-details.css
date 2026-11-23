@@ -3,8 +3,13 @@ body :is(.hs-clock,.hud-timer){position:relative;isolation:isolate;border:0;bord
 body .hs-clock{font-size:17px;padding-top:4px;flex-shrink:0}
 body .hud-timer{display:flex;align-items:center;justify-content:center;width:72px;height:72px;font-size:25px;padding-top:12px}
 body :is(.hs-clock,.hud-timer)::before{content:'';position:absolute;inset:0;background:url('../icons/ui-stopwatch.webp') center/contain no-repeat;z-index:-2;pointer-events:none}
-body :is(.hs-clock,.hud-timer).low{background:none;color:#3b2718;text-shadow:none}
-body :is(.hs-clock,.hud-timer).low::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 30% 28% at 49% 57%,#f18a5b60 0 95%,transparent 100%);z-index:-1;pointer-events:none}
+/* The last seconds: red digits, a red halo that beats, and the stopwatch wobbles (tick sound and buzz are in the timer code). */
+body :is(.hs-clock,.hud-timer).low{background:none;color:#c4271a;text-shadow:0 1px 0 #fff8e8;animation:clockWobble .5s ease-in-out infinite}
+body :is(.hs-clock,.hud-timer).low::after{content:'';position:absolute;inset:-16%;background:radial-gradient(circle,#ff3b2a99 0 48%,#ff3b2a33 62%,transparent 74%);z-index:-1;pointer-events:none;animation:clockHalo .5s ease-in-out infinite alternate}
+@keyframes clockWobble{0%,100%{rotate:0deg;scale:1}25%{rotate:-5deg;scale:1.07}75%{rotate:5deg;scale:1.07}}
+@keyframes clockHalo{from{opacity:.45;scale:.92}to{opacity:1;scale:1.08}}
+@media (prefers-reduced-motion:reduce){body :is(.hs-clock,.hud-timer).low,body :is(.hs-clock,.hud-timer).low::after{animation:none}}
+html[data-motion=reduce] :is(.hs-clock,.hud-timer).low,html[data-motion=reduce] :is(.hs-clock,.hud-timer).low::after{animation:none}
 body #bluff-content .bl-clock{font-size:16px;padding-top:3px}
 body #bluff-content .bl-clock.wide{font-size:8px}
 
