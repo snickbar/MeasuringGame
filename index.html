@@ -1389,7 +1389,7 @@ if (location.protocol === "file:") {
   .solo-bubble { position: relative; display: inline-block; max-width: 100%; box-sizing: border-box; padding: 6px 12px; border-radius: 14px; background: #fff; border: 2px solid #d8c3a0; color: #4a2c12; font-weight: 700; font-size: 14px; line-height: 1.25; box-shadow: 0 2px 0 rgba(74,44,18,.18); animation: soloBubbleIn .45s cubic-bezier(.34,1.56,.64,1) 1s both; }
   .solo-bubble::before { content: ""; position: absolute; left: 22px; top: -9px; width: 14px; height: 14px; background: #fff; border-left: 2px solid #d8c3a0; border-top: 2px solid #d8c3a0; transform: rotate(45deg); }
   .solo-bubble-mo { margin-top: 8px; }
-  .solo-bubble-fox { display: block; margin: 10px 108px 4px 0; width: fit-content; max-width: calc(100% - 108px); }
+  .solo-bubble-fox { display: block; margin: 10px 64px 4px auto; width: fit-content; max-width: calc(100% - 64px); }
   .solo-bubble-fox::before { left: auto; right: -9px; top: 12px; transform: rotate(135deg); }
   .solo-bubble-mo::before { left: -9px; top: 12px; transform: rotate(-45deg); }
   @keyframes soloBubbleIn { 0% { scale: .4; opacity: 0; } 100% { scale: 1; opacity: 1; } }
@@ -4199,6 +4199,11 @@ if (location.protocol === "file:") {
   .wl-rs { display: flex; flex-direction: column; justify-content: flex-start; gap: 8px; min-height: 100%; box-sizing: border-box; padding: 4px 0 10px; }
   .wl-rs .tw-avg { position: relative; margin: 0; }
   .wl-rs-acc .tw-avg-num { font-size: 56px; }
+  .wl-rs-mark { margin-left: auto; flex: none; display: flex; align-items: center; }
+  .wl-rs-mark svg, .wl-rs-mark img { width: 44px; height: 44px; }
+  .wl-rs-sayrow { position: relative; height: 0; z-index: 3; display: flex; justify-content: center; pointer-events: none; }
+  .wl-rs-sayrow .solo-bubble { position: absolute; top: -9px; }
+  .solo-bubble-down::before { left: 50%; top: auto; bottom: -9px; margin-left: -7px; transform: rotate(225deg); }
   .wl-rs-verdict { display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: #000; }
   .wl-rs-verdict svg, .wl-rs-verdict img { width: 28px; height: 28px; }
   .wl-rs-boost { margin-top: 4px; font-size: 14px; }
@@ -14520,11 +14525,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const foxReaction = mood !== "same" ? `worlds-balloon-fox-${mood}.webp` : "";
       el.innerHTML = `<div class="pin-top">${header}${dots(k)}</div>
         <div class="wl-rs">
-          <div class="dc-card dc-hot tw-avg wl-rs-acc"><div class="solo-result-line">${soloResultAvatarHtml(acc, 1150)}<div><div class="tw-avg-label">${boost ? "Your buffered guess" : "This question"}</div><div class="tw-avg-num">${reduced ? formatAccuracy(acc) : "0"}%</div></div></div>
-            <div class="wl-rs-verdict">${markSvg(acc)}<span>${label}</span></div>
+          <div class="dc-card dc-hot tw-avg wl-rs-acc"><div class="solo-result-line">${soloResultAvatarHtml(acc, 1150)}<div><div class="tw-avg-label">${boost ? "Your buffered guess" : "This question"}</div><div class="tw-avg-num">${reduced ? formatAccuracy(acc) : "0"}%</div></div><span class="wl-rs-mark" role="img" aria-label="${acc >= 60 ? "Right" : "Off"}">${markSvg(acc)}</span></div>
             ${boost ? `<div class="wl-rs-boost">${boost}</div>` : ""}
             <div class="wl-rs-lines"><span>You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b></span><span>Answer <b>${ans}</b></span></div></div>
           <div class="dc-card dc-hot tw-avg wl-rs-meter"><div class="tw-avg-label">Your average this level</div><div class="tw-avg-num">${formatAccuracy(reduced ? runningAvg : prevAvg)}%</div>${worldProgressBarHtml(reduced ? runningAvg : (k > 0 ? prevAvg : 0), "day")}</div>
+          <div class="wl-rs-sayrow"><div class="solo-bubble solo-bubble-down">${escapeHtml(label)}</div></div>
           <div class="wl-rs-scene${reduced ? " is-reacting" : ""}" data-mood="${mood}" aria-hidden="true"><i class="wl-cl c1"></i><i class="wl-cl c2"></i><i class="wl-cl c3"></i><div class="wl-rs-balloon"><div class="wl-rs-sway">${mascotMarkup("worlds",mood==="up"?"win":mood==="down"?"lose":"soso",{key:wl.runId+":"+k,delay:800,still:reduced})}</div>${mood === "up" ? '<i class="wl-sp s1"></i><i class="wl-sp s2"></i><i class="wl-sp s3"></i><i class="wl-sp s4"></i>' : ""}</div></div>
         </div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="wl-next">${last ? "See my results" : "Next question"}</button></div>`;
