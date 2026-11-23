@@ -21513,6 +21513,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         try { y = new DOMMatrix(getComputedStyle(it.reel).transform).m42 || 0; } catch (e) {}
         it.loop.cancel();
         if (instant) { finish(); return; }
+        // The picture's own pose (rotation / flip) can be set after the reel started, so read it now, while the landing picture is still off screen.
+        const real = card.querySelector(":scope > img"), fin = it.reel.lastElementChild;
+        if (real && fin) fin.style.transform = real.style.transform || "";
         it.reel.animate([{ transform: `translateY(${y}px)` }, { transform: `translateY(${-(K + 1) * it.H}px)` }],
           { duration: 520, easing: "cubic-bezier(.2,.8,.3,1.12)", fill: "forwards" }).onfinish = finish;
       };
