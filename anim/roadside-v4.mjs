@@ -66,7 +66,8 @@ export function drawRoadsideV4Sky(ctx,kit,{width,height,floorY=height-45,dark,ti
   ctx.save();if(dark&&scene==='food')ctx.filter='brightness(.60) saturate(.80)';
   if(sky){const skyHeight=scene==='diner'?Math.max(height*.4,roadsideProjection(width,floorY,shiftY,scene).horizon+width*.20+shiftY*.1):height;
     ctx.fillStyle=scene==='diner'?'#f7ae83':'#52b9f4';ctx.fillRect(0,0,width,height);
-    ctx.drawImage(sky,0,0,width,skyHeight);}
+    ctx.drawImage(sky,0,0,width,skyHeight);
+    if(scene==='diner'&&skyHeight<height)ctx.drawImage(sky,0,sky.naturalHeight-1,sky.naturalWidth,1,0,skyHeight-1,width,height-skyHeight+1);}
   const t=reduced?0:time;
   if(scene==='food'){const cloud=kit.images[food('clouds')];
     sprite(ctx,cloud,width*(.20+.018*Math.sin(t*.05)),height*.19+(shiftY*.035%height),width*.24);
