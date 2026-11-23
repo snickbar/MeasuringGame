@@ -3614,6 +3614,10 @@ if (location.protocol === "file:") {
     #perfect-flash.flash { animation: none; }
   }
   .rx-stage { position: absolute; pointer-events: none; }
+  .rx-from { position: absolute; left: 50%; top: 100%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; padding: 2px 8px 2px 3px; border-radius: 999px; background: rgba(255,253,246,.96); border: 2px solid #ecdcc0; box-shadow: 0 2px 6px rgba(74,44,18,.3); font: 700 12px 'Fredoka', sans-serif; color: #4a2c12; white-space: nowrap; max-width: 150px; }
+  .rx-from.above { top: auto; bottom: 100%; }
+  .rx-from b { overflow: hidden; text-overflow: ellipsis; font-weight: 700; }
+  .rx-from .avatar-icon { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; flex: 0 0 auto; }
   .rx-piv { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
   .rx-piv > img { width: 52%; height: 52%; object-fit: contain; display: block; }
   .rx-piv > img[src^="monthly/art/poster-r"] { width: 69%; height: 69%; }
@@ -22099,6 +22103,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     reactionsPanelEl.appendChild(stage);
     const sizeFix = def && RX_SCALE[def.id];
     if (sizeFix) { stage.style.scale = String(sizeFix); }
+    // The sender's card is scrolled out of view (or not on screen): the picture sits at the edge of the list, beside somebody else's card, so
+    // say whose it is with a small name tag and an arrow toward where their card is.
+    if (!r.previewAt) {
+      let away = "";
+      if (card) {
+        const rc = card.getBoundingClientRect(), cc = (card.closest("#score-col") || card.parentElement).getBoundingClientRect();
+        if (rc.top < cc.top - 2) away = "up"; else if (rc.bottom > cc.bottom + 2) away = "down";
+      } else away = "none";
+      const who = currentPlayers?.[r.playerId];
+      if (away && who) {
+        const tag = document.createElement("div");
+        tag.className = "rx-from" + (away === "up" ? " above" : "");
+        tag.innerHTML = (away === "up" ? "▲ " : "") + avatarHtml(who.avatar) + `<b>${escapeHtml(who.name || "Player")}</b>` + (away === "down" ? " ▼" : "");
+        stage.appendChild(tag);
+      }
+    }
     rxShowing[r.playerId] = stage;
     if (def && def.id === "sideeye") {
       piv.animate([{ transform: "scale(.35)" }, { transform: "scale(1.12)", offset: .2 }, { transform: "none" }], { duration: 500, easing: "ease-out" });

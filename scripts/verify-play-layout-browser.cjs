@@ -137,6 +137,7 @@ window.__layoutRobotScroll=async()=>{quickRobot.hide();quickRobot.stand('scroll:
 const FRAME_PROBE_MS=300;
 // Monthly always plays on its own month's question board (the fixture's month is 2026-10, board mb10), whatever board is equipped.
 window.__layoutDailyResult=async()=>{await window.__layoutAudit('daily');daily.guesses=[3];daily.res={i:0,acc:100,ok:true,ans:'3',label:'Perfect!',side:wbSidePick(true,2,'',false,true),quip:'Nailed it'};daily.phase='result';renderDaily();};
+window.__layoutReaction=pid=>{if(window.__rxd)return document.querySelectorAll('.rx-from').length;window.__rxd=1;const sc=document.getElementById('score-col');if(sc)sc.scrollTop=0;renderReactionBubble({playerId:pid,emoji:Object.keys(REACTIONS)[0],at:Date.now()});return document.querySelectorAll('.rx-from').length;};
 window.__layoutExitConfirm=async()=>{await window.__layoutAudit('daily');openExitConfirm('quickResume','Resume your Quick Game?','Round 2 of 5 is saved. Pick up where you left off, or start a new game (this drops the saved one).','Resume','Start new');};
 window.__layoutMenuShot=async kind=>{exitConfirmOverlayEl.classList.remove('show');await window.__layoutAudit(kind==='survival'?'survival':kind==='wb'?'whichbigger':'worlds');
  const L=(m,o)=>localStorage.setItem('mg_resume_'+deviceId+'_'+m,JSON.stringify(o));
@@ -254,7 +255,7 @@ server.listen(0,'127.0.0.1',()=>{
      process.exit(0);
     }
     if(process.env.PLAY_LAYOUT_EVAL){ // run one page expression after loading a mode (PLAY_LAYOUT_EVAL_MODE) and print its result; for quick checks
-     try{await evaluate('window.__layoutAudit('+JSON.stringify(process.env.PLAY_LAYOUT_EVAL_MODE||'quick')+')');const samples=[];for(let i=0;i<14;i++){samples.push(await evaluate(process.env.PLAY_LAYOUT_EVAL));await new Promise(r=>setTimeout(r,120));}fs.writeFileSync(process.env.PLAY_LAYOUT_EVAL_OUT||'/tmp/layout-eval.txt',JSON.stringify(samples));}catch(e){fs.writeFileSync(process.env.PLAY_LAYOUT_EVAL_OUT||'/tmp/layout-eval.txt','ERROR '+e.message);}process.exit(0);
+     try{await evaluate('window.__layoutAudit('+JSON.stringify(process.env.PLAY_LAYOUT_EVAL_MODE||'quick')+')');const samples=[];for(let i=0;i<14;i++){samples.push(await evaluate(process.env.PLAY_LAYOUT_EVAL));await new Promise(r=>setTimeout(r,120));if(i===5&&process.env.PLAY_LAYOUT_EVAL_SHOT){const sh=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(process.env.PLAY_LAYOUT_EVAL_SHOT,Buffer.from(sh.data,'base64'));}}fs.writeFileSync(process.env.PLAY_LAYOUT_EVAL_OUT||'/tmp/layout-eval.txt',JSON.stringify(samples));}catch(e){fs.writeFileSync(process.env.PLAY_LAYOUT_EVAL_OUT||'/tmp/layout-eval.txt','ERROR '+e.message);}process.exit(0);
     }
     if(process.env.PLAY_LAYOUT_QSHOTS){ // review pictures of each mode's question screen (visual pass); writes PNGs and stops
      const dir=process.env.PLAY_LAYOUT_QSHOTS;fs.mkdirSync(dir,{recursive:true});
