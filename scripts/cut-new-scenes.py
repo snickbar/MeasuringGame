@@ -67,18 +67,43 @@ def frames(file, names, w=480):
         for c in cs:
             if k < len(names):
                 f = im.crop((c[0] + 2, r[0] + 2, c[1] - 2, r[1] - 2)); save(fit_w(f, w), names[k]); k += 1
-def tall(file, name, key, w=900):
+def apron_fade(im, from_row=.72, bottom=.18, side=.08):
+    """Soften the gravel or grass apron around a building so it melts into the lot instead of ending in a hard box."""
+    a = np.array(im).astype(float); h, w = a.shape[:2]
+    y = np.arange(h)[:, None] / h; x = np.arange(w)[None, :] / w
+    fade_b = np.clip((1 - y) / bottom, 0, 1)                                  # bottom rows fade out
+    fade_s = np.clip(np.minimum(x, 1 - x) / side, 0, 1)                        # side edges fade, only in the apron zone
+    zone = np.clip((y - from_row) / .06, 0, 1)
+    a[..., 3] *= np.minimum(1, fade_b + (1 - zone)) * (1 - zone + zone * fade_s)
+    return Image.fromarray(a.clip(0, 255).astype("uint8"), "RGBA")
+def tall(file, name, key, w=900, apron=False):
     im = Image.open(src / file)
     im = key_out(im) if key else im.convert("RGB")
+    if apron: im = apron_fade(im)
     save(fit_w(im, w), name)
+def sky_cut(file, name, w=900, tol=11, feather=14):
+    """A backdrop whose plain sky is removed (transparent) so the scene's own stars, clouds and fireflies show behind the skyline."""
+    from PIL import ImageFilter
+    im = Image.open(src / file).convert("RGB"); a = np.array(im).astype(int); h, wd, _ = a.shape
+    sky = np.zeros((h, wd), bool); live = np.ones(wd, bool)
+    for y in range(1, h):
+        d = np.abs(a[y] - a[y - 1]).sum(axis=1)
+        live &= d < tol
+        sky[y] = live
+    sky[0] = True
+    m = Image.fromarray(np.where(sky, 0, 255).astype("uint8")).filter(ImageFilter.MinFilter(3)).filter(ImageFilter.GaussianBlur(1.2))
+    out_im = im.convert("RGBA"); out_im.putalpha(m)
+    # fade the skyline a little so no hard sky-coloured fringe shows
+    bb = out_im.getchannel("A").getbbox(); out_im = out_im.crop((0, max(0, bb[1] - 4), wd, h))
+    save(fit_w(out_im, w), name)
 def ground(file, name, w=1500):
     im = Image.open(src / file).convert("RGB"); im = seamless(im, round(im.width * .08)); save(fit_w(im, w), name)
 # --- drive-in
 ground("drivein-01-ground.png", "drivein-ground")
 sheet("drivein-02-cars.png", 3, 2, [f"drivein-car-{i}" for i in range(6)])
 tall("drivein-03-screen.png", "drivein-screen", True)
-tall("drivein-04-snack-stand.png", "drivein-snack-stand", True)
-tall("drivein-05-backdrop.png", "drivein-backdrop", False)
+tall("drivein-04-snack-stand.png", "drivein-snack-stand", True, apron=True)
+sky_cut("drivein-05-backdrop.png", "drivein-backdrop")
 frames("drivein-06-movie-frames.png", [f"drivein-movie-{i}" for i in range(6)])
 sheet("drivein-07-snack-animation.png", 4, 2, ["drivein-neon-on", "drivein-neon-off", "drivein-bulbs-a", "drivein-bulbs-b", "drivein-pop-0", "drivein-pop-1", "drivein-pop-2", "drivein-window-glow"], 300)
 # --- food trucks

@@ -40,8 +40,10 @@ for (const [scene, words] of Object.entries(OBJECT_GROUPS)) for (const id of wor
 }
 for (const [id, scene] of Object.entries(SCENE_MOVES)) SCENERY_BY_OBJECT[id] = scene;
 // Retro Rewind objects (the Retro Rewind World) reveal in the roller rink and arcade.
-for (const id of `rotary-phone lava-lamp boombox vinyl-record retro-cartridge typewriter retro-game-system portable-cassette-player rubber-wristband baggy-pants yarn-hair-doll fashion-doll wall-payphone cat-wall-clock coil-spring-toy fortune-ball drawing-screen-toy potato-toy egg-digital-pet handheld-game-system red-toy-wagon videotape floor-jukebox stuffed-bean-toy bean-bag-chair tv-dinner smiley-pin plastic-food-container roller-skate mood-ring pet-rock three-ring-binder calculator-watch slap-bracelet quarter-gumball-machine transforming-robot-toy plastic-army-man combo-video-player school-folder pump-water-blaster video-rental-card disposable-camera photo-booth-strip graphing-calculator plasma-globe kids-meal-toy worlds-fair-globe comic-book`.split(' ')) SCENERY_BY_OBJECT[id] = 'retro';
+for (const id of `rotary-phone lava-lamp vinyl-record retro-cartridge typewriter retro-game-system rubber-wristband baggy-pants yarn-hair-doll fashion-doll wall-payphone cat-wall-clock coil-spring-toy fortune-ball drawing-screen-toy potato-toy egg-digital-pet handheld-game-system floor-jukebox stuffed-bean-toy tv-dinner smiley-pin plastic-food-container roller-skate mood-ring pet-rock three-ring-binder calculator-watch slap-bracelet quarter-gumball-machine school-folder graphing-calculator plasma-globe kids-meal-toy`.split(' ')) SCENERY_BY_OBJECT[id] = 'retro';
 SCENERY_BY_OBJECT['arcade-machine'] = 'retro';
+// Movie-night and road-trip Retro Rewind objects reveal at the drive-in.
+for (const id of `videotape video-rental-card combo-video-player boombox portable-cassette-player disposable-camera photo-booth-strip red-toy-wagon pump-water-blaster comic-book worlds-fair-globe plastic-army-man bean-bag-chair transforming-robot-toy`.split(' ')) SCENERY_BY_OBJECT[id] = 'drivein';
 export function sceneryFor(object) { return SCENERY_BY_OBJECT[object.id] || 'grass'; }
 
 // A scene flagged night:true is always night; night:'dark' is night only when the app is in dark mode.
@@ -256,6 +258,14 @@ export const SETTINGS = {
       props: [{ img: 'restaurant-table-0', x: 0.1, row: 730, w: 0.12 }, { img: 'restaurant-table-5', x: 0.9, row: 730, w: 0.12 }],
       tanks: [{ box: [.418, .493, .582, .76], fish: [{ img: 'restaurant-fish-0', y: .3, w: .17, speed: .05, phase: 0 }, { img: 'restaurant-fish-1', y: .55, w: .2, speed: -.035, phase: .4 }, { img: 'restaurant-fish-2', y: .2, w: .16, speed: .04, phase: .7 }, { img: 'restaurant-fish-7', y: .72, w: .14, speed: -.06, phase: .15 }, { img: 'restaurant-fish-4', y: .45, w: .17, speed: .03, phase: .55 }] }] }] },
   retro: { floor: 'retro-v3-arcade', fittedFloor: true, floorInset: 0, lightTally: true, sky: ['#162548', '#6676b4'], parallax: [] },
+  // Drive-in theater: a night lot. Everything stands on the lot by depth (floorDepth singles), the hills behind it follow the far edge of the lot.
+  drivein: { floor: 'drivein-ground', floorTileWidth: 1450, floorBehind: true, floorInset: 0, night: true, sky: ['#05084a', '#161774'], fireflies: 'always', movers: ['twinkle'],
+    floorDepth: { par: .5, tables: [], rows: [], singles: [
+      { img: 'drivein-screen', r: 0, x: .36, w: .62, live: { movie: { box: [.066, .225, .934, .553], imgs: ['drivein-movie-0', 'drivein-movie-1', 'drivein-movie-2', 'drivein-movie-3', 'drivein-movie-4', 'drivein-movie-5'], plan: [[0, 3.2], [2, .35], [0, 2.2], [1, 3], [3, 3], [4, 3], [5, 3]] } } },
+      { img: 'drivein-snack-stand', r: .03, x: .82, w: .4, live: { blink: [{ box: [.26, .18, .74, .262], round: .03, speed: .22 }], pop: { imgs: ['drivein-pop-0', 'drivein-pop-1', 'drivein-pop-2'], x: .49, y: .03, w: .17, every: 1.6 } } },
+      { img: 'drivein-car-0', r: .1, x: .22, w: .2 }, { img: 'drivein-car-3', r: .1, x: .5, w: .2 }, { img: 'drivein-car-1', r: .1, x: .78, w: .2 },
+      { img: 'drivein-car-2', r: .22, x: .15, w: .27 }, { img: 'drivein-car-4', r: .22, x: .5, w: .27 }, { img: 'drivein-car-5', r: .22, x: .85, w: .27 }] },
+    parallax: [{ img: 'drivein-backdrop', par: .5, lift: 632, scale: 1, noFill: true }] },
   workshop: { floor: 'workshop-n-floor', floorTileWidth: 640, floorDrifters: [{ img: 'workshop-n-movers-0', lane: 0.5, w: 0.032, speed: 20, start: 0.2, bob: 0.3 }, { img: 'workshop-n-movers-1', lane: 0.5, w: 0.061, speed: 40, start: 0.5 }, { img: 'workshop-n-movers-3', lane: 0.5, w: 0.043, speed: 10, start: 0.7 }, { img: 'workshop-n-movers-4', lane: 0.5, w: 0.038, speed: 26, start: 0.35, bob: 0.3 }, { img: 'workshop-n-movers-5', lane: 0.5, w: 0.071, speed: 16, start: 0.85 }], sky: ['#d6dbe0', '#eef0f2'],
     parallax: [{ img: 'workshop-n-far', par: .16, lift: 330, scale: 0.85, props: [{ img: 'workshop-n-big-0', x: 0.5, row: 360, w: 0.258 }] },
       { img: 'workshop-n-mid', par: .34, lift: 166, scale: 0.75, props: [{ img: 'workshop-n-reveals-0', x: 0.14, row: 546, w: 0.085 }, { img: 'workshop-n-reveals-1', x: 0.5, row: 546, w: 0.086 }, { img: 'workshop-n-reveals-2', x: 0.84, row: 546, w: 0.150 }, { img: 'workshop-n-anim-0', x: 0.72, row: 546, w: 0.152, spin: { img: 'workshop-n-anim-1', fx: .5, fy: .5, size: .7, speed: .8 } }] },
@@ -447,7 +457,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const pick = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[pick], id = VARIANT_OF[pick] || pick;
-  const names = [...projectedRoomImages(config.projectedRoom), !NO_STARS.has(id) && 'star-field', config.floor, config.floorProp?.img, ...Object.values(config.retroRink || {}), ...Object.values(config.bookcase || {}), ...Object.values(config.workshop || {}), config.deskLamp?.arm, config.deskLamp?.shade, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomCeiling, config.roomRoof?.img, ...(config.floorDepth?.tables || []).map(q => q.img || q), ...(config.floorDepth?.rows || []).flatMap(r => (r.tables || []).map(q => q.img || q)), ...(config.floorDepth?.singles || []).map(q => q.img), config.roomRoof && 'star-field', ...(config.wallPieces || []).map(q => q.img), ...(config.parallax || []).flatMap(l => (l.tanks || []).flatMap(t => t.fish.map(f => f.img))), config.roomPlant, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.paneling, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [...projectedRoomImages(config.projectedRoom), !NO_STARS.has(id) && 'star-field', config.floor, config.floorProp?.img, ...Object.values(config.retroRink || {}), ...Object.values(config.bookcase || {}), ...Object.values(config.workshop || {}), config.deskLamp?.arm, config.deskLamp?.shade, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomCeiling, config.roomRoof?.img, ...(config.floorDepth?.tables || []).map(q => q.img || q), ...(config.floorDepth?.rows || []).flatMap(r => (r.tables || []).map(q => q.img || q)), ...(config.floorDepth?.singles || []).flatMap(q => [q.img, ...(q.live?.movie?.imgs || []), ...(q.live?.pop?.imgs || [])]), config.roomRoof && 'star-field', ...(config.wallPieces || []).map(q => q.img), ...(config.parallax || []).flatMap(l => (l.tanks || []).flatMap(t => t.fish.map(f => f.img))), config.roomPlant, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.paneling, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if ((config.town && Object.values(config.town).some(name => !images[name])) || (config.square && Object.values(config.square).some(name => !images[name])) || (config.coast && Object.values(config.coast).some(name => !images[name])) || (config.rooftop && Object.values(config.rooftop).some(name => !images[name])) || (config.floor && !images[config.floor]) || (config.avenue && ['pier', 'beach', 'ocean'].some(key => !images[config.avenue[key]]))) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -1948,7 +1958,7 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   if (behindFloor && config.floorBehind) drawSceneryFloor(ctx, kit, FLOOR_DATA[config.floor], { width, height, groundScale, dark, time, reduced, ...behindFloor }); // a deep floor that the rows of tables stand on
   if (config.projectedRoom) drawProjectedIndoor(ctx, kit, { width, height, shiftY, floorY, dark, time, reduced });
   drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundScale, time, reduced });
-  if (behindFloor && config.floorDepth) drawFloorDepthRows(ctx, kit, { width, height, groundScale, dark, ...behindFloor });
+  if (behindFloor && config.floorDepth) drawFloorDepthRows(ctx, kit, { width, height, groundScale, dark, time, reduced, ...behindFloor });
   const petals = images[config.fallingPetals];
   if (petals && !reduced) drawFallingPetals(ctx, petals, width, height, time, shiftY);
   drawSpritePieces(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale }); // in front of the far layers, so nothing flies behind a hill and vanishes
@@ -2035,8 +2045,35 @@ function drawWorkshopPiece(ctx, image, x, y, width, anchorY = .5) {
 }
 
 function floorDepthPar(depth, r, surface) { return r >= surface ? 1 : depth.par + (1 - depth.par) * Math.max(0, r) / surface; }
+// Small animations painted on top of a standing piece, placed by fractions of its picture:
+// movie: pictures that take turns inside a box (the drive-in screen); blink: a neon sign that flickers off now and then; pop: a puff of popcorn that bursts above it.
+function drawLivePiece(ctx, kit, live, left, top, w, h, time, reduced) {
+  const t = reduced ? 0 : time;
+  const m = live.movie, shots = m && m.imgs.map(n => kit.images[n]);
+  if (m && shots.every(Boolean)) {
+    const total = m.plan.reduce((a, [, d]) => a + d, 0); let u = t % total, i = 0;
+    while (u >= m.plan[i][1]) { u -= m.plan[i][1]; i = (i + 1) % m.plan.length; }
+    const [x0, y0, x1, y1] = m.box, bx = left + x0 * w, by = top + y0 * h, bw = (x1 - x0) * w, bh = (y1 - y0) * h;
+    ctx.save(); ctx.beginPath(); ctx.rect(bx, by, bw, bh); ctx.clip();
+    const draw = (pic, a) => { if (a <= 0) return; const k = Math.max(bw / pic.naturalWidth, bh / pic.naturalHeight), dw = pic.naturalWidth * k, dh = pic.naturalHeight * k; ctx.globalAlpha = a; ctx.drawImage(pic, bx + (bw - dw) / 2, by + (bh - dh) / 2, dw, dh); };
+    const fade = Math.min(.4, m.plan[i][1] / 2), prev = shots[m.plan[(i + m.plan.length - 1) % m.plan.length][0]];
+    if (u < fade && !reduced) { draw(prev, 1); draw(shots[m.plan[i][0]], u / fade); } else draw(shots[m.plan[i][0]], 1);
+    ctx.restore();
+  }
+  for (const b of live.blink || []) { // dim the neon for a moment, twice in a short burst, then hold lit
+    const c = (t * b.speed) % 1, off = (c > .70 && c < .75) || (c > .80 && c < .84);
+    if (!off) continue;
+    const [x0, y0, x1, y1] = b.box; ctx.save(); ctx.fillStyle = 'rgba(30,5,10,.62)';
+    ctx.beginPath(); ctx.roundRect(left + x0 * w, top + y0 * h, (x1 - x0) * w, (y1 - y0) * h, b.round * w); ctx.fill(); ctx.restore();
+  }
+  const pop = live.pop, shotsPop = pop && pop.imgs.map(n => kit.images[n]);
+  if (pop && shotsPop.every(Boolean)) {
+    const c = (t / pop.every) % 1, stage = c < .12 ? 0 : c < .24 ? 1 : c < .38 ? 2 : -1;
+    if (stage >= 0) { const pic = shotsPop[stage], pw = pop.w * w, ph = pw * pic.naturalHeight / pic.naturalWidth; ctx.drawImage(pic, left + pop.x * w - pw / 2, top + pop.y * h - ph, pw, ph); }
+  }
+}
 // Rows of tables standing on a deep floor: each row rides the floor at its own depth.
-export function drawFloorDepthRows(ctx, kit, { width, height, floorY, shiftY = 0, shiftX = 0, groundScale = 1, anchorX = width / 2, dark }) {
+export function drawFloorDepthRows(ctx, kit, { width, height, floorY, shiftY = 0, shiftX = 0, groundScale = 1, anchorX = width / 2, dark, time = 0, reduced }) {
   const depth = kit.config.floorDepth, image = kit.images[kit.config.floor]; if (!depth || !image) return;
   const meta = FLOOR_DATA[kit.config.floor], tile = (kit.config.floorTileWidth || 380) * groundScale, tileH = tile * image.naturalHeight / image.naturalWidth;
   const restTop = floorY - shiftY - tileH * meta.surface - floorInset(kit) * groundScale;
@@ -2047,7 +2084,11 @@ export function drawFloorDepthRows(ctx, kit, { width, height, floorY, shiftY = 0
     if (one) { // a single piece placed once, by screen position
       const pic = kit.images[one.img]; if (!pic) continue;
       const base = restTop + one.r * tileH + floorDepthPar(depth, one.r, meta.surface) * shiftY, w = one.w * width * groundScale, h = w * pic.naturalHeight / pic.naturalWidth;
-      if (base - h < height && base > 0) ctx.drawImage(pic, width * one.x + shiftX - w / 2, base - h, w, h);
+      if (base - h < height && base > 0) {
+        const left = width * one.x + shiftX - w / 2, top = base - h;
+        ctx.drawImage(pic, left, top, w, h);
+        if (one.live) drawLivePiece(ctx, kit, one.live, left, top, w, h, time, reduced);
+      }
       continue;
     }
     const base = restTop + row.r * tileH + floorDepthPar(depth, row.r, meta.surface) * shiftY;
