@@ -101,6 +101,7 @@ const robotSnap=()=>{const el=document.querySelector('.qr-robot'),card=scoreColE
   rect:{l:Math.round(r.left),t:Math.round(r.top),r:Math.round(r.right),b:Math.round(r.bottom)},card:c&&{l:Math.round(c.left),t:Math.round(c.top),r:Math.round(c.right)},hud:{l:Math.round(hud.left),r:Math.round(hud.right)},boardTop:Math.round(board.top),boardBottom:Math.round(board.bottom)};};
 const robotWait=ms=>new Promise(r=>setTimeout(r,ms));
 window.__layoutRobotHide=()=>{quickRobot.hide();partyAnt.hide();};
+window.__layoutWbStreak=n=>{Object.assign(wb,{phase:'result',ok:true,picked:wb.pair.bigger.id,score:n,streak:n,prevStreak:n-1});renderWhichBigger();return document.querySelectorAll('.wb-streak-chip').length;};
 window.__layoutWbResult=()=>{Object.assign(wb,{phase:'result',ok:true,picked:wb.pair.bigger.id,score:1,prevStreak:0});renderWhichBigger();};
 // Classic Party ant (anim/party-ant.mjs): stands on the TOP score card, then reacts to every revealed paper by finishing place.
 window.__layoutAnt=async()=>{quickRobot.hide();partyAnt.hide();const solo=roomState.settings.solo;roomState.settings.solo=false;

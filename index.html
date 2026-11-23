@@ -1389,6 +1389,14 @@ if (location.protocol === "file:") {
   /* streak chip: flames that grow with the streak */
   .wb-streak { display: flex; justify-content: center; margin: -4px 0 10px; }
   .wb-streak-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 14px 3px 8px; border-radius: 999px; font-weight: 800; font-size: 15px; color: #fff; text-shadow: 0 1px 0 rgba(0,0,0,.35); border: 2px solid #8a2f0a; background: linear-gradient(#ff9a3c, #e8631a); box-shadow: 0 3px 0 rgba(74,44,18,.35); animation: wbChipIn .5s cubic-bezier(.34,1.56,.64,1) both; }
+  .wb-streak { position: relative; flex-direction: column; align-items: center; }
+  .wb-streak.hot { margin-top: 2px; }
+  .wb-ember { position: absolute; bottom: 6px; width: 7px; height: 7px; border-radius: 50%; background: #ffb43c; box-shadow: 0 0 6px #ff7a1c; pointer-events: none; animation: wbEmber 2s linear infinite; }
+  @keyframes wbEmber { from { translate: 0 0; opacity: 1; } to { translate: 6px -46px; opacity: 0; } }
+  .wb-fire-edge { position: fixed; left: 0; right: 0; bottom: 0; height: 120px; z-index: 0; pointer-events: none; background: linear-gradient(to top, rgba(255,110,30,.55), transparent); animation: wbEdgeBeat 1s ease-in-out infinite alternate; }
+  @keyframes wbEdgeBeat { from { opacity: .5; } to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .wb-ember { display: none; } .wb-fire-edge { animation: none; } }
+  html[data-motion=reduce] .wb-ember { display: none; } html[data-motion=reduce] .wb-fire-edge { animation: none; }
   .wb-streak-chip img { width: 24px; height: 24px; object-fit: contain; animation: wbFlicker .7s ease-in-out infinite alternate; }
   .wb-streak-chip b { font-size: 20px; }
   .wb-streak-chip.t2 { background: linear-gradient(#ff7a3c, #d9361a); box-shadow: 0 3px 0 rgba(74,44,18,.35), 0 0 14px 3px rgba(255,120,40,.7); } .wb-streak-chip.t2 img { width: 30px; height: 30px; }
@@ -15794,7 +15802,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const wbStreakHtml = (n) => {
     if (!n || n < 2) return "";
     const tier = n >= 10 ? 3 : n >= 5 ? 2 : 1;
-    return `<div class="wb-streak"><span class="wb-streak-chip t${tier}"><img src="icons/reactions/fire.webp" alt="" draggable="false"><b>${n}</b> in a row</span></div>`;
+    // 5+ in a row: embers drift up (the verdict line already says On fire! / Unstoppable!); 10+: the bottom edge of the screen glows and beats.
+    const embers = tier >= 2 ? [18, 38, 58, 78].map((x, i) => `<i class="wb-ember" style="left:${x}%;animation-delay:${i * .45}s"></i>`).join("") : "";
+    return `<div class="wb-streak${tier >= 2 ? " hot" : ""}">${tier === 3 ? '<span class="wb-fire-edge"></span>' : ""}${embers}<span class="wb-streak-chip t${tier}"><img src="icons/reactions/fire.webp" alt="" draggable="false"><b>${n}</b> in a row</span></div>`;
   };
   const wbHeartsHtml = (lives, score, bump, spot, streak) => {
     // Best follows you up while you play: once you pass your old best, the box takes your score and glows gold.
