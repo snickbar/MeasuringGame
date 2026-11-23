@@ -4228,6 +4228,7 @@ if (location.protocol === "file:") {
   }
   #paused-overlay, #kick-modal { justify-content: safe center; overflow-y: auto; padding: 48px 12px 24px; }
   #paused-overlay.active, #kick-modal.active { display: flex; }
+  body.settings-over-game #paused-overlay { display: none !important; } /* Settings opened from the pause screen sits on top; Back to game returns to it */
   #kick-modal button, #paused-overlay button { width: 100%; margin: 12px 0 0; }
   /* Waiting lobby (a game held because only one human was left): who is back, and who is still away. */
   .paused-players { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; width: 100%; }
@@ -5467,6 +5468,7 @@ if (location.protocol === "file:") {
     <p class="exit-reason" id="paused-msg">Waiting for the host to resume</p>
     <ul id="paused-players" class="paused-players" style="display:none;"></ul>
     <button id="paused-resume-btn" type="button" class="menu-action-art art-start-game" data-fit-single-line="true" style="display:none;">Resume</button>
+    <button id="paused-settings-btn" type="button" class="menu-action-art art-start-game" data-fit-single-line="true">Settings</button>
     <button id="paused-host-btn" type="button" class="menu-action-art art-start-game" data-fit-single-line="true" style="display:none;">Take over as host</button>
   </section>
 </div>
@@ -23027,6 +23029,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       document.getElementById("paused-msg").textContent = canResume ? "Pick up where you left off." : "Waiting for the host to resume";
     }
   }
+  document.getElementById("paused-settings-btn").addEventListener("click", () => { if (canPeekSettings()) setSettingsOverGame(true); else guardToolbarNav(() => openOverlay(settingsScreen))(); });
   document.getElementById("paused-host-btn").addEventListener("click", () => {
     if (!currentRoomCode) return;
     const code = currentRoomCode, id = currentPlayerId;
