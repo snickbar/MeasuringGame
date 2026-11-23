@@ -262,11 +262,11 @@ export const SETTINGS = {
   drivein: { floor: 'drivein-ground', floorTileWidth: 1450, floorBehind: true, floorInset: 0, night: true, sky: ['#05084a', '#161774'], fireflies: 'always', movers: ['twinkle'],
     floorDepth: { par: .5, zoomX: true, tables: [], rows: [], singles: [
       { img: 'drivein-screen', r: 0, x: .5, w: .94, live: { glows: { lights: [{ xs: [.156, .318, .499, .681, .841], y: .133, r: .12 }] },  movie: { box: [.066, .225, .934, .553], imgs: ['drivein-movie-0', 'drivein-movie-1', 'drivein-movie-2', 'drivein-movie-3', 'drivein-movie-4', 'drivein-movie-5'], plan: [[0, 3.2], [2, .35], [0, 2.2], [1, 3], [3, 3], [4, 3], [5, 3]] } } },
-      { img: 'drivein-snack-stand', r: .13, x: .84, w: .38, live: { blink: [{ box: [.26, .18, .74, .262], round: .03, speed: .22 }], pop: { n: 7, x: .49, y: .045, h: .1, spread: .14, size: .016, every: 1.5 },
+      { img: 'drivein-snack-stand', r: .04, x: .84, w: .36, live: { blink: [{ box: [.26, .18, .74, .262], round: .03, speed: .22 }], pop: { n: 7, x: .49, y: .045, h: .1, spread: .14, size: .016, every: 1.5 },
         glows: { bulbs: [{ xs: [.111, .175, .241, .307, .37, .43, .493, .554, .619, .68, .745, .815, .883], y: .303, r: .06, speed: 4.4 }], windows: [{ x: .5, y: .56, r: .3 }] } } },
-      { img: 'drivein-car-0', r: 0.07, x: 0.14, w: 0.15, fan: 6, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 0 }] } } }, { img: 'drivein-car-7', r: 0.07, x: 0.38, w: 0.15, fan: 6, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 1 }] } } }, { img: 'drivein-car-1', r: 0.07, x: 0.62, w: 0.15, fan: 6, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 2 }] } } }, { img: 'drivein-car-9', r: 0.07, x: 0.86, w: 0.15, fan: 6, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 3 }] } } },
-      { img: 'drivein-car-6', r: 0.17, x: 0.2, w: 0.19, fan: 6, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 4 }] } } }, { img: 'drivein-car-3', r: 0.17, x: 0.4, w: 0.19, fan: 6, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 5 }] } } }, { img: 'drivein-car-2', r: 0.17, x: 0.6, w: 0.19, fan: 6, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 6 }] } } }, { img: 'drivein-car-10', r: 0.17, x: 0.8, w: 0.19, fan: 6, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 7 }] } } },
-      { img: 'drivein-car-4', r: 0.28, x: 0.13, w: 0.24, fan: 6, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 8 }] } } }, { img: 'drivein-car-8', r: 0.28, x: 0.38, w: 0.24, fan: 6, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 9 }] } } }, { img: 'drivein-car-5', r: 0.28, x: 0.63, w: 0.24, fan: 6, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 10 }] } } }, { img: 'drivein-car-11', r: 0.28, x: 0.88, w: 0.24, fan: 6, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 11 }] } } },
+      { img: 'drivein-car-0', r: 0.07, x: 0.14, w: 0.15, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 0 }] } } }, { img: 'drivein-car-7', r: 0.07, x: 0.38, w: 0.15, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 1 }] } } }, { img: 'drivein-car-1', r: 0.07, x: 0.62, w: 0.15, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 2 }] } } }, { img: 'drivein-car-9', r: 0.07, x: 0.86, w: 0.15, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 3 }] } } },
+      { img: 'drivein-car-6', r: 0.17, x: 0.2, w: 0.19, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 4 }] } } }, { img: 'drivein-car-3', r: 0.17, x: 0.4, w: 0.19, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 5 }] } } }, { img: 'drivein-car-2', r: 0.17, x: 0.6, w: 0.19, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 6 }] } } }, { img: 'drivein-car-10', r: 0.17, x: 0.8, w: 0.19, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 7 }] } } },
+      { img: 'drivein-car-4', r: 0.28, x: 0.13, w: 0.24, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 8 }] } } }, { img: 'drivein-car-8', r: 0.28, x: 0.38, w: 0.24, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 9 }] } } }, { img: 'drivein-car-5', r: 0.28, x: 0.63, w: 0.24, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 10 }] } } }, { img: 'drivein-car-11', r: 0.28, x: 0.88, w: 0.24, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 11 }] } } },
       { img: 'drivein-prop-lamp', r: 0.06, x: 0.02, w: 0.075 },
       { img: 'drivein-prop-lamp', r: 0.06, x: 0.98, w: 0.075 },
       { img: 'drivein-prop-lamp', r: 0.22, x: 0.03, w: 0.1 },
@@ -280,13 +280,11 @@ export const SETTINGS = {
       { img: 'drivein-prop-speaker', r: 0.285, x: 0.255, w: 0.065 },
       { img: 'drivein-prop-speaker', r: 0.285, x: 0.505, w: 0.065 },
       { img: 'drivein-prop-speaker', r: 0.285, x: 0.755, w: 0.065 },
-      { img: 'drivein-lights-a', r: .125, x: .5, w: .42, swap: { img: 'drivein-lights-b', period: 1.2, duty: .5 } },
-      { img: 'drivein-arch-on', r: .36, x: .19, w: .34, swap: { img: 'drivein-arch-off', period: 4, duty: .93 } },
-      { img: 'drivein-prop-ticket', r: .36, x: .86, w: .22, live: { glows: { windows: [{ x: .5, y: .55, r: .35 }] } } },
-      { img: 'drivein-prop-sign', r: 0.33, x: 0.62, w: 0.15 },
-      { img: 'drivein-prop-bin', r: 0.33, x: 0.73, w: 0.05 },
-      { img: 'drivein-prop-fence', r: 0.12, x: 0.9, w: 0.14 },
-      { img: 'drivein-prop-fence', r: 0.12, x: 0.1, w: 0.14 } ] },
+      { img: 'drivein-lights-a', r: .37, string: { x1: .07, x2: .93, poleW: .1, sag: .06, bulbs: 11, size: .022, period: 1.2 } },
+      { img: 'drivein-arch-on', r: .36, x: .26, w: .3, swap: { img: 'drivein-arch-off', period: 4, duty: .93 } },
+      { img: 'drivein-prop-ticket', r: .36, x: .74, w: .2, live: { glows: { windows: [{ x: .5, y: .55, r: .35 }] } } },
+      { img: 'drivein-prop-sign', r: 0.33, x: 0.5, w: 0.14 },
+      { img: 'drivein-prop-bin', r: 0.33, x: 0.6, w: 0.05 }, ] },
     parallax: [{ img: 'drivein-backdrop', par: .5, lift: 632, scale: 1, noFill: true, onFloor: { overlap: 6 } }] },
   workshop: { floor: 'workshop-n-floor', floorTileWidth: 640, floorDrifters: [{ img: 'workshop-n-movers-0', lane: 0.5, w: 0.032, speed: 20, start: 0.2, bob: 0.3 }, { img: 'workshop-n-movers-1', lane: 0.5, w: 0.061, speed: 40, start: 0.5 }, { img: 'workshop-n-movers-3', lane: 0.5, w: 0.043, speed: 10, start: 0.7 }, { img: 'workshop-n-movers-4', lane: 0.5, w: 0.038, speed: 26, start: 0.35, bob: 0.3 }, { img: 'workshop-n-movers-5', lane: 0.5, w: 0.071, speed: 16, start: 0.85 }], sky: ['#d6dbe0', '#eef0f2'],
     parallax: [{ img: 'workshop-n-far', par: .16, lift: 330, scale: 0.85, props: [{ img: 'workshop-n-big-0', x: 0.5, row: 360, w: 0.258 }] },
@@ -2116,6 +2114,30 @@ function drawLivePiece(ctx, kit, live, left, top, w, h, time, reduced) {
     ctx.restore();
   }
 }
+// A string of party bulbs hung between two poles that stand at the sides of the lot. The poles are slices of one picture; the rope and bulbs are drawn here so the string can span any width.
+function drawLightString(ctx, kit, one, { width, height, restTop, tileH, depth, meta, shiftY, shiftX, groundScale, anchorX, time, reduced }) {
+  const pic = kit.images[one.img]; if (!pic) return;
+  const st = one.string, base = restTop + one.r * tileH + floorDepthPar(depth, one.r, meta.surface) * shiftY;
+  const zoomX = x => (depth.zoomX ? anchorX + (width * x - anchorX) * groundScale : width * x) + shiftX;
+  const pw = st.poleW * width * groundScale, sc = pw / (pic.naturalWidth * .17), ph = pic.naturalHeight * sc;
+  if (base - ph > height || base < 0) return;
+  const xl = zoomX(st.x1), xr = zoomX(st.x2), cut = pic.naturalWidth * .17;
+  ctx.drawImage(pic, 0, 0, cut, pic.naturalHeight, xl - pw / 2, base - ph, pw, ph);
+  ctx.drawImage(pic, pic.naturalWidth - cut, 0, cut, pic.naturalHeight, xr - pw / 2, base - ph, pw, ph);
+  const ya = base - ph * (1 - .2), sag = st.sag * width * groundScale, n = st.bulbs, flip = !reduced && ((time / st.period) % 1) > .5;
+  const at = t => ({ x: xl + (xr - xl) * t, y: ya + 4 * sag * t * (1 - t) });
+  ctx.save(); ctx.strokeStyle = '#4a2c12'; ctx.lineWidth = Math.max(1.5, width * .005); ctx.beginPath();
+  for (let i = 0; i <= 24; i++) { const q = at(i / 24); i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y); } ctx.stroke();
+  const br = st.size * width * groundScale;
+  for (let i = 0; i < n; i++) {
+    const q = at((i + .5) / n), lit = (i % 2 === 0) !== flip, by = q.y + br * 1.25;
+    if (lit) { const g = ctx.createRadialGradient(q.x, by, 0, q.x, by, br * 3.2); g.addColorStop(0, 'rgba(255,214,110,.55)'); g.addColorStop(1, 'rgba(255,214,110,0)'); ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = g; ctx.fillRect(q.x - br * 3.2, by - br * 3.2, br * 6.4, br * 6.4); ctx.restore(); }
+    ctx.fillStyle = '#6b4a2b'; ctx.fillRect(q.x - br * .32, q.y, br * .64, br * .5); // cap
+    ctx.beginPath(); ctx.arc(q.x, by, br, 0, 6.3); ctx.fillStyle = lit ? '#ffe27a' : '#8c6a52'; ctx.fill(); ctx.lineWidth = Math.max(1.2, br * .18); ctx.strokeStyle = '#3b2410'; ctx.stroke();
+    if (lit) { ctx.beginPath(); ctx.arc(q.x - br * .28, by - br * .3, br * .28, 0, 6.3); ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fill(); }
+  }
+  ctx.restore();
+}
 // Rows of tables standing on a deep floor: each row rides the floor at its own depth.
 export function drawFloorDepthRows(ctx, kit, { width, height, floorY, shiftY = 0, shiftX = 0, groundScale = 1, anchorX = width / 2, dark, time = 0, reduced }) {
   const depth = kit.config.floorDepth, image = kit.images[kit.config.floor]; if (!depth || !image) return;
@@ -2125,13 +2147,14 @@ export function drawFloorDepthRows(ctx, kit, { width, height, floorY, shiftY = 0
   ctx.save(); if (dark) ctx.filter = 'brightness(60%)';
   const items = [...depth.rows.map((row, ri) => ({ r: row.r, row, ri })), ...(depth.singles || []).map(one => ({ r: one.r, one }))].sort((a, b) => a.r - b.r);
   for (const { row, ri, one } of items) {
+    if (one && one.string) { drawLightString(ctx, kit, one, { width, height, restTop, tileH, depth, meta, shiftY, shiftX, groundScale, anchorX, time, reduced }); continue; }
     if (one) { // a single piece placed once, by screen position
       const pic = kit.images[one.img]; if (!pic) continue;
       const base = restTop + one.r * tileH + floorDepthPar(depth, one.r, meta.surface) * shiftY, w = one.w * width * groundScale, h = w * pic.naturalHeight / pic.naturalWidth;
       if (base - h < height && base > 0) {
         const left = (depth.zoomX ? anchorX + (width * one.x - anchorX) * groundScale : width * one.x) + shiftX - w / 2, top = base - h; // zoomX: the lot zooms around the stack, so a zoom never squeezes the cars together
         const alt = one.swap && kit.images[one.swap.img], flip = alt && !reduced && ((time / one.swap.period + (one.swap.phase || 0)) % 1) > one.swap.duty; // a second picture takes its turn (string lights, a neon sign flicker)
-        if (one.fan) { const cx = left + w / 2, dir = (anchorX + (width * one.x - anchorX) * (depth.zoomX ? groundScale : 1) + shiftX) < width / 2 ? 1 : -1; ctx.save(); ctx.translate(cx, base); ctx.rotate(dir * one.fan * Math.PI / 180); ctx.translate(-cx, -base); } // parked in a fan: cars on the left lean right, cars on the right lean left
+        if (one.fan) { const cx = left + w / 2, dir = (anchorX + (width * one.x - anchorX) * (depth.zoomX ? groundScale : 1) + shiftX) < width / 2 ? 1 : -1; ctx.save(); ctx.translate(cx, base); ctx.rotate(dir * one.fan * Math.PI / 180); if (dir < 0) ctx.scale(-1, 1); ctx.translate(-cx, -base); } // parked in a fan: cars on the left lean right and show their left side, cars on the right lean left and are mirrored to show their right side
         ctx.drawImage(flip ? alt : pic, left, top, w, h);
         if (one.fan) ctx.restore();
         if (one.live) drawLivePiece(ctx, kit, one.live, left, top, w, h, time, reduced);
