@@ -7,8 +7,8 @@ for(const id of ids)for(const mood of ['idle','win','soso','lose']) {
   const selected=pickMascotReaction(id,mood,key,()=>.4),rest=spec.idle[0];
   const first=spec.count+selected*2,second=first+1;
   if(id==='worlds'&&selected===5){ // his balloon never deflates: a lost round shows the worried face (frame 16) and returns to rest
-    assert.deepEqual([0,680,800,950,2240,2360,2800].map(t=>mascotFrame(id,mood,t,key)),[rest,16,16,16,16,16,rest],'worlds/lose keeps the balloon full');
-    assert.equal(mascotFrame(id,mood,850,key,true),16);
+    assert.deepEqual([0,680,800,950,2240,2360,2800].map(t=>mascotFrame(id,mood,t,key)),[rest,16,17,17,17,17,17],'worlds/lose sags halfway and stays there');
+    assert.equal(mascotFrame(id,mood,850,key,true),17);
     continue;
   }
   for(let cycle=0;cycle<3;cycle++) {
