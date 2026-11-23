@@ -41,11 +41,15 @@ export function drawPark(ctx,images,{width,projection,cityBase,time=0,reduced=fa
     const w=width*(.32+row*.01),outside=-width*.015;
     sprite(ctx,img('bush-left'),outside,y,w);sprite(ctx,img('bush-right'),width-outside,y,w);}
   const f=sprite(ctx,img('fountain-loop'),width*.5,at(.15).y,width*.50);
+  // Small painted join pieces overlap the loop's curb and the avenue's two ends.
+  ctx.save();ctx.beginPath();ctx.rect(0,front-width*.075,width,ctx.canvas.height);ctx.clip();
+  for(const side of [-1,1])sprite(ctx,img('path-connector'),width*(side<0?.35:.65),front+width*.006,width*.17,side>0);
+  ctx.restore();
   for(const side of [-1,1]){
     flutterBunting(ctx,img('bunting'),width*(side<0?.22:.78),at(.04).y,width*.16,t,reduced);
     sprite(ctx,img('cafe'),width*(side<0?.22:.78),at(.07).y,width*.16);
     // Both the bench and its neighboring flowers are nearer than their table, never perched behind it.
-    sprite(ctx,img('bench'),width*(side<0?.20:.80),at(.17).y,width*.14);
+    sprite(ctx,img('bench'),width*(side<0?.20:.80),at(.17).y,width*.14,side>0);
     sprite(ctx,img('flowers-white'),width*(side<0?.10:.90),at(.17).y,width*.06);
   }
   if(f&&!reduced){ctx.save();ctx.strokeStyle='#d6fdff';ctx.lineWidth=1.25;

@@ -8,7 +8,7 @@ export const V4_TRUCKS = [
   { name: 'pizza', side: -1, depth: .59 }, { name: 'pretzel', side: 1, depth: .59 },
   { name: 'taco', side: -1, depth: .82 }, { name: 'coffee', side: 1, depth: .82 },
 ];
-const FOOD_IMAGES = [...['sky','ground','city-skyline','park-treeline','tree-left','tree-right','lamp','bench','flowers-pink','flowers-white','menu','cafe','bunting','clouds','fountain-loop','bush-left','bush-right','bush-back', ...V4_TRUCKS.map(t => 'truck-' + t.name)].map(food), '../../items/butterfly'];
+const FOOD_IMAGES = [...['sky','ground','city-skyline','park-treeline','tree-left','tree-right','lamp','bench','flowers-pink','flowers-white','menu','cafe','bunting','clouds','fountain-loop','path-connector','bush-left','bush-right','bush-back', ...V4_TRUCKS.map(t => 'truck-' + t.name)].map(food), '../../items/butterfly'];
 const DINER_IMAGES = ['sky','asphalt','building','neon-sign','highway','distant-town','treeline','water-tower','car-left','car-right','lamp','pole-sign','flowerbed','flowers','neon-on','neon-off','cloud-small','cloud-long'].map(diner);
 export function installRoadsideV4(settings, variants) {
   settings['foodtrucks-v4'] = { roadsideV4: 'food', floor: food('ground'), floorBehind: true, fittedFloor: true,
@@ -31,13 +31,14 @@ export function roadsideProjection(width, floorY, shiftY = 0, scene = 'food') {
 }
 export function foodCityBase(width, projection, shiftY=0) {
   // The far skyline may lag, but the space behind this finite park cannot grow without bound.
-  return Math.max(projection.horizon+width*.04+shiftY*.11,projection.at(.18).y-width*.30);
+  return Math.max(projection.horizon+width*.04+shiftY*.11,projection.at(.18).y-width*.30)-width*.065;
 }
-function sprite(ctx, img, x, bottom, width) {
+function sprite(ctx, img, x, bottom, width, flip = false) {
   if (!img) return null;
   const h = width * img.naturalHeight / img.naturalWidth, top = bottom - h;
   if (top > ctx.canvas.height || bottom < 0) return null;
-  ctx.drawImage(img, x - width / 2, top, width, h);
+  ctx.save();if(flip){ctx.translate(x*2,0);ctx.scale(-1,1);}
+  ctx.drawImage(img, x - width / 2, top, width, h);ctx.restore();
   return { x: x - width / 2, y: top, w: width, h, bottom };
 }
 function steam(ctx, x, y, size, time, reduced) {
@@ -81,6 +82,8 @@ export function drawRoadsideV4(ctx,kit,options) {
   if(scene==='food'){
     const cityBase=foodCityBase(width,p,shiftY);
     foodGround(ctx,images[food('ground')],{width,height,shiftY,projection:p,cityBase});
+    // One fixed distant hedge bridges the lifted skyline to the finite garden below.
+    sprite(ctx,images[food('bush-back')],width*.5,cityBase+width*.12,width*1.15);
     sprite(ctx,images[food('city-skyline')],width*.5,cityBase,width*1.12);
     drawPark(ctx,images,{width,projection:p,cityBase,time:t,reduced,sprite});
     const trees=p.at(.27);
