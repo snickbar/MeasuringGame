@@ -5467,7 +5467,7 @@ if (location.protocol === "file:") {
 
 <div id="solo-wait-bar" role="status" aria-live="polite"></div>
 <div id="host-menu" role="menu"></div>
-<div id="solo-ask" role="dialog" aria-live="polite"><div class="solo-ask-card"><h2>You're the only one here</h2><p>The other player hasn't come back. Wait for them in the lobby, or keep playing without them?</p><button type="button" id="solo-ask-lobby" class="menu-action-art art-start-game" data-fit-single-line="true">Go to lobby and wait</button><button type="button" id="solo-ask-go" class="menu-action-art art-start-game" data-fit-single-line="true">Keep playing</button></div></div>
+<div id="solo-ask" role="dialog" aria-live="polite"><div class="solo-ask-card"><h2>You're the only one here</h2><p id="solo-ask-msg">The other player hasn't come back.</p><button type="button" id="solo-ask-lobby" class="menu-action-art art-start-game" data-fit-single-line="true">Wait in lobby</button><button type="button" id="solo-ask-go" class="menu-action-art art-start-game" data-fit-single-line="true">Continue</button><button type="button" id="solo-ask-home" class="menu-action-art art-start-game" data-fit-single-line="true">Go home</button></div></div>
 <div id="paused-overlay">
   <section class="exit-card" role="dialog" aria-labelledby="paused-title" aria-describedby="paused-msg">
     <div class="exit-icon exit-hero" aria-hidden="true"><img src="icons/pause-medallion.webp" alt=""></div>
@@ -5476,6 +5476,7 @@ if (location.protocol === "file:") {
     <ul id="paused-players" class="paused-players" style="display:none;"></ul>
     <button id="paused-resume-btn" type="button" class="menu-action-art art-start-game" data-fit-single-line="true" style="display:none;">Resume</button>
     <button id="paused-settings-btn" type="button" class="menu-action-art art-start-game" data-fit-single-line="true">Settings</button>
+    <button id="paused-home-btn" type="button" class="menu-action-art art-start-game" data-fit-single-line="true" style="display:none;">Go home</button>
     <button id="paused-host-btn" type="button" class="menu-action-art art-start-game" data-fit-single-line="true" style="display:none;">Take over as host</button>
   </section>
 </div>
@@ -16645,7 +16646,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       runTransaction(ref(db, `profiles/${deviceId}/tipDollars`), (cur) => (cur | 0) + d).catch(() => {});
     });
   });
-  toolbarHomeBtn.addEventListener("click", guardToolbarNav(async () => {
+  const goHomeNow = async () => {
     // Returning Home is navigation, not a page reload. Keep the wallet and the decoded scene alive.
     worldStop(); survivalStop(); dailyStop(); monthlyStop();
     if (currentRoomCode && currentPlayerId) await stepOutOfRoom();
@@ -16667,7 +16668,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
     } catch (e) { /* Keep the current scene if the device's preferences are unavailable. */ }
     installHomeScene();
-  }));
+  };
+  toolbarHomeBtn.addEventListener("click", guardToolbarNav(goHomeNow));
 
   // Shrinks a ".fit-text" element's font-size (from whatever its CSS rule
   // sets) until its content actually fits the box it's rendered in - a
@@ -23009,6 +23011,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const gone = w ? (w.ids || []).filter((id) => players[id] && isPlayerAway(players[id])) : [];
     const ask = document.getElementById("solo-ask"), live = !!w && !w.dismissed && !roomState.paused && !!me && me.connected !== false && gone.length > 0 && !!currentRoomCode;
     ask.classList.toggle("show", live && nowMs() - w.since >= SOLO_WAIT_MS);
+    if (ask.classList.contains("show")) {
+      const names = gone.map((id) => players[id].name || "A player");
+      document.getElementById("solo-ask-msg").textContent = (names.length > 1 ? names.slice(0, -1).join(", ") + " and " + names[names.length - 1] + " haven't" : names[0] + " hasn't") + " come back. Wait in the lobby, keep playing without them, or go home and rejoin later.";
+    }
     if (!live || w.dismissed) { bar.classList.remove("show"); return; }
     if (nowMs() - w.since >= SOLO_WAIT_MS) { bar.classList.remove("show"); return; }
     // Any one of the missing humans coming back is enough, so it never names anybody.
@@ -23019,6 +23025,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const soloAsk = (fn) => { const code = currentRoomCode, t = nowMs(); document.getElementById("solo-ask").classList.remove("show"); if (code) runTransaction(ref(db, `rooms/${code}`), (cur) => fn(cur, t), { applyLocally: false }).catch((e) => console.warn("[solo ask]", e)); };
   document.getElementById("solo-ask-lobby").addEventListener("click", () => soloAsk(holdForLobby));
   document.getElementById("solo-ask-go").addEventListener("click", () => soloAsk(keepPlaying));
+  // Home: freeze the game in the waiting lobby first, then leave (the seat stays, so everyone can rejoin it later).
+  document.getElementById("solo-ask-home").addEventListener("click", () => { soloAsk(holdForLobby); goHomeNow(); });
+  document.getElementById("paused-home-btn").addEventListener("click", () => goHomeNow());
 
   function renderPausedOverlay(paused) {
     pausedOverlayEl.classList.toggle("active", !!paused);
@@ -23036,6 +23045,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     pausedResumeBtn.style.opacity = hold && !ready ? ".55" : "";
     hostBtn.style.display = hold && !isHost && hostGone && here ? "flex" : "none";
     list.style.display = hold ? "grid" : "none";
+    document.getElementById("paused-home-btn").style.display = hold ? "flex" : "none";
     if (hold) {
       const hereNow = humans.filter(([, p]) => p.connected !== false); // only who is here: it does not matter which absent player comes back
       list.innerHTML = hereNow.map(([id, p]) => `<li class="here"><span>${escapeHtml(p.name || "Player")}${p.isHost ? " (host)" : ""}${id === currentPlayerId ? " (you)" : ""}</span><span class="pp-state">Here</span></li>`).join("") + (ready ? "" : `<li class="away"><span>Another player</span><span class="pp-state">Not back yet</span></li>`);
