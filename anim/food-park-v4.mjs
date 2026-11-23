@@ -31,23 +31,22 @@ export function foodGround(ctx,image,{width,height,shiftY=0,projection,cityBase}
   ctx.restore();
 }
 export function drawPark(ctx,images,{width,projection,cityBase,time=0,reduced=false,sprite}) {
-  const img=name=>images['food-v4-'+name],at=projection.at,t=reduced?0:time;
-  const front=at(.18).y,back=cityBase+width*.025;
-  // Separate hedge rows fill the depth to the city; side banks leave a genuine opening in the middle.
-  const backEnd=Math.max(back+width*.055,at(.15).y-width*.17);
-  const backRows=Math.min(16,Math.max(2,Math.ceil((backEnd-back)/(width*.065))+1));
-  for(let row=0;row<backRows;row++)sprite(ctx,img('bush-back'),width*(.5+.012*Math.sin(row*2)),back+(backEnd-back)*row/(backRows-1),width*(row%2?1.12:1.18));
-  const rows=Math.min(24,Math.max(3,Math.ceil((front-back)/(width*.085))));
-  for(let row=0;row<rows;row++){const u=(row+.5)/rows,y=back+(front-back)*u;
-    const w=width*(.34+.04*u),outside=width*(.09-.01*u);
+  const img=name=>images['food-v4-'+name],t=reduced?0:time;
+  const front=projection.at(.18).y;
+  // This is one finite garden, not foliage generated to fill a camera-dependent gap.
+  // Furniture and shrubs share its near-edge anchor, keeping their ground contacts together.
+  const at=depth=>({y:front+width*1.10*(depth-.18)});
+  for(const [row,offset] of [-.19,-.14].entries())sprite(ctx,img('bush-back'),width*(row?.512:.5),front+width*offset,width*(row?1.12:1.18));
+  for(const [row,offset] of [-.12,-.055,.015].entries()){const y=front+width*offset;
+    const w=width*(.32+row*.01),outside=-width*.015;
     sprite(ctx,img('bush-left'),outside,y,w);sprite(ctx,img('bush-right'),width-outside,y,w);}
   const f=sprite(ctx,img('fountain-loop'),width*.5,at(.15).y,width*.50);
   for(const side of [-1,1]){
-    flutterBunting(ctx,img('bunting'),width*(side<0?.17:.83),at(.04).y,width*.16,t,reduced);
-    sprite(ctx,img('cafe'),width*(side<0?.16:.84),at(.07).y,width*.16);
+    flutterBunting(ctx,img('bunting'),width*(side<0?.22:.78),at(.04).y,width*.16,t,reduced);
+    sprite(ctx,img('cafe'),width*(side<0?.22:.78),at(.07).y,width*.16);
     // Both the bench and its neighboring flowers are nearer than their table, never perched behind it.
-    sprite(ctx,img('bench'),width*(side<0?.12:.88),at(.17).y,width*.14);
-    sprite(ctx,img('flowers-white'),width*(side<0?.035:.965),at(.17).y,width*.06);
+    sprite(ctx,img('bench'),width*(side<0?.20:.80),at(.17).y,width*.14);
+    sprite(ctx,img('flowers-white'),width*(side<0?.10:.90),at(.17).y,width*.06);
   }
   if(f&&!reduced){ctx.save();ctx.strokeStyle='#d6fdff';ctx.lineWidth=1.25;
     for(let i=0;i<3;i++){const k=(t*.45+i/3)%1;ctx.globalAlpha=(1-k)*.7;ctx.beginPath();ctx.ellipse(f.x+f.w*.5,f.y+f.h*.45,f.w*(.03+.09*k),f.h*(.008+.018*k),0,0,Math.PI*2);ctx.stroke();}

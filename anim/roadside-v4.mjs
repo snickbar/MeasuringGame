@@ -29,6 +29,10 @@ export function roadsideProjection(width, floorY, shiftY = 0, scene = 'food') {
     parallax: travel(depth),
   }) };
 }
+export function foodCityBase(width, projection, shiftY=0) {
+  // The far skyline may lag, but the space behind this finite park cannot grow without bound.
+  return Math.max(projection.horizon+width*.04+shiftY*.11,projection.at(.18).y-width*.30);
+}
 function sprite(ctx, img, x, bottom, width) {
   if (!img) return null;
   const h = width * img.naturalHeight / img.naturalWidth, top = bottom - h;
@@ -75,7 +79,7 @@ export function drawRoadsideV4(ctx,kit,options) {
   const p=roadsideProjection(width,floorY,shiftY,scene),h=p.horizon;
   ctx.save();if(dark&&scene==='food')ctx.filter='brightness(.63) saturate(.85)';
   if(scene==='food'){
-    const cityBase=h+width*.04+shiftY*.11;
+    const cityBase=foodCityBase(width,p,shiftY);
     foodGround(ctx,images[food('ground')],{width,height,shiftY,projection:p,cityBase});
     sprite(ctx,images[food('city-skyline')],width*.5,cityBase,width*1.12);
     drawPark(ctx,images,{width,projection:p,cityBase,time:t,reduced,sprite});
