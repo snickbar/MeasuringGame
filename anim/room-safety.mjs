@@ -42,7 +42,7 @@ export function transferHost(room, id, now = Date.now()) {
 export function chooseHost(room, fromId, toId) {
   if (room === null) return null;
   const from = room?.players?.[fromId], to = room?.players?.[toId];
-  if (!room || room.phase !== 'waiting' || !from?.isHost || !to || to.isBot || to.connected === false || fromId === toId) return undefined;
+  if (!room || (room.phase !== 'waiting' && !room.lobbyHold) || !from?.isHost || !to || to.isBot || to.connected === false || fromId === toId) return undefined;
   return { ...room, hostOriginal: null, pendingHostReclaim: null, players: Object.fromEntries(Object.entries(room.players).map(([pid, p]) => [pid, { ...p, isHost: pid === toId }])) };
 }
 // The original host is back online: they take the host seat back from whoever was covering for them.

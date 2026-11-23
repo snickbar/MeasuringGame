@@ -4244,6 +4244,9 @@ if (location.protocol === "file:") {
   #host-menu button + button { border-top: 2px solid #eadbbd; }
   #host-menu button.danger { color: #c0392b; }
   #host-menu button:active { filter: brightness(.94); }
+  /* A game held in the lobby: it is the real lobby, minus the things that would change the game. */
+  #lobby-screen.lobby-held #team-picker-row, #lobby-screen.lobby-held .lobby-bots-row, #lobby-screen.lobby-held #host-unlock-banner { display: none !important; }
+  body.settings-over-game #solo-ask { display: none !important; }
   #solo-ask { position: fixed; inset: 0; z-index: 900; display: none; align-items: center; justify-content: center; padding: 24px; background: rgba(0,0,0,.5); }
   #solo-ask.show { display: flex; }
   .solo-ask-card { width: min(100%, 360px); text-align: center; padding: 20px 18px 10px; border-radius: 22px; background: #fffdf6; border: 3px solid #b98a45; color: #4a2c12; box-shadow: 0 10px 28px #0006; }
@@ -5467,7 +5470,7 @@ if (location.protocol === "file:") {
 
 <div id="solo-wait-bar" role="status" aria-live="polite"></div>
 <div id="host-menu" role="menu"></div>
-<div id="solo-ask" role="dialog" aria-live="polite"><div class="solo-ask-card"><h2>You're the only one here</h2><p id="solo-ask-msg">The other player hasn't come back.</p><button type="button" id="solo-ask-lobby" class="menu-action-art art-start-game" data-fit-single-line="true">Wait in lobby</button><button type="button" id="solo-ask-go" class="menu-action-art art-start-game" data-fit-single-line="true">Continue</button><button type="button" id="solo-ask-home" class="menu-action-art art-start-game" data-fit-single-line="true">Go home</button></div></div>
+<div id="solo-ask" role="dialog" aria-live="polite"><div class="solo-ask-card"><h2>You're the only one here</h2><p id="solo-ask-msg">The other player hasn't come back.</p><button type="button" id="solo-ask-lobby" class="menu-action-art art-start-game" data-fit-single-line="true">Wait in lobby</button><button type="button" id="solo-ask-go" class="menu-action-art art-start-game" data-fit-single-line="true">Continue anyway</button><button type="button" id="solo-ask-settings" class="menu-action-art art-start-game" data-fit-single-line="true">Settings</button><button type="button" id="solo-ask-home" class="menu-action-art art-start-game" data-fit-single-line="true">Go home</button></div></div>
 <div id="paused-overlay">
   <section class="exit-card" role="dialog" aria-labelledby="paused-title" aria-describedby="paused-msg">
     <div class="exit-icon exit-hero" aria-hidden="true"><img src="icons/pause-medallion.webp" alt=""></div>
@@ -18402,7 +18405,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // Unconditionally restarting is cheap and always safe either way.
       if (hudTickHandle) { clearInterval(hudTickHandle); hudTickHandle = null; }
       startHudTicker();
-      applyPhase(roomState);
+      applyPhase(heldView(roomState));
       lastScoreColumnSignature = null;
       const phase = roomState.phase;
       // scheduleBotGuesses()/scheduleBotPicks() queue each bot's answer on a
@@ -18682,7 +18685,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const hostMenuEl = document.getElementById("host-menu");
   const closeHostMenu = () => hostMenuEl.classList.remove("show");
   playerList.addEventListener("click", (e) => {
-    const li = e.target.closest("li.lobby-player-card"); if (!li || !isHost || roomState.phase !== "waiting") return;
+    const li = e.target.closest("li.lobby-player-card"); if (!li || !isHost || (roomState.phase !== "waiting" && !lobbyHeld(roomState))) return;
     if (e.target.closest("button, .lobby-drag, .bot-row-ctl")) return;
     const id = li.dataset.pid, p = id && currentPlayers[id];
     if (!p || p.isBot || id === currentPlayerId) return;
@@ -18733,7 +18736,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const party=!roomState.settings?.solo;
       // Every mode gets the same cream cards (self / host shading); Team vs Team keeps its colour dot.
       li.classList.add("lobby-player-card"); li.dataset.pid = id;
-      if (isHost && !p.isBot && id !== currentPlayerId && roomState.phase === "waiting") li.classList.add("lobby-tappable");
+      if (isHost && !p.isBot && id !== currentPlayerId && (roomState.phase === "waiting" || lobbyHeld(roomState))) li.classList.add("lobby-tappable");
       if (p.frameIndex) li.dataset.pc = String(((Number(p.frameIndex) || 1) - 1 + 10) % 10 + 1);   // player colour, see anim/player-tint.css
       if (id === currentPlayerId) li.classList.add("lobby-player-self");
       if (p.isHost) li.classList.add("lobby-player-host");
@@ -19349,7 +19352,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     leavingGame = false;
     pendingRoomCode = code; pendingIsHost = wasHost; pendingSettings = settings;
   }
+  lobbyBackBtn.addEventListener("click", () => { if (lobbyHeld(roomState)) goHomeNow(); });
   lobbyBackBtn.addEventListener("click", guardGameBack(async () => {
+    if (lobbyHeld(roomState)) return;
     lobbyBackBtn.disabled = true;
     try { await stepOutOfRoom(); } finally { lobbyBackBtn.disabled = false; }
     lobbyScreenEl.classList.remove("active");
@@ -19683,6 +19688,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // tap doesn't skip straight into the countdown.
   hostStartBtn.addEventListener("click", () => {
     if (hostStartBtn.disabled) return;
+    if (lobbyHeld(roomState)) { togglePause(); return; } // Continue: back into the held game exactly where it stopped
     // Solo has nobody to wait for, so no "Start game?" question.
     if (roomState && roomState.settings && roomState.settings.solo) { startGameNow(); return; }
     openExitConfirm("startGame", "Start game?", "Everyone in the room will join the game.", "Start game", "Back to lobby");
@@ -22998,7 +23004,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!me || me.isBot || me.connected === false) return; // only a human who is actually here runs it
     const code = currentRoomCode, t = nowMs(), s = soloWaitState(roomState);
     let fn = null;
-    if (roomState.soloWait) {
+    if (lobbyHeld(roomState)) {
+      const hostEntry = Object.values(roomState.players).find((p) => p && p.isHost && !p.isBot);
+      if (!hostEntry || hostEntry.connected === false) fn = (cur) => takeLobbyHost(cur, currentPlayerId);
+    } else if (roomState.soloWait) {
       if (!lastHumanStanding(s)) fn = clearSoloWait;
     } else if (lastHumanStanding(s) && !roomState.paused) fn = startSoloWait;
     if (!fn) return;
@@ -23013,7 +23022,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     ask.classList.toggle("show", live && nowMs() - w.since >= SOLO_WAIT_MS);
     if (ask.classList.contains("show")) {
       const names = gone.map((id) => players[id].name || "A player");
-      document.getElementById("solo-ask-msg").textContent = (names.length > 1 ? names.slice(0, -1).join(", ") + " and " + names[names.length - 1] + " haven't" : names[0] + " hasn't") + " come back. Wait in the lobby, keep playing without them, or go home and rejoin later.";
+      document.getElementById("solo-ask-msg").textContent = (names.length > 1 ? names.slice(0, -1).join(", ") + " and " + names[names.length - 1] + " haven't" : names[0] + " hasn't") + " come back. Wait in the lobby, continue without them, or go home and rejoin later.";
     }
     if (!live || w.dismissed) { bar.classList.remove("show"); return; }
     if (nowMs() - w.since >= SOLO_WAIT_MS) { bar.classList.remove("show"); return; }
@@ -23026,6 +23035,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   document.getElementById("solo-ask-lobby").addEventListener("click", () => soloAsk(holdForLobby));
   document.getElementById("solo-ask-go").addEventListener("click", () => soloAsk(keepPlaying));
   // Home: freeze the game in the waiting lobby first, then leave (the seat stays, so everyone can rejoin it later).
+  document.getElementById("solo-ask-settings").addEventListener("click", () => { if (canPeekSettings()) setSettingsOverGame(true); });
   document.getElementById("solo-ask-home").addEventListener("click", () => { soloAsk(holdForLobby); goHomeNow(); });
   document.getElementById("paused-home-btn").addEventListener("click", () => goHomeNow());
 
@@ -24729,8 +24739,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     hostStartBtn.disabled = needsFriend;
     hostStartBtn.style.opacity = hostStartBtn.disabled ? ".5" : "";
     lobbyStatusEl.textContent = needsFriend && data.phase === "waiting" ? waitingMsg : "";
+    const held = lobbyHeld(roomState) && data.phase === "waiting";
+    lobbyScreenEl.classList.toggle("lobby-held", held);
+    if (held) {
+      const ready = lobbyReady(roomState);
+      hostStartBtn.textContent = "Continue game";
+      hostStartBtn.disabled = !ready;
+      hostStartBtn.style.opacity = ready ? "" : ".5";
+      lobbyStatusEl.textContent = !ready ? "The game is on hold until one more player is back." : (isHost ? "Another player is back. Continue when you're ready." : "Another player is back. Waiting for the host to continue.");
+    }
   }
+  // A game held in the waiting lobby (see anim/solo-wait.mjs) is shown on the real lobby screen: the room keeps its live
+  // phase underneath, but every screen decision treats it as 'waiting'.
+  const lobbyHeld = (d) => !!(d && d.lobbyHold && d.paused);
+  const heldView = (d) => (lobbyHeld(d) ? { ...d, phase: "waiting" } : d);
   function applyPhase(data) {
+    if (lobbyHeld(data)) data = heldView(data);
     if (![dailyScreenEl, monthlyScreenEl, worldsScreenEl, survivalScreenEl].some((s) => s.classList.contains("active")) && !(data.phase === "question" && data.settings?.mode === "teamworlds")) qBoardHome(); // the question card may still be borrowed by a Daily/Monthly screen
     const questionLayout = data.phase !== "question" ? null : data.settings?.mode !== "teamworlds" ? "party"
       : isHlSettings(data.settings) ? "highlow" : "teamworlds";
@@ -24794,7 +24818,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const overlayStillOpen = OVERLAY_SCREENS.some((el) => el.classList.contains("active"));
     if (!editingFromLobby) lobbyScreenEl.classList.toggle("active", phase === "waiting" && !overlayStillOpen);
     hostStartBtn.style.display = isHost ? "flex" : "none";
-    botControlsEl.style.display = isHost ? "flex" : "none";
+    botControlsEl.style.display = isHost && !lobbyHeld(data) ? "flex" : "none";
     applyLobbyMode(data);
     hudEl.classList.toggle("active", isHudActive);
     hudSubToolbarEl.classList.toggle("active", isHudActive || phase==='bluff');
@@ -25104,7 +25128,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       renderPlayerList();
       applyPhase(data);
       renderHudTop(data);
-      renderPausedOverlay(data.paused);
+      renderPausedOverlay(data.paused && !lobbyHeld(data));
       renderKickModal(data);
       renderAutoToggle(data);
 
