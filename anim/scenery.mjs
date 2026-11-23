@@ -3,6 +3,7 @@ import { drawAquarium } from './aquarium.mjs';
 import { installIndoorV3, projectedRoomImages, drawProjectedIndoor, drawWorkshopCeiling } from './indoor-perspective.mjs';
 import { FLOOR_DATA } from './scenery-data.mjs';
 import { drawRetroSky, drawRetroRink } from './retro-rink.mjs';
+import { installRoadsideV4, roadsideV4Images, drawRoadsideV4Sky, drawRoadsideV4 } from './roadside-v4.mjs';
 
 // Scenery follows the larger object's identity. Measurements never select a biome.
 export const OBJECT_GROUPS = {
@@ -492,6 +493,7 @@ improve('tabletop', c => { c.wallPieces = [{ img: 'tabletop-v2-wall-0', x: 0.25,
 
 installIndoorV3(SETTINGS, VARIANT_OF);
 installFloorOnlyV3(SETTINGS, VARIANT_OF);
+installRoadsideV4(SETTINGS, VARIANT_OF);
 
 const imageCache = new Map();
 // Compress extreme object zooms into a gentle terrain zoom (1–1.35×).
@@ -508,7 +510,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const pick = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[pick], id = VARIANT_OF[pick] || pick;
-  const names = [...projectedRoomImages(config.projectedRoom), !NO_STARS.has(id) && 'star-field', config.floor, config.floorProp?.img, ...Object.values(config.retroRink || {}), ...Object.values(config.bookcase || {}), ...Object.values(config.workshop || {}), config.deskLamp?.arm, config.deskLamp?.shade, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomCeiling, config.roomRoof?.img, ...(config.floorDepth?.tables || []).map(q => q.img || q), ...(config.floorDepth?.rows || []).flatMap(r => (r.tables || []).map(q => q.img || q)), ...(config.floorDepth?.singles || []).flatMap(q => [q.img, ...(q.live?.movie?.imgs || []), q.swap?.img]), config.roomRoof && 'star-field', ...(config.wallPieces || []).map(q => q.img), ...(config.parallax || []).flatMap(l => (l.tanks || []).flatMap(t => t.fish.map(f => f.img))), config.roomPlant, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.paneling, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [...roadsideV4Images(config.roadsideV4), ...projectedRoomImages(config.projectedRoom), !NO_STARS.has(id) && 'star-field', config.floor, config.floorProp?.img, ...Object.values(config.retroRink || {}), ...Object.values(config.bookcase || {}), ...Object.values(config.workshop || {}), config.deskLamp?.arm, config.deskLamp?.shade, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomCeiling, config.roomRoof?.img, ...(config.floorDepth?.tables || []).map(q => q.img || q), ...(config.floorDepth?.rows || []).flatMap(r => (r.tables || []).map(q => q.img || q)), ...(config.floorDepth?.singles || []).flatMap(q => [q.img, ...(q.live?.movie?.imgs || []), q.swap?.img]), config.roomRoof && 'star-field', ...(config.wallPieces || []).map(q => q.img), ...(config.parallax || []).flatMap(l => (l.tanks || []).flatMap(t => t.fish.map(f => f.img))), config.roomPlant, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.paneling, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if ((config.town && Object.values(config.town).some(name => !images[name])) || (config.square && Object.values(config.square).some(name => !images[name])) || (config.coast && Object.values(config.coast).some(name => !images[name])) || (config.rooftop && Object.values(config.rooftop).some(name => !images[name])) || (config.floor && !images[config.floor]) || (config.avenue && ['pier', 'beach', 'ocean'].some(key => !images[config.avenue[key]]))) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -1868,6 +1870,12 @@ function drawFallingPetals(ctx, image, width, height, time, shiftY) {
 }
 
 export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale = 1, anchorX = width / 2, pass = 'all', climbPx = 0, behindFloor }) {
+  if (kit.config.roadsideV4) {
+    const options = { width, height, shiftY, floorY, dark, time, reduced };
+    if (pass !== 'foreground') drawRoadsideV4Sky(ctx, kit, options);
+    if (pass !== 'background') drawRoadsideV4(ctx, kit, options);
+    return;
+  }
   if (kit.config.retroRink) {
     ctx.save();
     const options = { width, height, shiftY, floorY, dark, time, reduced };
@@ -2222,7 +2230,7 @@ export function drawFloorDepthRows(ctx, kit, { width, height, floorY, shiftY = 0
   ctx.restore();
 }
 export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX, shiftY = 0, groundScale = 1, anchorX = width / 2, dark, time = 0, reduced }) {
-  if (kit.config.retroRink || kit.config.projectedRoom) return; // The machine row and its carpet are one continuous foreground.
+  if (kit.config.retroRink || kit.config.projectedRoom || kit.config.roadsideV4) return; // These scenes draw their own continuous projected floor.
   const source = kit.images[kit.config.floor]; if (!source) return;
   const image = floorPerspectiveImage(source, kit.config.floorPerspective, meta.surface);
   const workshop = kit.config.workshop;

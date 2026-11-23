@@ -1,5 +1,7 @@
 // Measured alpha-surface positions and lower-edge colors from the approved PNGs.
 export const FLOOR_DATA = {
+  'food-v4-ground': { surface: 1, color: '#82ad24' },
+  'diner-v4-asphalt': { surface: 1, color: '#283e68' },
   "foodtruck-ground": { "surface": 0.35, "color": "#337a03" },
   "diner-ground": { "surface": 0.35, "color": "#37283c" },
   "drivein-ground": { "surface": 0.35, "color": "#241c3a" },

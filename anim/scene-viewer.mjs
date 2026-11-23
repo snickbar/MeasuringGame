@@ -3,7 +3,7 @@
 // Move a scene to the front when its artwork or layout changes. Scenes without
 // a recent revision appear alphabetically after this list.
 const recentScenes = [
-  "diner", "foodtrucks", "drivein", "retro", "restaurant", "workshop", "library", "tabletop", "kitchen", "living", "enchanted", "town", "city", "beach", "rooftop", "stadium", "boardwalk", "blossom", "cave", "space", "fair", "mountain", "jungle", "grass", "farm",
+  "diner-v4", "foodtrucks-v4", "diner", "foodtrucks", "drivein", "retro", "restaurant", "workshop", "library", "tabletop", "kitchen", "living", "enchanted", "town", "city", "beach", "rooftop", "stadium", "boardwalk", "blossom", "cave", "space", "fair", "mountain", "jungle", "grass", "farm",
   "volcano",
   "desert",
   "underwater", "snow", "forest",
@@ -14,7 +14,7 @@ const sceneLabels = {
   rooftop: "Rooftops at Sunset", living: "Living Room", resort: "Beach Resort",
   tabletop: "Tabletop", restaurant: "Restaurant", retro: "Roller Rink", drivein: "Drive-In Theater", diner: "Roadside Diner", foodtrucks: "Food Truck Street",
 };
-const sceneLabel = (id) => /-v[23]$/.test(id) ? sceneLabel(id.slice(0, -3)) + " " + id.slice(-2) : sceneLabels[id] ?? id.charAt(0).toUpperCase() + id.slice(1);
+const sceneLabel = (id) => /-v[234]$/.test(id) ? sceneLabel(id.slice(0, -3)) + " " + id.slice(-2) : sceneLabels[id] ?? id.charAt(0).toUpperCase() + id.slice(1);
 
 export function buildSceneViewer({ loadAnim, objects }) {
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
@@ -58,16 +58,19 @@ export function buildSceneViewer({ loadAnim, objects }) {
     const m = await import("./scenery.mjs");
     const available = Object.keys(m.SETTINGS);
     const base = [
-      ...recentScenes.filter((id) => Object.hasOwn(m.SETTINGS, id)),
-      ...available.filter((id) => !recentScenes.includes(id) && !/-v[23]$/.test(id))
+      ...recentScenes.filter((id) => Object.hasOwn(m.SETTINGS, id) && !/-v[234]$/.test(id)),
+      ...available.filter((id) => !recentScenes.includes(id) && !/-v[234]$/.test(id))
         .sort((a, b) => sceneLabel(a).localeCompare(sceneLabel(b))),
     ];
     // Comparison drafts come first, each followed by its unchanged current scene.
-    const drafts = available.filter((id) => /-v[23]$/.test(id));
-    ids = [...drafts.flatMap((id) => [id, id.slice(0, -3)]), ...base.filter((id) => !drafts.some(d => d.slice(0, -3) === id))];
+    const drafts = available.filter((id) => /-v[234]$/.test(id)).sort((a,b) => {
+      const rank = id => { const i = recentScenes.indexOf(id); return i < 0 ? recentScenes.length : i; };
+      return rank(a) - rank(b);
+    });
+    ids = [...new Set(drafts.flatMap((id) => [id, id.slice(0, -3)])), ...base.filter((id) => !drafts.some(d => d.slice(0, -3) === id))];
     const auto = el("option", "", "Auto (follows the big object)"); auto.value = ""; scene.appendChild(auto);
     ids.forEach((id) => { const o = el("option", "", sceneLabel(id)); o.value = id; scene.appendChild(o); });
-    if (saved.scene && !ids.includes(saved.scene) && /-v[23]$/.test(saved.scene) && ids.includes(saved.scene.slice(0,-3))) saved.scene = saved.scene.slice(0,-3);
+    if (saved.scene && !ids.includes(saved.scene) && /-v[234]$/.test(saved.scene) && ids.includes(saved.scene.slice(0,-3))) saved.scene = saved.scene.slice(0,-3);
     scene.value = saved.scene !== undefined && (saved.scene === "" || ids.includes(saved.scene)) ? saved.scene : "rooftop";
   }
   async function play() {
