@@ -261,12 +261,13 @@ export const SETTINGS = {
   // Drive-in theater: a night lot. Everything stands on the lot by depth (floorDepth singles), the hills behind it follow the far edge of the lot.
   drivein: { floor: 'drivein-ground', floorTileWidth: 1450, floorBehind: true, floorInset: 0, night: true, sky: ['#05084a', '#161774'], fireflies: 'always', movers: ['twinkle'],
     floorDepth: { par: .5, zoomX: true, tables: [], rows: [], singles: [
-      { img: 'drivein-screen', r: 0, x: .5, w: .94, live: { glows: { lights: [{ xs: [.156, .318, .499, .681, .841], y: .133, r: .12 }] },  movie: { box: [.066, .225, .934, .553], imgs: ['drivein-movie-0', 'drivein-movie-1', 'drivein-movie-2', 'drivein-movie-3', 'drivein-movie-4', 'drivein-movie-5'], plan: [[0, 3.2], [2, .35], [0, 2.2], [1, 3], [3, 3], [4, 3], [5, 3]] } } },
+      { img: 'drivein-screen', r: 0, x: .5, w: .94, live: { bats: { n: 4, period: 9, y: [.12, .6], size: .035 }, glows: { lights: [{ xs: [.156, .318, .499, .681, .841], y: .157, r: .12 }] },  movie: { box: [.066, .266, .934, .653], imgs: ['drivein-movie-0', 'drivein-movie-1', 'drivein-movie-2', 'drivein-movie-3', 'drivein-movie-4', 'drivein-movie-5'], plan: [[0, 3.2], [2, .35], [0, 2.2], [1, 3], [3, 3], [4, 3], [5, 3]] } } },
       { img: 'drivein-snack-stand', r: .04, x: .84, w: .36, live: { blink: [{ box: [.26, .18, .74, .262], round: .03, speed: .22 }], pop: { n: 7, x: .49, y: .045, h: .1, spread: .14, size: .016, every: 1.5 },
         glows: { bulbs: [{ xs: [.111, .175, .241, .307, .37, .43, .493, .554, .619, .68, .745, .815, .883], y: .303, r: .06, speed: 4.4 }], windows: [{ x: .5, y: .56, r: .3 }] } } },
+      { img: 'drivein-car-7', r: 0.225, w: 0.12, drive: { from: -.15, to: 1.15, period: 16 }, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 0 }] } } },
       { img: 'drivein-car-0', r: 0.07, x: 0.14, w: 0.15, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 0 }] } } }, { img: 'drivein-car-7', r: 0.07, x: 0.38, w: 0.15, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 1 }] } } }, { img: 'drivein-car-1', r: 0.07, x: 0.62, w: 0.15, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 2 }] } } }, { img: 'drivein-car-9', r: 0.07, x: 0.86, w: 0.15, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 3 }] } } },
-      { img: 'drivein-car-6', r: 0.17, x: 0.2, w: 0.19, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 4 }] } } }, { img: 'drivein-car-3', r: 0.17, x: 0.4, w: 0.19, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 5 }] } } }, { img: 'drivein-car-2', r: 0.17, x: 0.6, w: 0.19, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 6 }] } } }, { img: 'drivein-car-10', r: 0.17, x: 0.8, w: 0.19, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 7 }] } } },
-      { img: 'drivein-car-4', r: 0.28, x: 0.13, w: 0.24, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 8 }] } } }, { img: 'drivein-car-8', r: 0.28, x: 0.38, w: 0.24, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 9 }] } } }, { img: 'drivein-car-5', r: 0.28, x: 0.63, w: 0.24, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 10 }] } } }, { img: 'drivein-car-11', r: 0.28, x: 0.88, w: 0.24, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 11 }] } } },
+      { img: 'drivein-car-6', r: 0.17, x: 0.2, w: 0.165, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 4 }] } } }, { img: 'drivein-car-3', r: 0.17, x: 0.4, w: 0.165, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 5 }] } } }, { img: 'drivein-car-2', r: 0.17, x: 0.6, w: 0.165, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 6 }] } } }, { img: 'drivein-car-10', r: 0.17, x: 0.8, w: 0.165, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 7 }] } } },
+      { img: 'drivein-car-4', r: 0.28, x: 0.13, w: 0.21, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 8 }] } } }, { img: 'drivein-car-8', r: 0.28, x: 0.38, w: 0.21, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 9 }] } } }, { img: 'drivein-car-5', r: 0.28, x: 0.63, w: 0.21, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 10 }] } } }, { img: 'drivein-car-11', r: 0.28, x: 0.88, w: 0.21, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 11 }] } } },
       { img: 'drivein-prop-lamp', r: 0.06, x: 0.02, w: 0.075 },
       { img: 'drivein-prop-lamp', r: 0.06, x: 0.98, w: 0.075 },
       { img: 'drivein-prop-lamp', r: 0.22, x: 0.03, w: 0.1 },
@@ -2102,6 +2103,19 @@ function drawLivePiece(ctx, kit, live, left, top, w, h, time, reduced) {
     }
     ctx.restore();
   }
+  const bats = live.bats; // a few bats flap across in front of the screen (code-drawn, they fly past and loop)
+  if (bats) {
+    ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for (let k = 0; k < bats.n; k++) {
+      const c = ((t / bats.period + k / bats.n) % 1), dir = k % 2 ? -1 : 1, q = (k * 37 % 10) / 10;
+      const x = left + (dir > 0 ? -.1 + 1.2 * c : 1.1 - 1.2 * c) * w, y = top + (bats.y[0] + (bats.y[1] - bats.y[0]) * q) * h + Math.sin(t * 1.7 + k * 2.1 + c * 9) * h * .02;
+      const sz = bats.size * w * (.8 + q * .5), fl = reduced ? .3 : Math.sin(t * 9 + k * 1.9);
+      ctx.globalAlpha = Math.min(1, c * 8, (1 - c) * 8) * .92; ctx.fillStyle = '#0d0a1c'; ctx.strokeStyle = '#0d0a1c'; ctx.lineWidth = Math.max(1, sz * .12);
+      ctx.beginPath(); ctx.ellipse(x, y, sz * .16, sz * .22, 0, 0, 6.3); ctx.fill();
+      for (const sd of [-1, 1]) { ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + sd * sz * .55, y - sz * (.45 + .35 * fl), x + sd * sz, y - sz * (.1 + .3 * fl)); ctx.quadraticCurveTo(x + sd * sz * .7, y + sz * .12, x + sd * sz * .5, y + sz * .08); ctx.quadraticCurveTo(x + sd * sz * .3, y + sz * .22, x, y + sz * .2); ctx.fill(); }
+    }
+    ctx.restore();
+  }
   const add = live.glows; // warm light that breathes: serving window, floodlights, and the eave bulbs that chase each other
   if (add) {
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
@@ -2126,10 +2140,13 @@ export function drawFloorDepthRows(ctx, kit, { width, height, floorY, shiftY = 0
       const pic = kit.images[one.img]; if (!pic) continue;
       const base = restTop + one.r * tileH + floorDepthPar(depth, one.r, meta.surface) * shiftY, w = one.w * width * groundScale, h = w * pic.naturalHeight / pic.naturalWidth;
       if (base - h < height && base > 0) {
-        const left = (depth.zoomX ? anchorX + (width * one.x - anchorX) * groundScale : width * one.x) + shiftX - w / 2, top = base - h; // zoomX: the lot zooms around the stack, so a zoom never squeezes the cars together
+        const dv = one.drive, ox = dv ? dv.from + (dv.to - dv.from) * ((((reduced ? 0 : time) / dv.period + (dv.phase || 0)) % 1 + 1) % 1) : one.x; // drive: a car rolls along its lane, in and out of sight
+        const left = (depth.zoomX ? anchorX + (width * ox - anchorX) * groundScale : width * ox) + shiftX - w / 2, top = base - h; // zoomX: the lot zooms around the stack, so a zoom never squeezes the cars together
         const alt = one.swap && kit.images[one.swap.img], flip = alt && !reduced && ((time / one.swap.period + (one.swap.phase || 0)) % 1) > one.swap.duty; // a second picture takes its turn (string lights, a neon sign flicker)
-        if (one.fan) { const cx = left + w / 2, dir = (anchorX + (width * one.x - anchorX) * (depth.zoomX ? groundScale : 1) + shiftX) < width / 2 ? 1 : -1; ctx.save(); ctx.translate(cx, base); ctx.rotate(dir * one.fan * Math.PI / 180); if (dir > 0) ctx.scale(-1, 1); ctx.translate(-cx, -base); } // parked in a fan: every car points at the screen: the pictures show a car heading up-left, so cars on the left are mirrored to head up-right, and each leans toward the middle
+        if (one.fan) { const cx = left + w / 2, dir = one.x < .5 ? 1 : -1; ctx.save(); ctx.translate(cx, base); ctx.rotate(dir * one.fan * Math.PI / 180); if (dir > 0) ctx.scale(-1, 1); ctx.translate(-cx, -base); } // parked in a fan: every car points at the screen: the pictures show a car heading up-left, so cars on the left are mirrored to head up-right, and each leans toward the middle
+        if (dv && dv.to > dv.from) { ctx.save(); ctx.translate(left + w / 2, 0); ctx.scale(-1, 1); ctx.translate(-(left + w / 2), 0); } // the picture heads up-left, so a car rolling right is mirrored
         ctx.drawImage(flip ? alt : pic, left, top, w, h);
+        if (dv && dv.to > dv.from) ctx.restore();
         if (one.fan) ctx.restore();
         if (one.live) drawLivePiece(ctx, kit, one.live, left, top, w, h, time, reduced);
       }
