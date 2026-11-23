@@ -429,13 +429,15 @@ html[data-motion=reduce] .tw-space * { animation: none !important; transition: n
    The meter starts the reaction. The resting drift and the rise or sink use separate layers. */
 .wl-rs-scene { position: relative; flex: 1 1 auto; min-height: 150px; max-height: 320px; overflow: hidden; border-radius: 22px; border: 3px solid #8bb7bd; background: linear-gradient(#8fd0f5, #dff3ff); animation: wlSceneIn .45s ease-out 1.3s both; }
 @keyframes wlSceneIn { from { opacity: 0; } to { opacity: 1; } }
-.wl-cl { position: absolute; left: 0; height: 18px; width: 56px; border-radius: 20px; background: rgba(255,255,255,.92); box-shadow: 14px -7px 0 -2px rgba(255,255,255,.92), 30px 2px 0 -3px rgba(255,255,255,.92); animation: wlSceneCloud 11s linear infinite, var(--shift, none); }
-.wl-cl.c1 { --cdy: .7; top: 16%; animation-delay: -3s, 0s; } .wl-cl.c2 { --cdy: 1; top: 46%; width: 70px; animation-duration: 15s, 6s; animation-delay: -9s, 0s; } .wl-cl.c3 { --cdy: 1.4; top: 74%; width: 44px; animation-duration: 9s, 6s; animation-delay: -5s, 0s; }
+.wl-cl { position: absolute; left: 0; height: 18px; width: 56px; border-radius: 20px; background: rgba(255,255,255,.92); box-shadow: 14px -7px 0 -2px rgba(255,255,255,.92), 30px 2px 0 -3px rgba(255,255,255,.92); animation: wlSceneCloud var(--d) linear var(--dl) infinite, var(--slope, none); }
+.wl-cl.c1 { --d: 11s; --dl: -3s; --dy: 110px; top: 16%; } .wl-cl.c2 { --d: 15s; --dl: -9s; --dy: 130px; top: 46%; width: 70px; } .wl-cl.c3 { --d: 9s; --dl: -5s; --dy: 120px; top: 74%; width: 44px; }
 @keyframes wlSceneCloud { from { left: 110%; } to { left: -30%; } }
-.wl-rs-scene.is-reacting[data-mood=up] .wl-cl { --shift: wlCloudsDown 6s ease-out both; }
-.wl-rs-scene.is-reacting[data-mood=down] .wl-cl { --shift: wlCloudsUp 6s ease-out both; }
-@keyframes wlCloudsDown { to { translate: 0 calc(var(--cdy, 1) * 90px); } } /* while the clouds drift left they also slope the opposite way to the balloon (balloon down: up and left, balloon up: down and left); near clouds travel farther than far ones */
-@keyframes wlCloudsUp { to { translate: 0 calc(var(--cdy, 1) * -90px); } }
+/* The clouds always drift left. They also slope the whole time, opposite to the balloon: balloon rising (or going up the meter): they slope down and left; balloon sinking: up and left.
+   The slope runs on the same clock as the drift (same length, same start), so a cloud never jumps when it wraps around off the right edge. */
+.wl-rs-scene[data-mood=up] .wl-cl { --slope: wlCloudsDown var(--d) linear var(--dl) infinite; }
+.wl-rs-scene[data-mood=down] .wl-cl { --slope: wlCloudsUp var(--d) linear var(--dl) infinite; }
+@keyframes wlCloudsDown { from { translate: 0 0; } to { translate: 0 var(--dy); } }
+@keyframes wlCloudsUp { from { translate: 0 0; } to { translate: 0 calc(var(--dy) * -1); } }
 .wl-rs-balloon { position: absolute; left: 50%; bottom: 10%; height: 72%; aspect-ratio: 285 / 560; transform: translateX(-50%); }
 .wl-rs-scene[data-mood=up] { --dip: 2%; --past: -16%; --recover: -11%; --end: -12%; }
 .wl-rs-scene[data-mood=down] { --dip: -1%; --past: 11%; --recover: 7%; --end: 8%; }
