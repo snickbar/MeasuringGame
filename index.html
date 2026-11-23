@@ -12579,13 +12579,24 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return `<div class="dc-card dc-cal" id="dc-cal"><div class="dc-cal-hd"><button type="button" class="dc-cal-nav" data-cal="${shift(-1)}" aria-label="Previous month" ${ym <= ymFirst ? "disabled" : ""}>&lsaquo;</button><b>${name}</b><button type="button" class="dc-cal-nav" data-cal="${shift(1)}" aria-label="Next month" ${ym >= ymNow ? "disabled" : ""}>&rsaquo;</button><span class="dc-cal-sub">${played} day${played === 1 ? "" : "s"} played${best > 1 ? ` &middot; best streak ${best}` : ""}</span></div><div class="dc-cal-dow">${["S", "M", "T", "W", "T", "F", "S"].map((x) => `<span>${x}</span>`).join("")}</div><div class="dc-cal-grid">${cells}</div></div>`;
   }
   const soloScoreReaction = (acc) => acc >= 90 ? "cheer" : acc >= 60 ? "pleased" : acc >= 40 ? "puzzled" : "deflated";
-  function soloScoreMascotHtml(art, reaction, { animate = true, sunriseStep = null, foreground = "" } = {}) {
-    const sunrise = sunriseStep !== null, id=sunrise?'rooster':'squirrel';
-    const mood=reaction==='cheer'||reaction==='pleased'?'win':reaction==='deflated'?'lose':'soso';
-    const key=sunrise?(daily?.date+':'+sunriseStep):((mo?.runId||mo?.key)+':'+mo?.level+':'+mo?.guesses?.length);
-    return '<div class="solo-score-mascot '+(sunrise?'dc-rooster':'mo-squirrel')+' solo-score-'+reaction+'" aria-hidden="true">'+
-      (sunrise?'<span class="dc-rooster-sun" style="--dc-sun-height:'+([24,34,44,55][sunriseStep])+'%"></span>':'')+
-      '<span class="solo-score-pose">'+mascotMarkup(id,mood,{key,delay:550,still:prefersReducedMotion()})+'</span>'+foreground+'</div>';
+  function soloScoreMascotHtml(art, reaction, { animate = true, sunriseStep = null, foreground = "", gesture = null } = {}) {
+    const sunrise = sunriseStep !== null;
+    if (!sunrise) { // the Monthly squirrel: his own pictures, and after every guess he tosses an acorn in a way that fits the outcome (thumbs-up toss, low toss, cheer)
+      return `<div class="solo-score-mascot mo-squirrel solo-score-${reaction}${animate ? " solo-score-animate" : ""}${gesture ? " mo-acorn-gesture" : ""}" aria-hidden="true">
+      <span class="solo-score-pose">
+        <img class="solo-score-ready" src="anim/mode-mascots/${art.ready}" alt="" draggable="false">
+        <img class="solo-score-reaction" src="anim/mode-mascots/${gesture?.hold ?? art[reaction]}" alt="" draggable="false">
+        ${gesture ? `<img class="mo-gesture-release" src="anim/mode-mascots/${gesture.release}" alt="" draggable="false">
+        <img class="mo-gesture-rest" src="anim/mode-mascots/${art[reaction]}" alt="" draggable="false">` : ""}
+      </span>
+      ${foreground}
+    </div>`;
+    }
+    const id = 'rooster', mood = reaction === 'cheer' || reaction === 'pleased' ? 'win' : reaction === 'deflated' ? 'lose' : 'soso';
+    const key = daily?.date + ':' + sunriseStep;
+    return '<div class="solo-score-mascot dc-rooster solo-score-' + reaction + '" aria-hidden="true">' +
+      '<span class="dc-rooster-sun" style="--dc-sun-height:' + ([24, 34, 44, 55][sunriseStep]) + '%"></span>' +
+      '<span class="solo-score-pose">' + mascotMarkup(id, mood, { key, delay: 550, still: prefersReducedMotion() }) + '</span>' + foreground + '</div>';
   }
   async function dailyWatchCalendarStamp(cell) {
     if (!cell || !window.IntersectionObserver || prefersReducedMotion()) return;
