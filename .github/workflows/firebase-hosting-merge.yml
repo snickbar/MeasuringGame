@@ -15,6 +15,9 @@ jobs:
       # deploy below publishes it alongside the site.
       - run: node scripts/build-live-bundle.js
       - run: node scripts/verify-production-package.mjs
+      # Phones update from GitHub releases, so the site does not need the update archive (hundreds of MB, different on every
+      # push). Publishing it to Hosting is what filled the free storage quota and made every deploy fail with a 429.
+      - run: rm -rf hosting/live
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
