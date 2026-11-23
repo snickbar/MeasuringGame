@@ -1,0 +1,7 @@
+import assert from 'node:assert/strict';import fs from 'node:fs';import path from 'node:path';import{createRequire}from'node:module';import{collectSceneAssets}from'./scene-runtime-assets.mjs';
+const require=createRequire(import.meta.url),{list}=require('./production-files.cjs'),retired=require('./retired-runtime-art.json'),pack=new Set(list()),active=await collectSceneAssets();
+assert.equal(new Set(retired).size,retired.length);for(const f of retired){assert(/^anim\/scenery\/[\w-]+\.(webp|png)$/.test(f),'Retirement limited to reviewed scenery: '+f);assert(fs.existsSync(f),'Archived source retained: '+f);assert(!pack.has(f),'Retired artwork excluded: '+f);}
+for(const f of active.files){assert(fs.existsSync(f),'Scene source exists: '+f);assert(pack.has(f),'Active scene asset included: '+f);}
+// Explicit CSS/HTML picture URLs outside the scene loader must remain available.
+for(const f of list().filter(f=>/\.(html|css|mjs|js)$/.test(f))){const s=fs.readFileSync(f,'utf8');for(const m of s.matchAll(/(?:src\s*=\s*|url\(\s*|new URL\(\s*)["']?([^"'\s)<>]+\.(?:webp|png|jpe?g))/g)){const raw=m[1];if(!raw.includes('scenery/')||/^(https?:|data:)/.test(raw)||raw.includes('${'))continue;const asset=path.posix.normalize(raw.startsWith('/')?raw.slice(1):path.posix.join(path.posix.dirname(f),raw));assert(pack.has(asset),'Direct scenery URL retained: '+f+' -> '+asset);}}
+console.log('PASS: '+active.scenes.length+' scenes retain all '+active.files.length+' loaded images; '+retired.length+' retired scenery files stay in source but do not ship.');

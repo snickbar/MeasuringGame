@@ -40,6 +40,22 @@ export function validateUpdate(value) {
 
 export function createLiveUpdater({ updater, fetchManifest = fetch, sources = UPDATE_SOURCES, timeoutMs = 8000 }) {
   let inFlight;
+  let cleaning;
+  async function cleanObsoleteBundles() {
+    // Called only after notifyAppReady resolves. Never remove a rollback target before a successful boot.
+    const removed=[];
+    try {
+      const current=await updater.current();
+      if (!current?.bundle?.id || current.bundle.id==='builtin' || current.bundle.status!=='success' || typeof updater.getNextBundle!=='function') return {removed};
+      const queued=await updater.getNextBundle(),keep=new Set([current.bundle.id,queued?.id,'builtin']);
+      for(const bundle of (await updater.list()).bundles || []) {
+        // Pending and downloading bundles can belong to another active request; leave them alone.
+        if(keep.has(bundle.id)||!['success','error'].includes(bundle.status))continue;
+        try { await updater.delete({id:bundle.id});removed.push(bundle.id); } catch { /* best effort */ }
+      }
+    } catch { /* Storage cleanup cannot prevent launch or update discovery. */ }
+    return {removed};
+  }
   // Partial update first (only changed files travel); any problem at all falls back to the full ZIP.
   async function downloadBundle(remote) {
     if (remote.manifestUrl) {
@@ -82,7 +98,7 @@ export function createLiveUpdater({ updater, fetchManifest = fetch, sources = UP
         // Cleanup is best effort, after successful queueing. Keep both live versions.
         try {
           const current = await updater.current(), keep = new Set([bundle.id,current?.bundle?.id,'builtin']);
-          for (const b of (await updater.list()).bundles || []) if (!keep.has(b.id)) { try { await updater.delete({ id:b.id }); } catch {} }
+          for (const b of (await updater.list()).bundles || []) if (!keep.has(b.id) && ['success','error'].includes(b.status)) { try { await updater.delete({ id:b.id }); } catch {} }
         } catch {}
         return { state:waiting?'ready':'downloaded', id:bundle.id };
       } catch (error) { errors.push(String(error?.message || error)); }
@@ -90,9 +106,14 @@ export function createLiveUpdater({ updater, fetchManifest = fetch, sources = UP
     return { state:'error', error:errors.join('; ') };
   }
   return {
+    cleanup() {
+      if(inFlight)return Promise.resolve({removed:[]});
+      if(!cleaning)cleaning=cleanObsoleteBundles().finally(()=>{cleaning=null;});
+      return cleaning;
+    },
     check(version, onFound) {
       // Background and Settings checks must never download the same ZIP twice.
-      if (!inFlight) inFlight = check(version,onFound).finally(() => { inFlight = null; });
+      if (!inFlight) inFlight = Promise.resolve(cleaning).then(()=>check(version,onFound)).finally(() => { inFlight = null; });
       return inFlight;
     },
   };

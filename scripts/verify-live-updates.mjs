@@ -67,3 +67,4 @@ for(const bad of [{...manifest,checksum:''},{...manifest,version:undefined},{...
  assert.throws(()=>validateManifest({version,files:[list.files[1]]},version),/index/);
 }
 console.log('PASS: GitHub primary, host/download fallback, manifest validation, checksum forwarding, pending/rejected bundles, timeout, and concurrent checks, and partial-update file lists with ZIP fallback.');
+await import('./verify-update-storage.mjs');

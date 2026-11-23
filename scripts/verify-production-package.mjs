@@ -23,3 +23,4 @@ const firebase=JSON.parse(fs.readFileSync('firebase.json','utf8'));assert.equal(
 if(packedPage)assert(firebase.hosting.headers.some(h=>h.source==='/'+APP_FILE&&h.headers.some(x=>x.key==='Cache-Control'&&x.value==='no-cache')),APP_FILE+' is revalidated on every load, so a new index.html never meets an old game module');
 const build=fs.readFileSync('scripts/build-live-bundle.js','utf8');assert(build.includes("fs.cpSync(WWW,HOSTING"));assert(build.includes("fs.cpSync(OUT,path.join(HOSTING,'live')"));assert(!fs.existsSync('www/live'),'Native package cannot contain its own update ZIP');
 console.log('Production package: '+files.length+' runtime files, all code imports/sounds/scenes, app links, unchanged runtime bytes (index.html shipped with its game module in '+APP_FILE+') and no review assets or nested update archive passed.');
+await import('./verify-retired-art.mjs');
