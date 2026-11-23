@@ -21454,12 +21454,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (it.done || (it.card === card && it.win?.isConnected)) return;
       if (!img || !img.offsetWidth || !img.offsetHeight) return;
       const W = img.offsetWidth, H = img.offsetHeight;
+      card.classList.add("reeling");   // positions the card, so the window is measured and placed against it
+      if (getComputedStyle(card).position === "static") card.style.position = "relative";
+      const cr = card.getBoundingClientRect(), ir = img.getBoundingClientRect(), sx = cr.width / (card.offsetWidth || 1) || 1, sy = cr.height / (card.offsetHeight || 1) || 1;
       const win = document.createElement("div");
       win.className = "qp-win";
-      win.style.cssText = `left:${img.offsetLeft}px;top:${img.offsetTop}px;width:${W}px;height:${H}px`;
-      win.innerHTML = `<div class="qp-reel">${it.strip.map(src => `<img src="${src}" alt="" draggable="false" style="width:${W}px;height:${H}px">`).join("")}</div>`;
+      win.style.cssText = `left:${(ir.left - cr.left) / sx - card.clientLeft}px;top:${(ir.top - cr.top) / sy - card.clientTop}px;width:${W}px;height:${H}px`;
+      const last = it.strip.length - 1;   // the object that lands keeps the pose the picture has on this card
+      win.innerHTML = `<div class="qp-reel">${it.strip.map((src, k) => `<img src="${src}" alt="" draggable="false" style="width:${W}px;height:${H}px${k === last && img.style.transform ? ";transform:" + img.style.transform : ""}">`).join("")}</div>`;
       it.card = card; it.win = win; it.H = H; it.reel = win.firstChild;
-      card.classList.add("reeling");
       card.appendChild(win);
       it.loop = it.reel.animate([{ transform: "translateY(0)" }, { transform: `translateY(${-it.K * H}px)` }], { duration: it.K * 70, iterations: Infinity });
       it.loop.currentTime = (performance.now() - r.t0) % (it.K * 70);
