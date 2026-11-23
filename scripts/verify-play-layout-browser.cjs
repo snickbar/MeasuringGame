@@ -8,6 +8,7 @@ const WALL_ALLOW=[
  '.hs-pig-frames',   // sprite strip: one frame shown at a time
  '#home-art','#home-fx','#home-title-shine','.hs-sheen', // home scenery and shine sweep
  '#final-screen',    // overflow-x:clip only trims the final title bounce
+ '.qp-win',          // helper-picture slot reel: a short spin inside a picture-sized window
  '.wl-bar',          // accuracy bar fill reveal (clip-path animates the fill)
 ];
 const WALLS=`(()=>{const ALLOW=${JSON.stringify(WALL_ALLOW)};const out=[];
