@@ -4981,7 +4981,7 @@ if (location.protocol === "file:") {
 
   <details class="howto-section"><summary>Rejoining a room</summary><div class="howto-body">
     <p>If you get disconnected or reload mid-game, open <b>Join Game</b> - your most recent room shows up as <b>Last game</b> with a one-tap <b>Rejoin</b> button.</p>
-    <p><b>If the other human leaves</b> (in any game with two or more people, bots do not count), the game keeps going and a 90 second timer shows how long they have to come back. If they return in time you just carry on. If not, the game is frozen and everyone waits in a lobby: once everyone is back the host taps <b>Continue</b> and it picks up exactly where it stopped. If the host is the one missing, the person who is here can take over as host.</p>
+    <p><b>If the other human leaves</b> (in any game with two or more people, bots do not count), the game keeps going and a 90 second timer shows how long they have to come back. If they return in time you just carry on. If not, the game is frozen and everyone waits in a lobby: once one more person is back (any of them) the host taps <b>Continue</b> and it picks up exactly where it stopped. If the host is the one missing, the person who is here can take over as host.</p>
   </div></details>
 
   <details class="howto-section"><summary>Host settings</summary><div class="howto-body">
@@ -22954,8 +22954,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const w = roomState && roomState.soloWait, players = (roomState && roomState.players) || {}, me = players[currentPlayerId];
     const gone = w ? (w.ids || []).filter((id) => players[id] && isPlayerAway(players[id])) : [];
     if (!w || roomState.paused || !me || me.connected === false || !gone.length || !currentRoomCode) { bar.classList.remove("show"); return; }
-    const names = gone.map((id) => players[id].name || "Player").join(" & ");
-    bar.textContent = "Waiting for " + names + " to come back \u00b7 " + clockText(w.since + SOLO_WAIT_MS - nowMs());
+    // Any one of the missing humans coming back is enough, so it never names anybody.
+    bar.textContent = "Waiting for another player to come back \u00b7 " + clockText(w.since + SOLO_WAIT_MS - nowMs());
     bar.classList.add("show");
   }
   setInterval(() => { soloWaitTick(); renderSoloWaitBar(); }, 1000);
@@ -22964,7 +22964,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     pausedOverlayEl.classList.toggle("active", !!paused);
     const hold = !!(paused && roomState.lobbyHold);
     const list = document.getElementById("paused-players"), hostBtn = document.getElementById("paused-host-btn");
-    document.getElementById("paused-title").textContent = hold ? "Waiting for everyone" : "Game paused";
+    document.getElementById("paused-title").textContent = hold ? "Waiting for another player" : "Game paused";
     const humans = Object.entries(currentPlayers || {}).filter(([, p]) => p && !p.isBot);
     const hostEntry = humans.find(([, p]) => p.isHost), hostGone = !hostEntry || hostEntry[1].connected === false;
     const me = currentPlayers[currentPlayerId], here = !!me && me.connected !== false;
@@ -22977,8 +22977,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     hostBtn.style.display = hold && !isHost && hostGone && here ? "flex" : "none";
     list.style.display = hold ? "grid" : "none";
     if (hold) {
-      list.innerHTML = humans.map(([id, p]) => `<li class="${p.connected === false ? "away" : "here"}"><span>${escapeHtml(p.name || "Player")}${p.isHost ? " (host)" : ""}${id === currentPlayerId ? " (you)" : ""}</span><span class="pp-state">${p.connected === false ? "Not back yet" : "Here"}</span></li>`).join("");
-      document.getElementById("paused-msg").textContent = !ready ? "The game is on hold until everyone is back." : (isHost ? "Everyone is back. Continue when you're ready." : "Everyone is back. Waiting for the host to continue.");
+      const hereNow = humans.filter(([, p]) => p.connected !== false); // only who is here: it does not matter which absent player comes back
+      list.innerHTML = hereNow.map(([id, p]) => `<li class="here"><span>${escapeHtml(p.name || "Player")}${p.isHost ? " (host)" : ""}${id === currentPlayerId ? " (you)" : ""}</span><span class="pp-state">Here</span></li>`).join("") + (ready ? "" : `<li class="away"><span>Another player</span><span class="pp-state">Not back yet</span></li>`);
+      document.getElementById("paused-msg").textContent = !ready ? "The game is on hold until one more player is back." : (isHost ? "Another player is back. Continue when you're ready." : "Another player is back. Waiting for the host to continue.");
     } else {
       document.getElementById("paused-msg").textContent = canResume ? "Pick up where you left off." : "Waiting for the host to resume";
     }

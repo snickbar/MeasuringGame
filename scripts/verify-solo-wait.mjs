@@ -19,8 +19,11 @@ assert.equal(held.paused, true); assert.equal(held.pausedAt, 1000 + SOLO_WAIT_MS
 for (const bad of [room({ phase: 'waiting' }, true, false), room({ phase: 'final' }, true, false), room({ settings: { solo: true } }, true, false)]) assert.equal(startSoloWait(bad, 1), undefined);
 const oneHuman = room({}, true, true); delete oneHuman.players.h2; assert.equal(soloWaitState(oneHuman), null);
 assert.deepEqual(startSoloWait(room({}, false, false), 1).soloWait.ids, ['h1', 'h2']); // both gone: still a valid wait (the first to come back runs it)
-// all humans connected again = ready; host takeover only when the host is away
+// two humans connected = ready, whichever they are (a third human alone is not enough); host takeover only when the host is away
 assert.equal(lobbyReady(held), false);
+const three = { ...held, players: { ...held.players, h3: { name: 'C', connected: true } } };
+assert.equal(lobbyReady(three), true, 'any one more human is enough, even if the one who left stays away');
+assert.equal(lobbyReady({ ...three, players: { ...three.players, h1: { ...three.players.h1, connected: false } } }), false);
 assert.equal(lobbyReady({ ...held, players: { ...held.players, h2: { ...held.players.h2, connected: true } } }), true);
 const hostAway = { ...held, players: { ...held.players, h1: { ...held.players.h1, connected: false }, h2: { ...held.players.h2, connected: true } } };
 const taken = takeLobbyHost(hostAway, 'h2'); assert.equal(taken.players.h2.isHost, true); assert.equal(taken.players.h1.isHost, false); assert.equal(taken.hostOriginal, 'h1');

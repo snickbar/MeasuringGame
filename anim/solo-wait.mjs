@@ -1,7 +1,7 @@
 // "Last human standing": in any started game with two or more human seats, once only one human is still connected a
 // grace timer starts (the game keeps running meanwhile). If the other human is back in time the timer simply clears.
 // If it runs out, the game is frozen (the normal pause, so every deadline is shifted when it resumes) and everyone is
-// held in a waiting lobby until all humans are back and the host taps Continue. Bots never count. Pure transaction
+// held in a waiting lobby until at least one more human is back (any of them) and the host taps Continue. Bots never count. Pure transaction
 // decisions: they are re-run against the latest room on every retry, and return undefined to leave the room alone.
 export const SOLO_WAIT_MS = 90000;
 const LIVE = new Set(['countdown', 'question', 'answers', 'animation', 'reveal', 'summary', 'hs', 'bluff']);
@@ -40,10 +40,9 @@ export function holdForLobby(room, now) {
   if (!lastHumanStanding(soloWaitState(room))) return undefined;
   return { ...room, soloWait: null, paused: true, pausedAt: now, lobbyHold: { at: now } };
 }
-// Every human seat is connected again.
+// One more human is enough: any two humans connected, it does not matter which ones are back.
 export function lobbyReady(room) {
-  const humans = Object.values(room?.players || {}).filter((p) => p && !p.isBot);
-  return humans.length >= 2 && humans.every((p) => p.connected !== false);
+  return Object.values(room?.players || {}).filter((p) => p && !p.isBot && p.connected !== false).length >= 2;
 }
 // The host is not here while the game is held in the lobby: the human who is here takes the host seat (the original host
 // gets it back when they return, see returnHost).
