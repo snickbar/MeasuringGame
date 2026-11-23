@@ -902,6 +902,8 @@ const MOTION = {
   "handheld-game-system": "tumble",
   "hay-bale": "scoot",
   "harp": "only-slide",
+  "briefcase": "scoot",
+  "axolotl-plush": "scoot",
   "dumpling-squishy": "scoot",
   "roadside-diner": "only-slide",
   "drawing-screen-toy": "fly",
