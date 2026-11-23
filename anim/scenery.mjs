@@ -260,8 +260,8 @@ export const SETTINGS = {
   retro: { floor: 'retro-v3-arcade', fittedFloor: true, floorInset: 0, lightTally: true, sky: ['#162548', '#6676b4'], parallax: [] },
   // Drive-in theater: a night lot. Everything stands on the lot by depth (floorDepth singles), the hills behind it follow the far edge of the lot.
   drivein: { floor: 'drivein-ground', floorTileWidth: 1450, floorBehind: true, floorInset: 0, night: true, sky: ['#05084a', '#161774'], fireflies: 'always', movers: ['twinkle'],
-    floorDepth: { par: .5, zoomX: true, tables: [], rows: [], singles: [
-      { img: 'drivein-screen', r: 0, x: .5, w: .94, live: { search: { beams: [{ x: .05, y: .1, dir: -22, sweep: 24, speed: .55, width: 4, len: 1.6 }, { x: .95, y: .1, dir: 22, sweep: 24, speed: .47, width: 4, len: 1.6 }] }, bats: { n: 4, period: 9, y: [.12, .6], size: .035 }, glows: { lights: [{ xs: [.156, .318, .499, .681, .841], y: .157, r: .12 }] },  movie: { box: [.066, .266, .934, .653], imgs: ['drivein-movie-0', 'drivein-movie-1', 'drivein-movie-2', 'drivein-movie-3', 'drivein-movie-4', 'drivein-movie-5'], plan: [[0, 3.2], [2, .35], [0, 2.2], [1, 3], [3, 3], [4, 3], [5, 3]] } } },
+    floorDepth: { par: .5, zoomX: true, zoomCenter: true, tables: [], rows: [], singles: [
+      { img: 'drivein-screen', r: 0, x: .5, w: .94, live: { search: { beams: [{ x: .05, y: .1, dir: -22, sweep: 24, speed: .55, width: 4, len: 1.6 }, { x: .95, y: .1, dir: 22, sweep: 24, speed: .47, width: 4, len: 1.6 }] }, bats: { n: 4, period: 9, y: [.12, .6], size: .035 }, glows: { lights: [{ xs: [.156, .318, .499, .681, .841], y: .157, r: .12 }] },  movie: { gray: true, box: [.066, .266, .934, .653], imgs: ['drivein-movie-0', 'drivein-movie-1', 'drivein-movie-2', 'drivein-movie-3', 'drivein-movie-4', 'drivein-movie-5'], plan: [[0, 3.2], [2, .35], [0, 2.2], [1, 3], [3, 3], [4, 3], [5, 3]] } } },
       { img: 'drivein-snack-stand', r: .04, x: .84, w: .36, live: { smoke: { x: .2, y: .3, n: 6, every: 6, rise: .45, drift: .14, size: .12 }, blink: [{ box: [.26, .18, .74, .262], round: .03, speed: .22 }], pop: { n: 7, x: .49, y: .045, h: .1, spread: .14, size: .016, every: 1.5 },
         glows: { bulbs: [{ xs: [.111, .175, .241, .307, .37, .43, .493, .554, .619, .68, .745, .815, .883], y: .303, r: .06, speed: 4.4 }], windows: [{ x: .5, y: .56, r: .3 }] } } },
       { img: 'drivein-car-7', r: 0.225, w: 0.12, drive: { from: -.15, to: 1.15, period: 16 }, live: { heads: { period: 7, phase: 0.0 }, glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 0 }] } } },
@@ -2080,6 +2080,7 @@ function drawLivePiece(ctx, kit, live, left, top, w, h, time, reduced, front) {
     while (u >= m.plan[i][1]) { u -= m.plan[i][1]; i = (i + 1) % m.plan.length; }
     const [x0, y0, x1, y1] = m.box, bx = left + x0 * w, by = top + y0 * h, bw = (x1 - x0) * w, bh = (y1 - y0) * h;
     ctx.save(); ctx.beginPath(); ctx.rect(bx, by, bw, bh); ctx.clip();
+    if (m.gray) ctx.filter = `grayscale(1) contrast(1.12) brightness(${reduced ? 1 : (1 + .05 * Math.sin(t * 23) * Math.sin(t * 7.3)).toFixed(3)})`; // an old black-and-white film with a faint projector flicker
     const draw = (pic, a) => { if (a <= 0) return; const k = Math.max(bw / pic.naturalWidth, bh / pic.naturalHeight), dw = pic.naturalWidth * k, dh = pic.naturalHeight * k; ctx.globalAlpha = a; ctx.drawImage(pic, bx + (bw - dw) / 2, by + (bh - dh) / 2, dw, dh); };
     const fade = Math.min(.4, m.plan[i][1] / 2), prev = shots[m.plan[(i + m.plan.length - 1) % m.plan.length][0]];
     if (u < fade && !reduced) { draw(prev, 1); draw(shots[m.plan[i][0]], u / fade); } else draw(shots[m.plan[i][0]], 1);
@@ -2096,7 +2097,7 @@ function drawLivePiece(ctx, kit, live, left, top, w, h, time, reduced, front) {
     ctx.save();
     for (let k = 0; k < pop.n; k++) {
       const c = ((t / pop.every) + k / pop.n * .9) % 1, v = (((k * 7) % 5) - 2) / 2, up = Math.sin(Math.min(1, c * 1.15) * Math.PI) * pop.h * h; // up then down
-      const px = left + (pop.x + v * pop.spread) * w * (.4 + c * .6) + (0) , py = top + pop.y * h - up, r = pop.size * w;
+      const px = left + (pop.x + v * pop.spread * Math.min(1, c * 1.6)) * w, py = top + pop.y * h - up, r = pop.size * w;
       if (c > .9) continue;
       ctx.globalAlpha = Math.min(1, (1 - c) * 3); ctx.fillStyle = '#fff4c8'; ctx.strokeStyle = '#e0a83a'; ctx.lineWidth = Math.max(1, r * .28);
       ctx.beginPath(); ctx.arc(px - r * .35, py, r * .7, 0, 6.3); ctx.arc(px + r * .35, py - r * .2, r * .7, 0, 6.3); ctx.arc(px, py + r * .3, r * .65, 0, 6.3); ctx.fill(); ctx.stroke();
@@ -2155,6 +2156,7 @@ function drawLivePiece(ctx, kit, live, left, top, w, h, time, reduced, front) {
 // Rows of tables standing on a deep floor: each row rides the floor at its own depth.
 export function drawFloorDepthRows(ctx, kit, { width, height, floorY, shiftY = 0, shiftX = 0, groundScale = 1, anchorX = width / 2, dark, time = 0, reduced }) {
   const depth = kit.config.floorDepth, image = kit.images[kit.config.floor]; if (!depth || !image) return;
+  if (depth.zoomCenter) { anchorX = width / 2; shiftX = 0; } // the lot zooms around its own middle and never slides sideways, so the screen is trimmed evenly on both sides
   const meta = FLOOR_DATA[kit.config.floor], tile = (kit.config.floorTileWidth || 380) * groundScale, tileH = tile * image.naturalHeight / image.naturalWidth;
   const restTop = floorY - shiftY - tileH * meta.surface - floorInset(kit) * groundScale;
   const phase = shiftX + anchorX * (1 - groundScale), offset = ((phase % tile) + tile) % tile - tile;
