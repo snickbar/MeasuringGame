@@ -12684,6 +12684,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     ["Two stars! Almost outfoxed it.", "So sly, so close!", "One more star, I can smell it."],
     ["Three stars. Fox-tastic!", "You outfoxed the whole level!", "Sly, sly, sly. Perfect!"],
   ];
+  // What the fox says after each question, by accuracy. Each tier starts with the plain verdict so it still shows up often.
+  const WORLD_FOX_ROUND = [
+    [100, ["Perfect!", "Spot on! Sly work!", "Not a whisker off!", "Fox-tastic, dead center!"]],
+    [99, ["The 1%!", "A whisker from perfect!", "So sly, so close!"]],
+    [90, ["So close!", "Sniffing distance!", "Almost had it, clever one!", "Up we go, nearly perfect!"]],
+    [70, ["Nice guess", "Good nose for it!", "Solid. The balloon likes it.", "Not bad at all!"]],
+    [40, ["In the neighborhood", "Warm. Getting warmer!", "Hmm, a bit foggy up here.", "Close enough to see the rooftop."]],
+    [0, ["Way off", "Whoa, that one drifted away!", "Lost in the clouds!", "Hold on, hot air leaking!"]],
+  ];
+  const worldFoxRound = (acc) => { const l = WORLD_FOX_ROUND.find(([min]) => acc >= min)[1]; return l[Math.floor(Math.random() * l.length)]; };
   const worldFoxSaying = (stars) => { const l = WORLD_FOX_SAYINGS[Math.max(0, Math.min(3, stars | 0))]; return l[Math.floor(Math.random() * l.length)]; };
   const soloSaying = (mascot, acc) => { const l = SOLO_SAYINGS[mascot][soloScoreReaction(acc)]; return l[Math.floor(Math.random() * l.length)]; };
   const soloScoreReaction = (acc) => acc >= 90 ? "cheer" : acc >= 60 ? "pleased" : acc >= 40 ? "puzzled" : "deflated";
@@ -14529,7 +14539,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             ${boost ? `<div class="wl-rs-boost">${boost}</div>` : ""}
             <div class="wl-rs-lines"><span>You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b></span><span>Answer <b>${ans}</b></span></div></div>
           <div class="dc-card dc-hot tw-avg wl-rs-meter"><div class="tw-avg-label">Your average this level</div><div class="tw-avg-num">${formatAccuracy(reduced ? runningAvg : prevAvg)}%</div>${worldProgressBarHtml(reduced ? runningAvg : (k > 0 ? prevAvg : 0), "day")}</div>
-          <div class="wl-rs-sayrow"><div class="solo-bubble solo-bubble-down">${escapeHtml(label)}</div></div>
+          <div class="wl-rs-sayrow"><div class="solo-bubble solo-bubble-down">${escapeHtml(worldFoxRound(acc))}</div></div>
           <div class="wl-rs-scene${reduced ? " is-reacting" : ""}" data-mood="${mood}" aria-hidden="true"><i class="wl-cl c1"></i><i class="wl-cl c2"></i><i class="wl-cl c3"></i><div class="wl-rs-balloon"><div class="wl-rs-sway">${mascotMarkup("worlds",mood==="up"?"win":mood==="down"?"lose":"soso",{key:wl.runId+":"+k,delay:800,still:reduced})}</div>${mood === "up" ? '<i class="wl-sp s1"></i><i class="wl-sp s2"></i><i class="wl-sp s3"></i><i class="wl-sp s4"></i>' : ""}</div></div>
         </div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="wl-next">${last ? "See my results" : "Next question"}</button></div>`;
