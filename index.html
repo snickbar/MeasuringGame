@@ -1389,6 +1389,8 @@ if (location.protocol === "file:") {
   .solo-bubble { position: relative; display: inline-block; max-width: 100%; box-sizing: border-box; padding: 6px 12px; border-radius: 14px; background: #fff; border: 2px solid #d8c3a0; color: #4a2c12; font-weight: 700; font-size: 14px; line-height: 1.25; box-shadow: 0 2px 0 rgba(74,44,18,.18); animation: soloBubbleIn .45s cubic-bezier(.34,1.56,.64,1) 1s both; }
   .solo-bubble::before { content: ""; position: absolute; left: 22px; top: -9px; width: 14px; height: 14px; background: #fff; border-left: 2px solid #d8c3a0; border-top: 2px solid #d8c3a0; transform: rotate(45deg); }
   .solo-bubble-mo { margin-top: 8px; }
+  .solo-bubble-fox { display: block; margin: 10px 108px 4px 0; width: fit-content; max-width: calc(100% - 108px); }
+  .solo-bubble-fox::before { left: auto; right: -9px; top: 12px; transform: rotate(135deg); }
   .solo-bubble-mo::before { left: -9px; top: 12px; transform: rotate(-45deg); }
   @keyframes soloBubbleIn { 0% { scale: .4; opacity: 0; } 100% { scale: 1; opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { .solo-bubble { animation: none; } }
@@ -12670,6 +12672,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       deflated: ["I dropped my acorn.", "That was a bit nuts.", "Back up the tree with you!"],
     },
   };
+  // The Worlds fox speaks by stars earned (0-3).
+  const WORLD_FOX_SAYINGS = [
+    ["Foxes try again. So can you!", "Not this time, sly one.", "Back in the den, then back at it!"],
+    ["One star in the bag!", "A good start, clever one!", "Let me sniff out a second star."],
+    ["Two stars! Almost outfoxed it.", "So sly, so close!", "One more star, I can smell it."],
+    ["Three stars. Fox-tastic!", "You outfoxed the whole level!", "Sly, sly, sly. Perfect!"],
+  ];
+  const worldFoxSaying = (stars) => { const l = WORLD_FOX_SAYINGS[Math.max(0, Math.min(3, stars | 0))]; return l[Math.floor(Math.random() * l.length)]; };
   const soloSaying = (mascot, acc) => { const l = SOLO_SAYINGS[mascot][soloScoreReaction(acc)]; return l[Math.floor(Math.random() * l.length)]; };
   const soloScoreReaction = (acc) => acc >= 90 ? "cheer" : acc >= 60 ? "pleased" : acc >= 40 ? "puzzled" : "deflated";
   function soloScoreMascotHtml(art, reaction, { animate = true, sunriseStep = null, foreground = "", gesture = null } = {}) {
@@ -14571,7 +14581,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const avg = accs.reduce((a, b) => a + b, 0) / accs.length;
     const rows = wl.questions.map((q, k) => { const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId); return `<div class="dc-row"><span class="dc-em">${markSvg(accs[k])}</span><span class="dc-rt">${escapeHtml(t.name)} in ${escapeHtml(u.plural)}</span><span class="dc-rv">${Math.round(accs[k])}%</span></div>`; }).join("");
     el.innerHTML = `<h2 class="dc-title" data-banner-art="balloon">${w.name} &middot; Level ${wl.level}</h2>${worldProgressHtml()}
-      <div class="dc-card dc-hot wl-has-fox"><div class="wl-big" data-result-stars="${wl.stars}" data-celebration-key="${wl.runId}">${worldStarsHtml(wl.stars)}</div><div class="dc-big">${Math.round(avg)}% accurate</div>${wl.newBest ? `<div class="dc-note" data-personal-best="${wl.runId}"><img class="polish-inline-art" src="icons/reactions/trophy.webp" alt=""> New personal best!</div>` : ""}<div class="dc-note">${wl.stars === 0 ? "Get above 60% for your first star." : wl.stars < 3 ? `Above ${WORLD_STAR_AT[wl.stars]}% for the next star.` : "All three stars!"}</div>${wl.gain ? `<div class="dc-note">+${wl.gain} coins</div>` : ""}<div class="wl-fox-anchor">${mascotMarkup("worlds",wl.stars>0?"win":"lose",{key:wl.runId+":final"})}</div></div>
+      <div class="dc-card dc-hot wl-has-fox"><div class="wl-big" data-result-stars="${wl.stars}" data-celebration-key="${wl.runId}">${worldStarsHtml(wl.stars)}</div><div class="dc-big">${Math.round(avg)}% accurate</div>${wl.newBest ? `<div class="dc-note" data-personal-best="${wl.runId}"><img class="polish-inline-art" src="icons/reactions/trophy.webp" alt=""> New personal best!</div>` : ""}<div class="dc-note">${wl.stars === 0 ? "Get above 60% for your first star." : wl.stars < 3 ? `Above ${WORLD_STAR_AT[wl.stars]}% for the next star.` : "All three stars!"}</div>${wl.gain ? `<div class="dc-note">+${wl.gain} coins</div>` : ""}<div class="solo-bubble solo-bubble-fox">${escapeHtml(worldFoxSaying(wl.stars))}</div><div class="wl-fox-anchor">${mascotMarkup("worlds",wl.stars>0?"win":"lose",{key:wl.runId+":final"})}</div></div>
       <div class="dc-card">${rows}</div>
       <button type="button" class="dc-btn dc-alt" id="wl-again">Try again (new questions)</button>
       <div class="pin-bottom" id="wl-done-bar">${wlDoneBarHtml()}</div>`;
@@ -16130,7 +16140,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             <div class="wb-result-stamp"><div class="wb-burst"><div class="wb-mark ${ok ? "ok" : "bad"}" aria-label="${ok ? 'Correct' : 'Incorrect'}">${ok ? "&#10004;" : "&#10006;"}</div></div><small>${ok ? '+1 point' : '1 life lost'}</small></div>
           </div>
           <div class="wb-verdict-t${milestone ? " mile" : ""}">${milestone || (ok ? "Correct!" : "Not quite!")}</div>
-          <div class="wb-result-quip">${wbSideHtml(wb.side)}${wb.quip ? `<div class="wb-quip">${escapeHtml(wb.quip)}</div>` : ""}</div>
+          <div class="wb-result-quip">${wbSideHtml(wb.side)}${wb.quip ? `<div class="wb-quip solo-bubble">${escapeHtml(wb.quip)}</div>` : ""}</div>
           ${wb.bestFlash && ok ? '<div class="wb-newbest">&#9733; New best! &#9733;</div>' : ""}
           ${!ok && wb.prevStreak >= 3 ? `<div class="wb-lost">Streak ended at ${wb.prevStreak}</div>` : ""}
           <p class="wb-line"><span class="wb-line-label">The bigger one</span><b>${escapeHtml(p.bigger.name.charAt(0).toUpperCase() + p.bigger.name.slice(1))}</b><span>${how}</span></p>
