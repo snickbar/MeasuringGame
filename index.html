@@ -1385,6 +1385,14 @@ if (location.protocol === "file:") {
   @keyframes wbSpark { 0%, 100% { opacity: 0; transform: scale(0) rotate(0); } 45% { opacity: 1; transform: scale(1.2) rotate(90deg); } 75% { opacity: .8; transform: scale(.7) rotate(150deg); } }
   html[data-motion=reduce] .wb-react img, html[data-motion=reduce] .wb-bit, html[data-motion=reduce] .wb-card.win, html[data-motion=reduce] .wb-card.win::after, html[data-motion=reduce] .wb-spark { animation: none !important; }
   html[data-motion=reduce] .wb-bit, html[data-motion=reduce] .wb-spark { display: none; }
+  /* The mascot's line after a guess: a speech bubble that pops in after the pose lands. Daily: tail points up at the rooster; Monthly: points left at the squirrel. */
+  .solo-bubble { position: relative; display: inline-block; max-width: 100%; box-sizing: border-box; padding: 6px 12px; border-radius: 14px; background: #fff; border: 2px solid #d8c3a0; color: #4a2c12; font-weight: 700; font-size: 14px; line-height: 1.25; box-shadow: 0 2px 0 rgba(74,44,18,.18); animation: soloBubbleIn .45s cubic-bezier(.34,1.56,.64,1) 1s both; }
+  .solo-bubble::before { content: ""; position: absolute; left: 22px; top: -9px; width: 14px; height: 14px; background: #fff; border-left: 2px solid #d8c3a0; border-top: 2px solid #d8c3a0; transform: rotate(45deg); }
+  .solo-bubble-mo { margin-top: 8px; }
+  .solo-bubble-mo::before { left: -9px; top: 12px; transform: rotate(-45deg); }
+  @keyframes soloBubbleIn { 0% { scale: .4; opacity: 0; } 100% { scale: 1; opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .solo-bubble { animation: none; } }
+  html[data-motion=reduce] .solo-bubble { animation: none; }
   .wb-quip { font-size: 15px; font-weight: 800; color: #6b4a2a; margin: 0 0 6px; }
   /* streak chip: flames that grow with the streak */
   .wb-streak { display: flex; justify-content: center; margin: -4px 0 10px; }
@@ -12647,6 +12655,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const best = (myProfile.dailyStreak && myProfile.dailyStreak.best) || 0;
     return `<div class="dc-card dc-cal" id="dc-cal"><div class="dc-cal-hd"><button type="button" class="dc-cal-nav" data-cal="${shift(-1)}" aria-label="Previous month" ${ym <= ymFirst ? "disabled" : ""}>&lsaquo;</button><b>${name}</b><button type="button" class="dc-cal-nav" data-cal="${shift(1)}" aria-label="Next month" ${ym >= ymNow ? "disabled" : ""}>&rsaquo;</button><span class="dc-cal-sub">${played} day${played === 1 ? "" : "s"} played${best > 1 ? ` &middot; best streak ${best}` : ""}</span></div><div class="dc-cal-dow">${["S", "M", "T", "W", "T", "F", "S"].map((x) => `<span>${x}</span>`).join("")}</div><div class="dc-cal-grid">${cells}</div></div>`;
   }
+  // What the Daily rooster and the Monthly squirrel say after a guess, by how close it was (same tiers as their poses). One is picked at random each time.
+  const SOLO_SAYINGS = {
+    rooster: {
+      cheer: ["Cock-a-doodle-NAILED it!", "Not a feather out of place!", "That is a perfect strut!"],
+      pleased: ["So close I can crow about it.", "Good guess, nearly there!", "Just a peck away!"],
+      puzzled: ["Hmm, that one ruffled me.", "Not quite what I expected.", "Close-ish? Maybe?"],
+      deflated: ["Well, that did not hatch.", "Back to the coop for you!", "We will not speak of it."],
+    },
+    squirrel: {
+      cheer: ["Nutty good guess!", "You found the acorn!", "Acorn-stounding!"],
+      pleased: ["Almost nutty-perfect!", "Close enough to snack on!", "Good eye, nearly there!"],
+      puzzled: ["Hmm, a bit squirrelly.", "Not quite my acorn.", "I would have guessed different..."],
+      deflated: ["I dropped my acorn.", "That was a bit nuts.", "Back up the tree with you!"],
+    },
+  };
+  const soloSaying = (mascot, acc) => { const l = SOLO_SAYINGS[mascot][soloScoreReaction(acc)]; return l[Math.floor(Math.random() * l.length)]; };
   const soloScoreReaction = (acc) => acc >= 90 ? "cheer" : acc >= 60 ? "pleased" : acc >= 40 ? "puzzled" : "deflated";
   function soloScoreMascotHtml(art, reaction, { animate = true, sunriseStep = null, foreground = "", gesture = null } = {}) {
     const sunrise = sunriseStep !== null;
@@ -12739,7 +12763,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           <div class="wb-result-stage dc-stage">${soloScoreMascotHtml(DAILY_ROOSTER_ART, soloScoreReaction(r.acc), { sunriseStep: r.i })}</div>
           <div class="dc-verdict-row">
             <div class="dc-verdict-copy"><div class="sv-arr" style="--a:.35s"><div class="wb-verdict-t">${r.label}</div></div>
-            <div class="wb-result-quip sv-arr" style="--a:.6s">${wbSideHtml(r.side)}<div class="wb-quip">${escapeHtml(r.quip)}</div></div></div>
+            <div class="wb-result-quip sv-arr" style="--a:.6s">${wbSideHtml(r.side)}<div class="wb-quip solo-bubble">${escapeHtml(r.quip)}</div></div></div>
             <div class="wb-result-stamp"><div class="wb-burst"><div class="wb-mark ${r.ok ? "ok" : "bad"}" aria-label="${r.ok ? "Right" : "Off"}">${r.ok ? "&#10004;" : "&#10006;"}</div></div></div>
           </div>
           <div class="sv-answer sv-arr" style="--a:.5s"><div class="sv-answer-row">
@@ -12796,7 +12820,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const i = daily.guesses.length - 1, q = daily.questions[i], g = daily.guesses[i], acc = roundAccuracy(g / q.answer), ok = acc >= 60;
     const ans = mod ? mod.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
     vibeAccuracy(acc);
-    daily.res = { i, acc, ok, ans, label: dcLabel(acc), side: wbSidePick(ok, acc >= 90 ? 2 : 20, "", false, true), quip: svQuip(ok, acc) };
+    daily.res = { i, acc, ok, ans, label: dcLabel(acc), side: wbSidePick(ok, acc >= 90 ? 2 : 20, "", false, true), quip: soloSaying("rooster", acc) };
     daily.phase = "result"; renderDaily();
   }
   async function dailyRunReveal() {
@@ -15067,7 +15091,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const objCard = (o) => `<div class="wb-card"><img src="${o.image}" alt="" draggable="false"><span class="wb-n">${escapeHtml(o.name)}</span></div>`;
     host.innerHTML = `<div class="wb-cards sv-rcards mo-rcards">${objCard(OBJECT_BY_ID.get(q.unitId))}${objCard(OBJECT_BY_ID.get(q.targetId))}</div>${soloFactsHtml(q)}<div class="dc-card dc-hot dc-res mo-round-result">
       <div class="mo-score-grid">${soloScoreMascotHtml(MONTHLY_SQUIRREL_ART, reaction, { gesture, foreground: monthlyAcornPile(i + 1, arrival) })}
-        <div class="mo-verdict"><div class="dc-res-head">${markSvg(acc)}<span>${label}</span></div></div>
+        <div class="mo-verdict"><div class="dc-res-head">${markSvg(acc)}<span>${label}</span></div><div class="solo-bubble solo-bubble-mo">${escapeHtml(soloSaying("squirrel", acc))}</div></div>
       </div>
       <div class="sv-answer sv-arr" style="--a:.4s"><div class="sv-answer-row">
         <div class="sv-answer-side"><span class="sv-side-label">Your guess</span><b>${g.toLocaleString("en-US", { maximumFractionDigits: 2 })}</b></div>
