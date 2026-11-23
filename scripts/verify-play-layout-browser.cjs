@@ -253,6 +253,13 @@ server.listen(0,'127.0.0.1',()=>{
      await evaluate('window.__layoutAudit("whichbigger")');await evaluate('window.__layoutWbResult()');await shot('whichbigger-result');
      process.exit(0);
     }
+    if(process.env.PLAY_LAYOUT_QSHOTS){ // review pictures of each mode's question screen (visual pass); writes PNGs and stops
+     const dir=process.env.PLAY_LAYOUT_QSHOTS;fs.mkdirSync(dir,{recursive:true});
+     for(const mode of ['quick','teamvteam','worlds','daily','monthly','survival','whichbigger','highlow','highstakes','highstakes:bet','bluff','bluff:vote','bluff:summary','quick:many']){
+      await evaluate('window.__layoutAudit('+JSON.stringify(mode)+')');await new Promise(r=>setTimeout(r,2600));
+      const sh=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(dir,mode.replace(':','-')+'-'+width+'x'+height+'.png'),Buffer.from(sh.data,'base64'));}
+     process.exit(0);
+    }
     if(!process.env.PLAY_LAYOUT_NAV_ONLY){
     const baselines={};
 if(process.env.PLAY_LAYOUT_WALLS){const bad=[];const run=async tag=>{const rows=JSON.parse(await evaluate(WALLS));rows.forEach(x=>bad.push(tag+' '+width+'x'+height+': '+x))};
