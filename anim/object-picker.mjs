@@ -5,6 +5,7 @@
 // Previews play the real reveal engine with the draft passed in (orientationFor / motionFor), nothing global changes.
 import { ORIENT } from "./orient-data.js";
 import { ENTRY_KINDS, entryKindFor } from "./entry-styles.mjs";
+import { RECENCY } from "./object-recency.js";
 
 const KEY = "object-picker-drafts-v1";
 const DEFAULT = { rot: 0, flip: false, leanL: "ccw", leanR: "cw", mirR: false };
@@ -14,7 +15,9 @@ const LEANS = [["ccw", "Turns counter-clockwise"], ["cw", "Turns clockwise"], ["
 export function buildObjectPicker({ loadAnim, objects }) {
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const wrap = el("div", "dbg-body object-picker");
-  const sorted = objects.slice().sort((a, b) => a.name.localeCompare(b.name));
+  // Newest or most recently updated first (a new object, or just new artwork); the rest in name order.
+  const sorted = objects.slice().sort((a, b) => (RECENCY[b.id] || 0) - (RECENCY[a.id] || 0) || a.name.localeCompare(b.name));
+  const byName = objects.slice().sort((a, b) => a.name.localeCompare(b.name));
   const byId = new Map(objects.map((o) => [o.id, o]));
   let drafts = {};
   try { drafts = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { drafts = {}; }
@@ -157,8 +160,8 @@ export function buildObjectPicker({ loadAnim, objects }) {
 
   // ---- live test in the real reveal ----
   const partner = el("select", "dbg-input"); partner.style.width = "100%"; partner.setAttribute("aria-label", "Test against");
-  sorted.forEach((o) => { const op = el("option", "", o.name); op.value = o.id; partner.appendChild(op); });
-  partner.value = byId.has("empire-state-building") ? "empire-state-building" : sorted[sorted.length - 1].id;
+  byName.forEach((o) => { const op = el("option", "", o.name); op.value = o.id; partner.appendChild(op); });
+  partner.value = byId.has("empire-state-building") ? "empire-state-building" : byName[byName.length - 1].id;
   partner.addEventListener("change", replaySoon);
   const stage = el("div"); stage.style.cssText = "width:100%;min-height:80px;border-radius:10px;overflow:hidden;background:#fff8ec";
   const testNote = el("p", "dbg-note", "Plays the real reveal with your draft and the saved entrance. The object you picked plays as the small one if it is smaller than the object you test against, otherwise as the big one.");

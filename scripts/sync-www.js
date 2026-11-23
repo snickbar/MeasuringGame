@@ -9,6 +9,7 @@ const path = require("path");
 const ROOT = path.join(__dirname, "..");
 const WWW = path.join(ROOT, "www");
 
+try{require('./build-object-recency.cjs');}catch(e){console.warn('object recency skipped:',e.message);}
 const {list}=require('./production-files.cjs');
 if(path.dirname(WWW)!==ROOT||path.basename(WWW)!=='www')throw Error('Unexpected build output path');
 
