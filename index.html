@@ -3543,6 +3543,11 @@ if (location.protocol === "file:") {
 
   /* After Lock it in (Classic, Party, Team vs Team): the answer slides to the bottom, a fact box pops in under each object, and the mascot waits in between. */
   #question-view.q-waiting .play-input-body { display: flex; flex-direction: column; }
+  #q-preview .qp .qp-reel { position: absolute; left: 0; right: 0; top: 2px; will-change: transform; }
+  #q-preview .qp .qp-reel img { display: block; margin: 0 auto; width: 62px; height: 62px; object-fit: contain; }
+  #q-preview .qp.reeling span { opacity: 0; }
+  #q-preview .qp.landed span { animation: qpLabelIn .25s ease-out; }
+  @keyframes qpLabelIn { from { opacity: 0; } to { opacity: 1; } }
   #question-view.q-waiting #q-preview { order: 0; flex: none; }
   #question-view.q-waiting #q-wait-scene { order: 1; display: flex; flex-direction: column; flex: 1 1 0; min-height: 0; }
   #question-view.q-waiting #guess-display { order: 2; flex: none; }
@@ -20332,6 +20337,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function setPromptTextStatic() {
     const text = questionPromptTextEl.dataset.txt;
+    stopQuestionReels(true);
     if (qSB) sbSetText(text, false);
     else { qWrite = null; qCurtainO = qCurtainTarget; questionPromptTextEl.textContent = text; startBoardLoop(); }
   }
@@ -21420,6 +21426,71 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function renderQuestionPreview(q) {
     const pair = questionObjects(q);
     renderQuestionMarkup(qPreviewEl, pair ? pair.map(o => `<div class="qp"><img src="${o.image}" alt="" draggable="false"><span>${escapeHtml(o.name)}</span></div>`).join("") : "");
+  }
+  // Slot-machine reel for the two helper pictures: both spin when the question starts, then the smaller object
+  // (named first in the question) lands as its word is written, and the larger one lands as its word is written.
+  // When the board shows the whole sentence at once, the larger one lands a short moment after the smaller.
+  let qReelToken = 0, qReelTimers = [], qReelStops = [];
+  function stopQuestionReels(now) {
+    qReelTimers.forEach(clearTimeout); qReelTimers = [];
+    const stops = qReelStops; qReelStops = [];
+    stops.forEach(fn => fn(!!now));
+  }
+  function startQuestionReel(q) {
+    stopQuestionReels(true);
+    qReelToken++;
+    const pair = questionObjects(q);
+    const cards = [...qPreviewEl.querySelectorAll(".qp")];
+    if (!pair || cards.length !== 2 || qReduceMotion || qPreviewEl.style.display === "none") return;
+    const token = qReelToken, text = q.prompt || "";
+    const pool = [...OBJECT_BY_ID.values()].filter(o => o.image);
+    if (pool.length < 6) return;
+    const K = 6, H = 62, GAP = 380;
+    const compact = t => t.replace(/\s+/g, "").length;
+    const endOf = (needle, last) => { const i = last ? text.lastIndexOf(needle) : text.indexOf(needle); return i < 0 ? -1 : compact(text.slice(0, i + needle.length)); };
+    const n = Math.max(1, compact(text));
+    const now = performance.now();
+    let unitAt, targetAt;
+    const uEnd = endOf(pair[0].plural || pair[0].name, false), tEnd = endOf(pair[1].name, true);
+    if (qSB?.animated && qSB.chars.length) {
+      const dur = boardReadingMs(qSB.id, n);
+      unitAt = qSB.t0 + dur * (uEnd < 0 ? 0.5 : uEnd / n) - now;
+      targetAt = qSB.t0 + dur * (tEnd < 0 ? 1 : tEnd / n) - now;
+    } else if (qWrite) {
+      unitAt = qWrite.start + (uEnd < 0 ? n / 2 : uEnd) * 42 - now;
+      targetAt = qWrite.start + (tEnd < 0 ? n : tEnd) * 42 - now;
+    } else if (qSB?.animated) {
+      unitAt = qSB.t0 + boardReadingMs(qSB.id, n) - now; targetAt = unitAt;
+    } else { unitAt = 0; targetAt = 0; }
+    unitAt = Math.max(unitAt, 650);
+    targetAt = Math.max(targetAt, unitAt + GAP);
+    const spin = (card, o, at) => {
+      const original = card.innerHTML;
+      const labels = [...card.querySelectorAll("span")];
+      const imgs = Array.from({ length: K }, () => pool[Math.floor(Math.random() * pool.length)].image);
+      const strip = [...imgs, imgs[0], o.image];
+      const reel = document.createElement("div");
+      reel.className = "qp-reel";
+      reel.innerHTML = strip.map(src => `<img src="${src}" alt="" draggable="false">`).join("");
+      card.classList.add("reeling");
+      card.replaceChildren(reel, ...labels);
+      const loop = reel.animate([{ transform: "translateY(0)" }, { transform: `translateY(${-K * H}px)` }], { duration: K * 70, iterations: Infinity });
+      let done = false;
+      const land = (instant) => {
+        if (done) return; done = true;
+        let y = 0;
+        try { y = new DOMMatrix(getComputedStyle(reel).transform).m42 || 0; } catch (e) {}
+        loop.cancel();
+        const finish = () => { if (token === qReelToken) { card.innerHTML = original; card.classList.remove("reeling"); card.classList.add("landed"); } };
+        if (instant) { finish(); return; }
+        reel.animate([{ transform: `translateY(${y}px)` }, { transform: `translateY(${-(K + 1) * H}px)` }],
+          { duration: 520, easing: "cubic-bezier(.2,.8,.3,1.12)", fill: "forwards" }).onfinish = finish;
+      };
+      qReelStops.push(land);
+      qReelTimers.push(setTimeout(() => land(false), at));
+    };
+    spin(cards[0], pair[0], unitAt);
+    spin(cards[1], pair[1], targetAt);
   }
   const twQuestionProgressEl = document.getElementById("tw-question-progress");
   const twQuestionPicsEl = document.getElementById("tw-question-pics");
@@ -25011,7 +25082,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const q = data.currentQuestion;
       const newPrompt = questionPromptTextEl.dataset.txt !== (q?.prompt || "");
       setPromptText(q ? q.prompt : "", true);
-      if (questionLayout === "party") renderQuestionPreview(q);
+      if (questionLayout === "party") { renderQuestionPreview(q); if (newPrompt) startQuestionReel(q); }
       renderTeamWorldsQuestionStats(q);
       if (questionLayout !== "party") getPlayLayout().highLow(hudEl, twQuestionProgressEl, submitGuessBtn, questionLayout);
       else getPlayLayout().party(hudEl, questionViewEl, submitGuessBtn);
