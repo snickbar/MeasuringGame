@@ -13774,6 +13774,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const colTops = colKey === hsColKey ? [...hsContentEl.querySelectorAll(".hs-board > .hs-col")].map((c) => c.scrollTop) : null;
     hsColKey = colKey;
     hsContentEl.innerHTML = html;
+    if (data.hsQ && hsContentEl.querySelector(".hs-q .dc-pic")) startQuestionReel(data.hsQ, hsContentEl, ".hs-q .dc-pic", false);
     if (colTops?.some(Boolean)) {
       const putBack = () => hsContentEl.querySelectorAll(".hs-board > .hs-col").forEach((c, i) => { if (colTops[i]) c.scrollTop = colTops[i]; });
       putBack(); requestAnimationFrame(putBack);
@@ -13998,6 +13999,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         : `<p class="hs-hint">You're out &mdash; but you can still mess with them. Write a believable <b>fake</b> answer for this question. Up to 3 get used &mdash; every player your fake fools earns you 2 coins at the end of the game:</p><div class="hs-fake"><div id="hs-fake-display" class="hs-fake-display">${escapeHtml(hsFakeStr || "0")}</div></div>${kpKeysHtml()}<button type="button" class="dc-btn" id="hs-fake-send">Send</button><p class="hs-hint"><span class="hs-timer" data-hs-ends="${data.hsPre.endsAt}">${Math.max(0, Math.ceil((data.hsPre.endsAt - nowMs()) / 1000))}</span>s left</p>`;
       else html += `<p class="hs-hint">The players who are out are writing fake answers for this round... <span class="hs-timer" data-hs-ends="${data.hsPre.endsAt}">${Math.max(0, Math.ceil((data.hsPre.endsAt - nowMs()) / 1000))}</span>s</p>`;
       hsContentEl.innerHTML = html;
+      if (data.hsQ && hsContentEl.querySelector(".hs-q .dc-pic")) startQuestionReel(data.hsQ, hsContentEl, ".hs-q .dc-pic", false);
       return;
     }
     const prevSig = hsContentEl.dataset.sig;
@@ -16032,6 +16034,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <button type="button" class="dc-btn" id="wb-lock" disabled>Lock it in</button>`;
       wbMountPlayLayout();
       wbMascotPose();
+      startQuestionReel({ prompt: "wb:" + p.left.id + ":" + p.right.id }, el, ".wb-card", false, [p.left, p.right]);
       return;
     }
     if (wb.phase === "reveal") {
@@ -20339,7 +20342,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function setPromptTextStatic() {
     const text = questionPromptTextEl.dataset.txt;
-    stopQuestionReels(true);
+    stopQuestionReels();
     if (qSB) sbSetText(text, false);
     else { qWrite = null; qCurtainO = qCurtainTarget; questionPromptTextEl.textContent = text; startBoardLoop(); }
   }
@@ -21432,20 +21435,45 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Slot-machine reel for the two helper pictures: both spin when the question starts, then the smaller object
   // (named first in the question) lands as its word is written, and the larger one lands as its word is written.
   // When the board shows the whole sentence at once (or there is no board), the larger one lands a short moment after the smaller.
-  let qReelToken = 0, qReelTimers = [], qReelStops = [], qReelKey = "", qReelAt = 0;
-  function stopQuestionReels(now) {
-    qReelTimers.forEach(clearTimeout); qReelTimers = [];
-    const stops = qReelStops; qReelStops = [];
-    stops.forEach(fn => fn(!!now));
+  // The reel's state outlives the screen's markup: High Stakes redraws its whole screen often, so each redraw re-attaches
+  // the unfinished reels (continuing from where they were) instead of restarting them.
+  let qReel = null, qReelKey = "", qReelAt = 0;
+  function stopQuestionReels() {
+    if (!qReel) return;
+    const r = qReel; qReel = null;
+    r.items.forEach(it => { clearTimeout(it.timer); it.land(true); });
   }
-  function startQuestionReel(q, host, cardSel, boardTimed) {
-    stopQuestionReels(true);
-    const token = ++qReelToken;
-    const pair = questionObjects(q);
-    const cards = host ? [...host.querySelectorAll(cardSel)] : [];
-    if (!pair || cards.length !== 2 || qReduceMotion || host.style.display === "none") return;
-    const key = (host.id || cardSel) + "|" + q.prompt;
-    if (key === qReelKey && performance.now() - qReelAt < 120000) return;   // a re-render of the same question must not respin
+  function attachQuestionReels() {
+    const r = qReel;
+    if (!r) return;
+    const host = r.host();
+    const cards = host ? [...host.querySelectorAll(r.sel)] : [];
+    if (cards.length !== 2) return;
+    r.items.forEach((it, i) => {
+      const card = cards[i], img = card.querySelector("img");
+      if (it.done || (it.card === card && it.win?.isConnected)) return;
+      if (!img || !img.offsetWidth || !img.offsetHeight) return;
+      const W = img.offsetWidth, H = img.offsetHeight;
+      const win = document.createElement("div");
+      win.className = "qp-win";
+      win.style.cssText = `left:${img.offsetLeft}px;top:${img.offsetTop}px;width:${W}px;height:${H}px`;
+      win.innerHTML = `<div class="qp-reel">${it.strip.map(src => `<img src="${src}" alt="" draggable="false" style="width:${W}px;height:${H}px">`).join("")}</div>`;
+      it.card = card; it.win = win; it.H = H; it.reel = win.firstChild;
+      card.classList.add("reeling");
+      card.appendChild(win);
+      it.loop = it.reel.animate([{ transform: "translateY(0)" }, { transform: `translateY(${-it.K * H}px)` }], { duration: it.K * 70, iterations: Infinity });
+      it.loop.currentTime = (performance.now() - r.t0) % (it.K * 70);
+    });
+  }
+  function startQuestionReel(q, host, cardSel, boardTimed, pairOverride) {
+    const hostEl = typeof host === "function" ? host : () => host;
+    const el = hostEl();
+    const pair = pairOverride || questionObjects(q);
+    const cards = el ? [...el.querySelectorAll(cardSel)] : [];
+    if (!pair || cards.length !== 2 || qReduceMotion || el.style.display === "none") return;
+    const key = (el.id || cardSel) + "|" + q.prompt;
+    if (key === qReelKey && performance.now() - qReelAt < 120000) { requestAnimationFrame(attachQuestionReels); return; }   // same question redrawn: keep the reel going, never respin
+    stopQuestionReels();
     qReelKey = key; qReelAt = performance.now();
     const text = q.prompt || "";
     const pool = [...OBJECT_BY_ID.values()].filter(o => o.image);
@@ -21469,39 +21497,27 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     } else { unitAt = 0; targetAt = 0; }
     unitAt = Math.max(unitAt, 650);
     targetAt = Math.max(targetAt, unitAt + GAP);
-    // Wait two frames so the screen has settled its picture sizes before the reel window is measured.
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      if (token !== qReelToken) return;
-      const t0 = performance.now(), shift = t0 - now;
-      [[cards[0], pair[0], unitAt], [cards[1], pair[1], targetAt]].forEach(([card, o, at]) => {
-        const img = card.querySelector("img");
-        if (!img || !img.offsetWidth || !img.offsetHeight) return;
-        const W = img.offsetWidth, H = img.offsetHeight;
-        const imgs = Array.from({ length: K }, () => pool[Math.floor(Math.random() * pool.length)].image);
-        const strip = [...imgs, imgs[0], o.image];
-        const win = document.createElement("div");
-        win.className = "qp-win";
-        win.style.cssText = `left:${img.offsetLeft}px;top:${img.offsetTop}px;width:${W}px;height:${H}px`;
-        win.innerHTML = `<div class="qp-reel">${strip.map(src => `<img src="${src}" alt="" draggable="false" style="width:${W}px;height:${H}px">`).join("")}</div>`;
-        const reel = win.firstChild;
-        card.classList.add("reeling");
-        card.appendChild(win);
-        const loop = reel.animate([{ transform: "translateY(0)" }, { transform: `translateY(${-K * H}px)` }], { duration: K * 70, iterations: Infinity });
-        let done = false;
-        const finish = () => { win.remove(); card.classList.remove("reeling"); card.classList.add("landed"); };
-        const land = (instant) => {
-          if (done) return; done = true;
-          let y = 0;
-          try { y = new DOMMatrix(getComputedStyle(reel).transform).m42 || 0; } catch (e) {}
-          loop.cancel();
-          if (instant) { finish(); return; }
-          reel.animate([{ transform: `translateY(${y}px)` }, { transform: `translateY(${-(K + 1) * H}px)` }],
-            { duration: 520, easing: "cubic-bezier(.2,.8,.3,1.12)", fill: "forwards" }).onfinish = finish;
-        };
-        qReelStops.push(land);
-        qReelTimers.push(setTimeout(() => land(false), Math.max(0, at - shift)));
-      });
-    }));
+    const r = qReel = { host: hostEl, sel: cardSel, t0: now, items: [] };
+    [[pair[0], unitAt], [pair[1], targetAt]].forEach(([o, at]) => {
+      const imgs = Array.from({ length: K }, () => pool[Math.floor(Math.random() * pool.length)].image);
+      const it = { K, strip: [...imgs, imgs[0], o.image], done: false, card: null, win: null, reel: null, loop: null, H: 0, timer: 0 };
+      it.land = (instant) => {
+        if (it.done) return; it.done = true;
+        const card = it.card, win = it.win;
+        const finish = () => { win?.remove(); card?.classList.remove("reeling"); card?.classList.add("landed"); };
+        if (!win || !win.isConnected) { finish(); return; }
+        let y = 0;
+        try { y = new DOMMatrix(getComputedStyle(it.reel).transform).m42 || 0; } catch (e) {}
+        it.loop.cancel();
+        if (instant) { finish(); return; }
+        it.reel.animate([{ transform: `translateY(${y}px)` }, { transform: `translateY(${-(K + 1) * it.H}px)` }],
+          { duration: 520, easing: "cubic-bezier(.2,.8,.3,1.12)", fill: "forwards" }).onfinish = finish;
+      };
+      it.timer = setTimeout(() => it.land(false), at);
+      r.items.push(it);
+    });
+    // Wait two frames so the screen has settled its picture sizes before the reel windows are measured.
+    requestAnimationFrame(() => requestAnimationFrame(() => { if (qReel === r) attachQuestionReels(); }));
   }
   const twQuestionProgressEl = document.getElementById("tw-question-progress");
   const twQuestionPicsEl = document.getElementById("tw-question-pics");
