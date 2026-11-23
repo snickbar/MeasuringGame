@@ -40,6 +40,12 @@ export function holdForLobby(room, now) {
   if (!lastHumanStanding(soloWaitState(room))) return undefined;
   return { ...room, soloWait: null, paused: true, pausedAt: now, lobbyHold: { at: now } };
 }
+// The player who is left chose to keep playing: the notice goes away and does not come back until someone returns.
+export function keepPlaying(room) {
+  if (room === null) return null;
+  if (!room?.soloWait || room.soloWait.dismissed || room.paused) return undefined;
+  return { ...room, soloWait: { ...room.soloWait, dismissed: true } };
+}
 // One more human is enough: any two humans connected, it does not matter which ones are back.
 export function lobbyReady(room) {
   return Object.values(room?.players || {}).filter((p) => p && !p.isBot && p.connected !== false).length >= 2;

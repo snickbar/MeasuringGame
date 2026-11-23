@@ -4244,6 +4244,12 @@ if (location.protocol === "file:") {
   #host-menu button + button { border-top: 2px solid #eadbbd; }
   #host-menu button.danger { color: #c0392b; }
   #host-menu button:active { filter: brightness(.94); }
+  #solo-ask { position: fixed; inset: 0; z-index: 900; display: none; align-items: center; justify-content: center; padding: 24px; background: rgba(0,0,0,.5); }
+  #solo-ask.show { display: flex; }
+  .solo-ask-card { width: min(100%, 360px); text-align: center; padding: 20px 18px 10px; border-radius: 22px; background: #fffdf6; border: 3px solid #b98a45; color: #4a2c12; box-shadow: 0 10px 28px #0006; }
+  .solo-ask-card h2 { margin: 0 0 8px; font: 700 24px Fredoka, sans-serif; }
+  .solo-ask-card p { margin: 0 0 6px; font: 600 16px Fredoka, sans-serif; }
+  .solo-ask-card button { width: 100%; margin: 10px 0; }
   #solo-wait-bar { position: fixed; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 84px); z-index: 50; display: none; max-width: min(92vw, 420px); padding: 8px 16px; border-radius: 999px;
     background: #fff4d6; border: 2px solid #d9a441; color: #5a3410; font: 700 15px Fredoka, sans-serif; box-shadow: 0 3px 10px #0003; pointer-events: none; text-align: center; }
   #solo-wait-bar.show { display: block; }
@@ -5461,6 +5467,7 @@ if (location.protocol === "file:") {
 
 <div id="solo-wait-bar" role="status" aria-live="polite"></div>
 <div id="host-menu" role="menu"></div>
+<div id="solo-ask" role="dialog" aria-live="polite"><div class="solo-ask-card"><h2>You're the only one here</h2><p>The other player hasn't come back. Wait for them in the lobby, or keep playing without them?</p><button type="button" id="solo-ask-lobby" class="menu-action-art art-start-game" data-fit-single-line="true">Go to lobby and wait</button><button type="button" id="solo-ask-go" class="menu-action-art art-start-game" data-fit-single-line="true">Keep playing</button></div></div>
 <div id="paused-overlay">
   <section class="exit-card" role="dialog" aria-labelledby="paused-title" aria-describedby="paused-msg">
     <div class="exit-icon exit-hero" aria-hidden="true"><img src="icons/pause-medallion.webp" alt=""></div>
@@ -5578,7 +5585,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { enforceSingleScreen } from "./anim/screen-visibility.mjs";
   import * as HS from "./anim/high-stakes.mjs";
   import { electedHost, transferHost, returnHost, admitPlayer, soloRepair, roomCapacity, commitHsState, hsRoundRecord, roomGameFinished, finishRoomDeparture, chooseHost } from "./anim/room-safety.mjs";
-  import { SOLO_WAIT_MS, soloWaitState, lastHumanStanding, startSoloWait, clearSoloWait, holdForLobby, lobbyReady, takeLobbyHost, clearLobbyHold } from "./anim/solo-wait.mjs";
+  import { SOLO_WAIT_MS, soloWaitState, lastHumanStanding, startSoloWait, clearSoloWait, holdForLobby, keepPlaying, lobbyReady, takeLobbyHost, clearLobbyHold } from "./anim/solo-wait.mjs";
   var careerLedger;
   var gameRewards;
   var powerups;
@@ -19327,8 +19334,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (roomUnsub) { roomUnsub(); roomUnsub = null; }
     if (reactionsUnsub) { reactionsUnsub(); reactionsUnsub = null; }
     try {
-      onDisconnect(ref(db, `rooms/${code}/players/${id}`)).cancel();
-      await remove(ref(db, `rooms/${code}/players/${id}`));
+      const ownRef = ref(db, `rooms/${code}/players/${id}`), midGame = !!soloWaitState(roomState);
+      onDisconnect(ownRef).cancel();
+      // Mid-game with other humans the seat stays (marked away) so they get the waiting timer and you can rejoin.
+      if (midGame) await update(ownRef, { connected: false, disconnectedAt: serverTimestamp() });
+      else await remove(ownRef);
       // A host stepping out keeps the room open for their own return; a guest leaving an empty room closes it.
       if (!wasHost) await maybeDeleteEmptyRoom(code);
     } catch (e) { console.warn("Couldn't step out of the room cleanly", e); }
@@ -22988,7 +22998,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     let fn = null;
     if (roomState.soloWait) {
       if (!lastHumanStanding(s)) fn = clearSoloWait;
-      else if (t - roomState.soloWait.since >= SOLO_WAIT_MS) fn = holdForLobby;
     } else if (lastHumanStanding(s) && !roomState.paused) fn = startSoloWait;
     if (!fn) return;
     soloWaitBusy = true;
@@ -22998,12 +23007,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const bar = document.getElementById("solo-wait-bar"); if (!bar) return;
     const w = roomState && roomState.soloWait, players = (roomState && roomState.players) || {}, me = players[currentPlayerId];
     const gone = w ? (w.ids || []).filter((id) => players[id] && isPlayerAway(players[id])) : [];
-    if (!w || roomState.paused || !me || me.connected === false || !gone.length || !currentRoomCode) { bar.classList.remove("show"); return; }
+    const ask = document.getElementById("solo-ask"), live = !!w && !w.dismissed && !roomState.paused && !!me && me.connected !== false && gone.length > 0 && !!currentRoomCode;
+    ask.classList.toggle("show", live && nowMs() - w.since >= SOLO_WAIT_MS);
+    if (!live || w.dismissed) { bar.classList.remove("show"); return; }
+    if (nowMs() - w.since >= SOLO_WAIT_MS) { bar.classList.remove("show"); return; }
     // Any one of the missing humans coming back is enough, so it never names anybody.
     bar.textContent = "Waiting for another player to come back \u00b7 " + clockText(w.since + SOLO_WAIT_MS - nowMs());
     bar.classList.add("show");
   }
   setInterval(() => { soloWaitTick(); renderSoloWaitBar(); }, 1000);
+  const soloAsk = (fn) => { const code = currentRoomCode, t = nowMs(); document.getElementById("solo-ask").classList.remove("show"); if (code) runTransaction(ref(db, `rooms/${code}`), (cur) => fn(cur, t), { applyLocally: false }).catch((e) => console.warn("[solo ask]", e)); };
+  document.getElementById("solo-ask-lobby").addEventListener("click", () => soloAsk(holdForLobby));
+  document.getElementById("solo-ask-go").addEventListener("click", () => soloAsk(keepPlaying));
 
   function renderPausedOverlay(paused) {
     pausedOverlayEl.classList.toggle("active", !!paused);

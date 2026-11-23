@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { chooseHost } from '../anim/room-safety.mjs';
-import { SOLO_WAIT_MS, soloWaitState, startSoloWait, clearSoloWait, holdForLobby, lobbyReady, takeLobbyHost, clearLobbyHold } from '../anim/solo-wait.mjs';
+import { SOLO_WAIT_MS, soloWaitState, startSoloWait, clearSoloWait, holdForLobby, keepPlaying, lobbyReady, takeLobbyHost, clearLobbyHold } from '../anim/solo-wait.mjs';
 const room = (over = {}, a = true, b = true) => ({ phase: 'question', settings: {}, players: {
   h1: { name: 'A', isHost: true, connected: a }, h2: { name: 'B', connected: b }, bot: { name: 'Bot', isBot: true, connected: true } }, ...over });
 // two humans present: nothing to do
@@ -14,6 +14,10 @@ assert.equal(clearSoloWait(r), undefined);
 assert.equal(clearSoloWait({ ...r, players: { ...r.players, h2: { ...r.players.h2, connected: true } } }).soloWait, null);
 // too early / on time
 assert.equal(holdForLobby(r, 1000 + SOLO_WAIT_MS - 1), undefined);
+const kept = keepPlaying(r);
+assert.equal(kept.soloWait.dismissed, true);
+assert.equal(keepPlaying(kept), undefined);
+assert.equal(startSoloWait(kept, 5), undefined);
 const held = holdForLobby(r, 1000 + SOLO_WAIT_MS);
 assert.equal(held.paused, true); assert.equal(held.pausedAt, 1000 + SOLO_WAIT_MS); assert.ok(held.lobbyHold); assert.equal(held.soloWait, null);
 // rules that do not apply: lobby, finished, Quick Game, one human + bots, a human who left for good
