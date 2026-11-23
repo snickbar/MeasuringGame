@@ -260,12 +260,13 @@ export const SETTINGS = {
   retro: { floor: 'retro-v3-arcade', fittedFloor: true, floorInset: 0, lightTally: true, sky: ['#162548', '#6676b4'], parallax: [] },
   // Drive-in theater: a night lot. Everything stands on the lot by depth (floorDepth singles), the hills behind it follow the far edge of the lot.
   drivein: { floor: 'drivein-ground', floorTileWidth: 1450, floorBehind: true, floorInset: 0, night: true, sky: ['#05084a', '#161774'], fireflies: 'always', movers: ['twinkle'],
-    floorDepth: { par: .5, tables: [], rows: [], singles: [
+    floorDepth: { par: .5, zoomX: true, tables: [], rows: [], singles: [
       { img: 'drivein-screen', r: 0, x: .36, w: .62, live: { glows: { lights: [{ xs: [.156, .318, .499, .681, .841], y: .133, r: .12 }] },  movie: { box: [.066, .225, .934, .553], imgs: ['drivein-movie-0', 'drivein-movie-1', 'drivein-movie-2', 'drivein-movie-3', 'drivein-movie-4', 'drivein-movie-5'], plan: [[0, 3.2], [2, .35], [0, 2.2], [1, 3], [3, 3], [4, 3], [5, 3]] } } },
       { img: 'drivein-snack-stand', r: .03, x: .82, w: .4, live: { blink: [{ box: [.26, .18, .74, .262], round: .03, speed: .22 }], pop: { n: 7, x: .49, y: .045, h: .1, spread: .14, size: .016, every: 1.5 },
         glows: { bulbs: [{ xs: [.111, .175, .241, .307, .37, .43, .493, .554, .619, .68, .745, .815, .883], y: .303, r: .06, speed: 4.4 }], windows: [{ x: .5, y: .56, r: .3 }] } } },
-      { img: 'drivein-car-0', r: .1, x: .22, w: .2 }, { img: 'drivein-car-3', r: .1, x: .5, w: .2 }, { img: 'drivein-car-1', r: .1, x: .78, w: .2 },
-      { img: 'drivein-car-2', r: .22, x: .15, w: .27 }, { img: 'drivein-car-4', r: .22, x: .5, w: .27 }, { img: 'drivein-car-5', r: .22, x: .85, w: .27 }] },
+      { img: 'drivein-car-0', r: 0.07, x: 0.14, w: 0.15 }, { img: 'diner-car-van', r: 0.07, x: 0.38, w: 0.15 }, { img: 'drivein-car-1', r: 0.07, x: 0.62, w: 0.15 }, { img: 'diner-car-convertible', r: 0.07, x: 0.86, w: 0.15 },
+      { img: 'diner-car-wagon', r: 0.17, x: 0.2, w: 0.19 }, { img: 'drivein-car-3', r: 0.17, x: 0.4, w: 0.19 }, { img: 'drivein-car-2', r: 0.17, x: 0.6, w: 0.19 }, { img: 'diner-car-sidecar', r: 0.17, x: 0.8, w: 0.19 },
+      { img: 'drivein-car-4', r: 0.28, x: 0.13, w: 0.24 }, { img: 'diner-car-pickup', r: 0.28, x: 0.38, w: 0.24 }, { img: 'drivein-car-5', r: 0.28, x: 0.63, w: 0.24 }, { img: 'diner-car-rig', r: 0.28, x: 0.88, w: 0.24 } ] },
     parallax: [{ img: 'drivein-backdrop', par: .5, lift: 632, scale: 1, noFill: true, onFloor: { overlap: 6 } }] },
   workshop: { floor: 'workshop-n-floor', floorTileWidth: 640, floorDrifters: [{ img: 'workshop-n-movers-0', lane: 0.5, w: 0.032, speed: 20, start: 0.2, bob: 0.3 }, { img: 'workshop-n-movers-1', lane: 0.5, w: 0.061, speed: 40, start: 0.5 }, { img: 'workshop-n-movers-3', lane: 0.5, w: 0.043, speed: 10, start: 0.7 }, { img: 'workshop-n-movers-4', lane: 0.5, w: 0.038, speed: 26, start: 0.35, bob: 0.3 }, { img: 'workshop-n-movers-5', lane: 0.5, w: 0.071, speed: 16, start: 0.85 }], sky: ['#d6dbe0', '#eef0f2'],
     parallax: [{ img: 'workshop-n-far', par: .16, lift: 330, scale: 0.85, props: [{ img: 'workshop-n-big-0', x: 0.5, row: 360, w: 0.258 }] },
@@ -2107,7 +2108,7 @@ export function drawFloorDepthRows(ctx, kit, { width, height, floorY, shiftY = 0
       const pic = kit.images[one.img]; if (!pic) continue;
       const base = restTop + one.r * tileH + floorDepthPar(depth, one.r, meta.surface) * shiftY, w = one.w * width * groundScale, h = w * pic.naturalHeight / pic.naturalWidth;
       if (base - h < height && base > 0) {
-        const left = width * one.x + shiftX - w / 2, top = base - h;
+        const left = (depth.zoomX ? anchorX + (width * one.x - anchorX) * groundScale : width * one.x) + shiftX - w / 2, top = base - h; // zoomX: the lot zooms around the stack, so a zoom never squeezes the cars together
         ctx.drawImage(pic, left, top, w, h);
         if (one.live) drawLivePiece(ctx, kit, one.live, left, top, w, h, time, reduced);
       }
