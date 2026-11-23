@@ -11463,10 +11463,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Shared by every reveal code path that flips the winning card (the normal
   // one-at-a-time animation, a late joiner catching up, and the "snap to
   // final state" fast-forward).
+  // The answer as the board writes it: the same text the animation's count ends on, so the line is not redrawn between phases.
+  const boardAnswerText = (q) => (animModuleResolved ? animModuleResolved.formatCount(q.answer, (animScene && animSceneRound === roomState?.round && animScene.R != null) ? animScene.R : q.answer) : q.answer.toFixed(2));
   function showAnswerReveal() {
-    const val = roomState.currentQuestion.answer.toFixed(2);
     revealListEl.classList.add("answer-revealed");
-    setAnswerLineValue(val);
+    setAnswerLineValue(boardAnswerText(roomState.currentQuestion));
   }
   const revealListEl = document.getElementById("reveal-list");
   const revealNextBtn = document.getElementById("reveal-next-btn");
@@ -25041,10 +25042,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const q = data.currentQuestion;
       if (q) {
         setPromptText(q.prompt, false);
-        // ...but not before the winner's card flips (that moment shows it via showAnswerReveal). Showing it here
-        // as well put the number up too early and then redrew it when the card flipped.
-        if (revealListEl.classList.contains("answer-revealed")) setAnswerLineValue(q.answer.toFixed(2));
-        else { questionAnswerLineEl.style.display = "none"; delete questionAnswerLineEl.dataset.shown; }
+        // The animation just gave the answer, so it stays on the board for the whole reveal (it used to disappear until the winner's card flipped).
+        setAnswerLineValue(boardAnswerText(q));
       }
     } else if (phase === "summary") {
       // A client that lands straight in summary (freshly joined, or reloaded
@@ -25054,7 +25053,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const q = data.currentQuestion;
       if (q) {
         setPromptText(q.prompt, false);
-        setAnswerLineValue(q.answer.toFixed(2));
+        setAnswerLineValue(boardAnswerText(q));
       }
     }
   }
