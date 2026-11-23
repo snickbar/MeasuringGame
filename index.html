@@ -2053,6 +2053,9 @@ if (location.protocol === "file:") {
   #recent-rooms-section { margin: 12px 0 0; padding: 10px 14px 12px; background: #fffdfa; border-radius: 14px; box-shadow: 0 1px 2px rgba(74,42,16,.05), 0 6px 18px rgba(90,58,38,.08); text-align: center; }
   #recent-rooms-section h3 { margin: 0 0 6px; font-family: 'Fredoka', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--brand); }
   /* My games: one card per game - a coloured game-type badge, the type + status chip, who is in it, and Rejoin */
+  .mode-games { margin: 12px 0 0; padding: 10px 14px 12px; background: #fffdfa; border-radius: 14px; text-align: center; }
+  .mode-games .cs-h { margin-top: 0; }
+  .mode-games-list { display: flex; flex-direction: column; gap: 8px; }
   #recent-rooms-list { display: flex; flex-direction: column; gap: 8px; }
   .recent-room-row { --rc: #c9822b; display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; column-gap: 10px; padding: 8px 10px 8px 8px; text-align: left; background: #fff; border-radius: 14px; border: 2px solid color-mix(in srgb, var(--rc) 35%, #fff); box-shadow: 0 2px 0 color-mix(in srgb, var(--rc) 45%, #fff); }
   .recent-room-row[data-kind="classic"] { --rc: #d9792b; }
@@ -4990,7 +4993,7 @@ if (location.protocol === "file:") {
   </div></details>
 
   <details class="howto-section"><summary>Hosting a party</summary><div class="howto-body">
-    <p>Tap <b>Party Mode</b>, then pick a mode (Classic Party, or Team vs Team to play 2v2) then tap <b>Room Settings</b> to choose the room settings and what happens if you disconnect, and tap <b>Pick Avatar</b>. Next, pick your name and avatar and tap <b>Join Lobby</b> - you're the host, so only you can start the game once everyone's in. If you've saved a preset (see <b>Host settings</b> below), tap one of the three preset slots above the settings to load it instantly.</p>
+    <p>Tap <b>Party Mode</b>, then pick a mode (Classic Party, or Team vs Team to play 2v2) then tap <b>Create new room</b> to choose the room settings and what happens if you disconnect, and tap <b>Pick Avatar</b>. Next, pick your name and avatar and tap <b>Join Lobby</b> - you're the host, so only you can start the game once everyone's in. If you've saved a preset (see <b>Host settings</b> below), tap one of the three preset slots above the settings to load it instantly.</p>
   </div></details>
 
   <details class="howto-section"><summary>Joining a room</summary><div class="howto-body">
@@ -13053,6 +13056,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (teamvteamScreenEl.classList.contains("active")) { window.scrollTo({ top: 0, behavior: "instant" }); return; }
     openOverlay(teamvteamScreenEl);
   }
+  // Each mode page lists that mode's games in progress (same rows as Join Game > My games, with Rejoin).
+  function fillModeGames(root) {
+    root.querySelectorAll(".mode-games:not([data-filled])").forEach((box) => {
+      box.dataset.filled = "1";
+      renderRecentRooms({ list: box.querySelector(".mode-games-list"), section: box, kinds: box.dataset.kinds.split(",") });
+    });
+  }
+  [teamvteamContentEl, typeof teamworldsContentEl !== "undefined" ? teamworldsContentEl : null].filter(Boolean).forEach((el) => new MutationObserver(() => fillModeGames(el)).observe(el, { childList: true }));
   function openPartyHub() {
     renderPartyHub();
     openOverlay(partyScreenEl);
@@ -13099,7 +13110,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card"><div class="dc-big">Scoring</div><div class="dc-note">Points for the closest guess, plus second chances, crowd favorite and accuracy bonuses. Highest score at the end wins the party.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">Every player earns coins based on their final score.</div></div>
       <h3 class="cs-h">Your personal best</h3>${classicBestHtml()}
-      <div class="pin-bottom"><button type="button" class="menu-action-art art-room-settings dc-btn" id="classic-start" data-fit-single-line="true">Room Settings</button></div>`;
+      <div class="mode-games" data-kinds="classic" hidden><h3 class="cs-h">Games in progress</h3><div class="mode-games-list"></div></div>
+      <div class="pin-bottom"><button type="button" class="menu-action-art art-room-settings dc-btn" id="classic-start" data-fit-single-line="true">Create new room</button></div>`;
     showInfoOverlay();
     overlayReturnScreen = partyScreenEl;
   }
@@ -13152,7 +13164,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card"><div class="dc-big">Survive together</div><div class="dc-note">You share 3 message bottles. You survive when the real answer sits between your two picks AND your bracket isn't too wide. HIGH &divide; LOW must stay within the max gap. It starts at ${HL_LIMIT_START}&times; and tightens by ${HL_LIMIT_STEP}&times; for every round you survive, down to ${HL_LIMIT_FLOOR}&times; after 10 wins. Cross your picks, miss the answer or go too wide and you lose a bottle. Survive 3 rounds to earn an empty bottle that breaks in place of a message bottle. You can hold one empty bottle at a time. Every fifth survival is a themed round worth double coins. A failed attempt keeps that theme.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">2 coins for every round you survive, every game. The free game ends at ${HL_FREE_CAP} rounds; Party Mode hosts can play endless.</div></div>
       <h3 class="cs-h">Your best runs</h3>${hlBestHtml()}
-      <div class="pin-bottom"><button type="button" class="menu-action-art art-room-settings dc-btn" id="hl-start" data-fit-single-line="true">Room Settings</button></div>`;
+      <div class="mode-games" data-kinds="hl" hidden><h3 class="cs-h">Games in progress</h3><div class="mode-games-list"></div></div>
+      <div class="pin-bottom"><button type="button" class="menu-action-art art-room-settings dc-btn" id="hl-start" data-fit-single-line="true">Create new room</button></div>`;
     showInfoOverlay();
     overlayReturnScreen = partyScreenEl;
   }
@@ -13168,7 +13181,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card"><div class="dc-big">Bluffs can win</div><div class="dc-note">If everyone else folds, the pot is yours. If nobody still in picked correctly, the pot rolls over.</div></div>
       <div class="dc-card"><div class="dc-big">Outlast the table</div><div class="dc-note">Start with ${HS.HS_START_COINS} chips. The ante rises by 5 every 2 rounds. Run out of chips and you’re out. The last player standing or the biggest stack after ${HS.HS_MAX_ROUNDS} rounds wins.</div></div>
       <h3 class="cs-h">Your personal best</h3>${classicBestHtml("highstakes", "chips")}
-      <div class="pin-bottom"><button type="button" class="menu-action-art art-room-settings dc-btn" id="hs-start" data-fit-single-line="true">Room Settings</button></div>`;
+      <div class="mode-games" data-kinds="highstakes" hidden><h3 class="cs-h">Games in progress</h3><div class="mode-games-list"></div></div>
+      <div class="pin-bottom"><button type="button" class="menu-action-art art-room-settings dc-btn" id="hs-start" data-fit-single-line="true">Create new room</button></div>`;
     showInfoOverlay();
     overlayReturnScreen = partyScreenEl;
   }
@@ -13199,7 +13213,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card"><div class="dc-big">Everyone takes a turn</div><div class="dc-note">Auto gives everyone two turns with 3 players, or one turn with 4 or more. Highest score wins. Vote accuracy breaks ties, and a complete tie shares the win.</div></div>
       <div class="dc-card"><div class="dc-big">On the clock</div><div class="dc-note">60 seconds to make a claim, then 60 seconds to vote. After you submit, you can change your vote for up to 10 seconds if time remains. Missed votes earn no points. No Second Chance or power-ups.</div></div>
       <h3 class="cs-h">Your personal best</h3>${classicBestHtml("bluff", "points")}
-      <div class="pin-bottom"><button type="button" class="menu-action-art art-room-settings dc-btn" id="bluff-start" data-fit-single-line="true">Room Settings</button></div>`;
+      <div class="mode-games" data-kinds="bluff" hidden><h3 class="cs-h">Games in progress</h3><div class="mode-games-list"></div></div>
+      <div class="pin-bottom"><button type="button" class="menu-action-art art-room-settings dc-btn" id="bluff-start" data-fit-single-line="true">Create new room</button></div>`;
     showInfoOverlay();overlayReturnScreen=partyScreenEl;
     document.getElementById('bluff-start').onclick=()=>showRoomOptions({title:'Bluff the Room',like:{mode:'bluff'},back:openBluffInfo,
       extrasHtml:`<div class="dc-card"><div class="dc-big">Equal maker turns</div><div class="dc-note">Auto gives everyone two turns with 3 players, or one turn with 4 or more.</div>
@@ -13269,7 +13284,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card"><div class="dc-big">Scoring</div><div class="dc-note">Same rules as Classic Party &mdash; closest guess, second chances, crowd favorite &mdash; just credited to your team. If you and your teammate tie for the round win, your team only gets it once.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">Both teammates earn the same full amount, based on your team's final score.</div></div>
       <h3 class="cs-h">Your best teams</h3>${teamVTeamBestHtml()}
-      <div class="pin-bottom"><button type="button" class="menu-action-art art-room-settings dc-btn" id="tvt-start" data-fit-single-line="true">Room Settings</button></div>`;
+      <div class="mode-games" data-kinds="tvt" hidden><h3 class="cs-h">Games in progress</h3><div class="mode-games-list"></div></div>
+      <div class="pin-bottom"><button type="button" class="menu-action-art art-room-settings dc-btn" id="tvt-start" data-fit-single-line="true">Create new room</button></div>`;
   }
   function openTeamVTeamInfo() {
     renderTeamVTeamInfo();
@@ -14644,7 +14660,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card dc-hot"><div class="dc-big">Play as a team</div><div class="dc-note">You and your partner each answer the same 5 questions independently - we average your two guesses and score that. Rated the same way as Solo Worlds: up to 3 stars for a great run.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${WORLD_STAR_COINS} coins for every star your team earns, every game you play - replay for more.</div></div>
       <h3 class="cs-h">Your top 5 for ${escapeHtml(w.name)}</h3>${teamWorldsBestHtml(w.id)}
-      <div class="pin-bottom"><button type="button" class="menu-action-art art-room-settings dc-btn" id="tw-start" data-fit-single-line="true">Room Settings</button></div>`;
+      <div class="mode-games" data-kinds="worlds" hidden><h3 class="cs-h">Games in progress</h3><div class="mode-games-list"></div></div>
+      <div class="pin-bottom"><button type="button" class="menu-action-art art-room-settings dc-btn" id="tw-start" data-fit-single-line="true">Create new room</button></div>`;
   }
   function openTeamWorldsScreen() {
     twWorldId = null;
@@ -18517,7 +18534,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
   });
 
-  function renderRecentRooms() {
+  // opts.list / opts.section / opts.kinds: the same "My games" rows, limited to some game kinds (the mode pages show only their own).
+  window.__recentList = recentRoomsListEl; window.__recentSection = recentRoomsSection;
+  function renderRecentRooms(opts) {
+    const recentRoomsListEl = opts?.list || window.__recentList, recentRoomsSection = opts?.section || window.__recentSection, only = opts?.kinds || null;
     const rooms = loadRecentRooms();
     if (rooms.length === 0) { recentRoomsSection.style.display = "none"; return; }
     recentRoomsListEl.innerHTML = "";
@@ -18568,6 +18588,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             : mode === "teamvteam" ? ["tvt", "\u2694\uFE0F", "Team vs Team"]
             : d.settings?.solo ? ["quick", "\u26A1", "Quick Game"]
             : ["classic", "\uD83D\uDCCF", "Classic Party"];
+          if (only && !only.includes(kk)) { row.remove(); return; }
           row.dataset.kind = kk;
           // The host can close the game for everyone (tap twice to confirm).
           const mine = (r.playerId && d.players && d.players[r.playerId]) || Object.values(d.players || {}).find((p) => p && p.isHost && p.name === currentName);
