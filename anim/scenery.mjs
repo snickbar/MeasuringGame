@@ -44,6 +44,10 @@ for (const id of `rotary-phone lava-lamp vinyl-record retro-cartridge typewriter
 SCENERY_BY_OBJECT['arcade-machine'] = 'retro';
 // Movie-night and road-trip Retro Rewind objects reveal at the drive-in.
 for (const id of `videotape video-rental-card combo-video-player boombox portable-cassette-player disposable-camera photo-booth-strip red-toy-wagon pump-water-blaster comic-book worlds-fair-globe plastic-army-man bean-bag-chair transforming-robot-toy`.split(' ')) SCENERY_BY_OBJECT[id] = 'drivein';
+// Diner meals, retro diner things and road traffic reveal at the roadside diner.
+for (const id of `roadside-diner pancakes breakfast-tray ribs mashed-potatoes stuffing sweet-potato-casserole casserole-dish turkey cream-pie pumpkin-pie dinner-roll sliced-bread-loaf napkin barstool teacup egg butter-stick steak toaster floor-jukebox tv-dinner classic-bug-car wall-payphone semi-truck boxy-suv stop-sign`.split(' ')) SCENERY_BY_OBJECT[id] = 'diner';
+// Street food reveals on the food truck street.
+for (const id of `hot-dog hamburger taco pizza-slice soft-pretzel french-fry ice-cream-cone churro cotton-candy boba-tea donut cheesesteak chicken-nugget soda-can foot-long-sub bagel potato-chip-tube sushi-piece hot-dog-cart ice-cream-truck coffee-pod smore ice-cream-sundae`.split(' ')) SCENERY_BY_OBJECT[id] = 'foodtrucks';
 export function sceneryFor(object) { return SCENERY_BY_OBJECT[object.id] || 'grass'; }
 
 // A scene flagged night:true is always night; night:'dark' is night only when the app is in dark mode.
@@ -285,6 +289,42 @@ export const SETTINGS = {
       { img: 'drivein-prop-sign', r: 0.35, x: 0.7, w: 0.15 },
       { img: 'drivein-prop-bin', r: 0.35, x: 0.82, w: 0.055 }, ] },
     parallax: [{ img: 'drivein-backdrop', par: .5, lift: 632, scale: 1, noFill: true, onFloor: { overlap: 6 } }] },
+  // Roadside diner: a neon-lit chrome diner at dusk. The lot is the floor; the highway and its overpass stand on the lot's far edge.
+  diner: { floor: 'diner-ground', floorTileWidth: 1450, floorBehind: true, floorInset: 0, night: true, sky: ['#0d0656', '#401083'], movers: ['twinkle'],
+    floorDepth: { par: .5, zoomX: true, zoomCenter: true, tables: [], rows: [], singles: [
+      { img: 'diner-building', r: .0, x: .5, w: .64, live: { smoke: { x: .5, y: .1, n: 4, every: 7, rise: .1, drift: .03, size: .03 } } },
+      { img: 'diner-pole-sign', r: .05, x: .06, w: .13 },
+      { img: 'diner-sign-on', r: .06, x: .93, w: .17, swap: { img: 'diner-sign-off', period: 3.4, duty: .9 } },
+      { img: 'diner-car-rig', r: 0.07, x: 0.9, w: 0.3, live: { glows: { reds: [{ xs: [.2,.8], y: .6, r: .16, phase: 0 }] } } },
+      { img: 'diner-car-wagon', r: 0.13, x: 0.13, w: 0.24, live: { glows: { reds: [{ xs: [.2,.8], y: .6, r: .16, phase: 2 }] } } },
+      { img: 'diner-car-van', r: 0.13, x: 0.87, w: 0.22, live: { glows: { reds: [{ xs: [.2,.8], y: .6, r: .16, phase: 4 }] } } },
+      { img: 'diner-car-convertible', r: 0.23, x: 0.22, w: 0.26, live: { glows: { reds: [{ xs: [.2,.8], y: .6, r: .16, phase: 6 }] } } },
+      { img: 'diner-car-pickup', r: 0.23, x: 0.78, w: 0.26, live: { glows: { reds: [{ xs: [.2,.8], y: .6, r: .16, phase: 8 }] } } },
+      { img: 'diner-car-sidecar', r: 0.32, x: 0.5, w: 0.2, live: { glows: { reds: [{ xs: [.25,.75], y: .6, r: .16, phase: 10 }] } } },
+      { img: 'diner-pumps', r: .2, x: .6, w: .1 },
+      { img: 'diner-phone-booth', r: .1, x: .02, w: .07 },
+      { img: 'diner-news-boxes', r: .09, x: .35, w: .08 },
+      { img: 'diner-soda-machine', r: .09, x: .65, w: .08 },
+      { img: 'diner-lamp', r: .06, x: .22, w: .06 },
+      { img: 'diner-lamp', r: .06, x: .78, w: .06 },
+      { img: 'diner-bench', r: .3, x: .08, w: .12 },
+      { img: 'diner-barrel', r: .3, x: .93, w: .08 },
+      { img: 'diner-open-on', r: .35, x: .86, w: .13, swap: { img: 'diner-open-off', period: 5, duty: .88 } }, ] },
+    parallax: [{ img: 'diner-highway', par: .5, lift: 632, scale: 1, noFill: true, onFloor: { overlap: 6 } }] },
+  // Food truck street: a park lawn between two rows of food trucks, with a city skyline over the treetops.
+  foodtrucks: { floor: 'foodtruck-ground', floorTileWidth: 1450, floorBehind: true, floorInset: 0, sky: ['#0a62e8', '#79b7ff'], nightSky: ['#0d1a45', '#2b3f78'], night: 'dark', floaters: ['cloud-set-day'],
+    floorDepth: { par: .5, zoomX: true, zoomCenter: true, tables: [], rows: [], singles: [
+      { img: 'foodtruck-left', r: .1, x: .5, w: 1 },
+      { img: 'foodtruck-right', r: .1, x: .5, w: 1 },
+      { img: 'foodtruck-lamppost', r: .1, x: .05, w: .07 }, { img: 'foodtruck-lamppost', r: .1, x: .95, w: .07 },
+      { img: 'foodtruck-cart-pretzel', r: .14, x: .2, w: .15 }, { img: 'foodtruck-cart-shaved', r: .14, x: .8, w: .15 },
+      { img: 'foodtruck-cart-lemonade', r: .24, x: .13, w: .17 }, { img: 'foodtruck-cart-popcorn', r: .24, x: .87, w: .17 },
+      { img: 'foodtruck-cart-icecream', r: .34, x: .22, w: .19 }, { img: 'foodtruck-cart-nuts', r: .34, x: .78, w: .19 },
+      { img: 'foodtruck-bench', r: .2, x: .4, w: .13 }, { img: 'foodtruck-picnic', r: .2, x: .62, w: .14 },
+      { img: 'foodtruck-menu-sign', r: .3, x: .38, w: .1 }, { img: 'foodtruck-planter', r: .3, x: .64, w: .14 },
+      { img: 'foodtruck-hydrant', r: .42, x: .05, w: .08 }, { img: 'foodtruck-bins', r: .42, x: .95, w: .13 },
+      { img: 'foodtruck-bunting-a', r: -.8, x: .5, w: .85, swap: { img: 'foodtruck-bunting-b', period: 1.6, duty: .5 } }, ] },
+    parallax: [{ img: 'foodtruck-backdrop', par: .5, lift: 632, scale: 1, noFill: true, onFloor: { overlap: 6 } }] },
   workshop: { floor: 'workshop-n-floor', floorTileWidth: 640, floorDrifters: [{ img: 'workshop-n-movers-0', lane: 0.5, w: 0.032, speed: 20, start: 0.2, bob: 0.3 }, { img: 'workshop-n-movers-1', lane: 0.5, w: 0.061, speed: 40, start: 0.5 }, { img: 'workshop-n-movers-3', lane: 0.5, w: 0.043, speed: 10, start: 0.7 }, { img: 'workshop-n-movers-4', lane: 0.5, w: 0.038, speed: 26, start: 0.35, bob: 0.3 }, { img: 'workshop-n-movers-5', lane: 0.5, w: 0.071, speed: 16, start: 0.85 }], sky: ['#d6dbe0', '#eef0f2'],
     parallax: [{ img: 'workshop-n-far', par: .16, lift: 330, scale: 0.85, props: [{ img: 'workshop-n-big-0', x: 0.5, row: 360, w: 0.258 }] },
       { img: 'workshop-n-mid', par: .34, lift: 166, scale: 0.75, props: [{ img: 'workshop-n-reveals-0', x: 0.14, row: 546, w: 0.085 }, { img: 'workshop-n-reveals-1', x: 0.5, row: 546, w: 0.086 }, { img: 'workshop-n-reveals-2', x: 0.84, row: 546, w: 0.150 }, { img: 'workshop-n-anim-0', x: 0.72, row: 546, w: 0.152, spin: { img: 'workshop-n-anim-1', fx: .5, fy: .5, size: .7, speed: .8 } }] },

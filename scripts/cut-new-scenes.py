@@ -100,6 +100,12 @@ def sky_cut(file, name, w=900, tol=11, feather=14):
     save(fit_w(out_im, w), name)
 def ground(file, name, w=1500):
     im = Image.open(src / file).convert("RGB"); im = seamless(im, round(im.width * .08)); save(fit_w(im, w), name)
+def melt_bottom(name, color, frac=.13):
+    """Darken the bottom of a backdrop toward the colour at the top of the floor picture, so the two meet without a seam."""
+    f = out / (name + ".webp"); a = np.array(Image.open(f).convert("RGBA")).astype(float); h = a.shape[0]
+    t = np.clip((np.arange(h) / h - (1 - frac)) / frac, 0, 1)[:, None, None] ** 1.4
+    a[..., :3] = a[..., :3] * (1 - t) + np.array(color) * t
+    Image.fromarray(a.clip(0, 255).astype("uint8"), "RGBA").save(f, quality=85, method=6)
 ONLY = sys.argv[1:]
 if not ONLY:
   pass
@@ -113,18 +119,18 @@ if not ONLY:
   sheet("drivein-07-snack-animation.png", 4, 2, ["drivein-neon-on", "drivein-neon-off", "drivein-bulbs-a", "drivein-bulbs-b", "drivein-pop-0", "drivein-pop-1", "drivein-pop-2", "drivein-window-glow"], 300)
   # --- food trucks
   ground("foodtrucks-01-ground.png", "foodtruck-ground")
-  tall("foodtrucks-02-left-trucks.png", "foodtruck-left", True)
-  tall("foodtrucks-03-right-trucks.png", "foodtruck-right", True)
+  for f, n in (("foodtrucks-02-left-trucks.png", "foodtruck-left"), ("foodtrucks-03-right-trucks.png", "foodtruck-right")):   # the sidewalk melts into the lawn instead of ending in a hard edge
+      save(fit_w(apron_fade(key_out(Image.open(src / f)), .82, .2, .001), 900), n)
   tall("foodtrucks-04-backdrop.png", "foodtruck-backdrop", False)
   sheet("foodtrucks-05-park-props.png", 4, 2, ["foodtruck-bench", "foodtruck-lamppost", "foodtruck-bins", "foodtruck-hydrant", "foodtruck-picnic", "foodtruck-cafe", "foodtruck-menu-sign", "foodtruck-planter"], 300)
   sheet("foodtrucks-06-street-carts.png", 4, 2, ["foodtruck-cart-pretzel", "foodtruck-cart-hotdog", "foodtruck-cart-lemonade", "foodtruck-cart-nuts", "foodtruck-cart-icecream", "foodtruck-balloons", "foodtruck-cart-shaved", "foodtruck-cart-popcorn"], 300)
   sheet("foodtrucks-07-animation.png", 4, 2, ["foodtruck-steam-0", "foodtruck-steam-1", "foodtruck-steam-2", "foodtruck-lights-a", "foodtruck-lights-b", "foodtruck-bunting-a", "foodtruck-bunting-b", "foodtruck-open"], 300)
   # --- diner
   ground("diner-01-ground.png", "diner-ground")
-  tall("diner-02-building.png", "diner-building", True)
+  tall("diner-02-building.png", "diner-building", True, apron=True)
   sheet("diner-03-roadside-props.png", 4, 2, ["diner-pole-sign", "diner-pumps", "diner-phone-booth", "diner-news-boxes", "diner-soda-machine", "diner-barrel", "diner-bench", "diner-lamp"], 300)
   sheet("diner-04-vehicles.png", 3, 2, ["diner-car-wagon", "diner-car-pickup", "diner-car-convertible", "diner-car-van", "diner-car-sidecar", "diner-car-rig"], 400)
-  tall("diner-05-highway.png", "diner-highway", False)
+  sky_cut("diner-05-highway.png", "diner-highway"); melt_bottom("diner-highway", (47, 34, 55))
   tall("diner-06-backdrop.png", "diner-backdrop", False)
   sheet("diner-07-animation.png", 4, 2, ["diner-sign-on", "diner-sign-off", "diner-open-on", "diner-open-off", "diner-head-0", "diner-head-1", "diner-tail", "diner-steam"], 300)
 
