@@ -21310,8 +21310,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     leavingGame = true;
     cancelRevealEffects();
     const roomCode = currentRoomCode;
-    onDisconnect(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`)).cancel();
-    await remove(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`));
+    const ownRef = ref(db, `rooms/${roomCode}/players/${currentPlayerId}`);
+    onDisconnect(ownRef).cancel();
+    // In a started game with other humans the seat is kept (marked away) so the others get the "waiting for a player"
+    // timer and you can rejoin; deleting it would make the game forget a human was ever there.
+    if (soloWaitState(roomState)) await update(ownRef, { connected: false, disconnectedAt: serverTimestamp() });
+    else await remove(ownRef);
     await maybeDeleteEmptyRoom(roomCode);
     detachRoom();
     showLeftScreen("The other players can keep playing without you.", {
