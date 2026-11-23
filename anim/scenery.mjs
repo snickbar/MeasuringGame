@@ -261,11 +261,12 @@ export const SETTINGS = {
   // Drive-in theater: a night lot. Everything stands on the lot by depth (floorDepth singles), the hills behind it follow the far edge of the lot.
   drivein: { floor: 'drivein-ground', floorTileWidth: 1450, floorBehind: true, floorInset: 0, night: true, sky: ['#05084a', '#161774'], fireflies: 'always', movers: ['twinkle'],
     floorDepth: { par: .5, tables: [], rows: [], singles: [
-      { img: 'drivein-screen', r: 0, x: .36, w: .62, live: { movie: { box: [.066, .225, .934, .553], imgs: ['drivein-movie-0', 'drivein-movie-1', 'drivein-movie-2', 'drivein-movie-3', 'drivein-movie-4', 'drivein-movie-5'], plan: [[0, 3.2], [2, .35], [0, 2.2], [1, 3], [3, 3], [4, 3], [5, 3]] } } },
-      { img: 'drivein-snack-stand', r: .03, x: .82, w: .4, live: { blink: [{ box: [.26, .18, .74, .262], round: .03, speed: .22 }], pop: { imgs: ['drivein-pop-0', 'drivein-pop-1', 'drivein-pop-2'], x: .49, y: .03, w: .17, every: 1.6 } } },
+      { img: 'drivein-screen', r: 0, x: .36, w: .62, live: { glows: { lights: [{ xs: [.156, .318, .499, .681, .841], y: .133, r: .12 }] },  movie: { box: [.066, .225, .934, .553], imgs: ['drivein-movie-0', 'drivein-movie-1', 'drivein-movie-2', 'drivein-movie-3', 'drivein-movie-4', 'drivein-movie-5'], plan: [[0, 3.2], [2, .35], [0, 2.2], [1, 3], [3, 3], [4, 3], [5, 3]] } } },
+      { img: 'drivein-snack-stand', r: .03, x: .82, w: .4, live: { blink: [{ box: [.26, .18, .74, .262], round: .03, speed: .22 }], pop: { n: 7, x: .49, y: .045, h: .1, spread: .14, size: .016, every: 1.5 },
+        glows: { bulbs: [{ xs: [.111, .175, .241, .307, .37, .43, .493, .554, .619, .68, .745, .815, .883], y: .303, r: .06, speed: 4.4 }], windows: [{ x: .5, y: .56, r: .3 }] } } },
       { img: 'drivein-car-0', r: .1, x: .22, w: .2 }, { img: 'drivein-car-3', r: .1, x: .5, w: .2 }, { img: 'drivein-car-1', r: .1, x: .78, w: .2 },
       { img: 'drivein-car-2', r: .22, x: .15, w: .27 }, { img: 'drivein-car-4', r: .22, x: .5, w: .27 }, { img: 'drivein-car-5', r: .22, x: .85, w: .27 }] },
-    parallax: [{ img: 'drivein-backdrop', par: .5, lift: 632, scale: 1, noFill: true }] },
+    parallax: [{ img: 'drivein-backdrop', par: .5, lift: 632, scale: 1, noFill: true, onFloor: { overlap: 6 } }] },
   workshop: { floor: 'workshop-n-floor', floorTileWidth: 640, floorDrifters: [{ img: 'workshop-n-movers-0', lane: 0.5, w: 0.032, speed: 20, start: 0.2, bob: 0.3 }, { img: 'workshop-n-movers-1', lane: 0.5, w: 0.061, speed: 40, start: 0.5 }, { img: 'workshop-n-movers-3', lane: 0.5, w: 0.043, speed: 10, start: 0.7 }, { img: 'workshop-n-movers-4', lane: 0.5, w: 0.038, speed: 26, start: 0.35, bob: 0.3 }, { img: 'workshop-n-movers-5', lane: 0.5, w: 0.071, speed: 16, start: 0.85 }], sky: ['#d6dbe0', '#eef0f2'],
     parallax: [{ img: 'workshop-n-far', par: .16, lift: 330, scale: 0.85, props: [{ img: 'workshop-n-big-0', x: 0.5, row: 360, w: 0.258 }] },
       { img: 'workshop-n-mid', par: .34, lift: 166, scale: 0.75, props: [{ img: 'workshop-n-reveals-0', x: 0.14, row: 546, w: 0.085 }, { img: 'workshop-n-reveals-1', x: 0.5, row: 546, w: 0.086 }, { img: 'workshop-n-reveals-2', x: 0.84, row: 546, w: 0.150 }, { img: 'workshop-n-anim-0', x: 0.72, row: 546, w: 0.152, spin: { img: 'workshop-n-anim-1', fx: .5, fy: .5, size: .7, speed: .8 } }] },
@@ -457,7 +458,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const pick = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[pick], id = VARIANT_OF[pick] || pick;
-  const names = [...projectedRoomImages(config.projectedRoom), !NO_STARS.has(id) && 'star-field', config.floor, config.floorProp?.img, ...Object.values(config.retroRink || {}), ...Object.values(config.bookcase || {}), ...Object.values(config.workshop || {}), config.deskLamp?.arm, config.deskLamp?.shade, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomCeiling, config.roomRoof?.img, ...(config.floorDepth?.tables || []).map(q => q.img || q), ...(config.floorDepth?.rows || []).flatMap(r => (r.tables || []).map(q => q.img || q)), ...(config.floorDepth?.singles || []).flatMap(q => [q.img, ...(q.live?.movie?.imgs || []), ...(q.live?.pop?.imgs || [])]), config.roomRoof && 'star-field', ...(config.wallPieces || []).map(q => q.img), ...(config.parallax || []).flatMap(l => (l.tanks || []).flatMap(t => t.fish.map(f => f.img))), config.roomPlant, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.paneling, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [...projectedRoomImages(config.projectedRoom), !NO_STARS.has(id) && 'star-field', config.floor, config.floorProp?.img, ...Object.values(config.retroRink || {}), ...Object.values(config.bookcase || {}), ...Object.values(config.workshop || {}), config.deskLamp?.arm, config.deskLamp?.shade, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomCeiling, config.roomRoof?.img, ...(config.floorDepth?.tables || []).map(q => q.img || q), ...(config.floorDepth?.rows || []).flatMap(r => (r.tables || []).map(q => q.img || q)), ...(config.floorDepth?.singles || []).flatMap(q => [q.img, ...(q.live?.movie?.imgs || [])]), config.roomRoof && 'star-field', ...(config.wallPieces || []).map(q => q.img), ...(config.parallax || []).flatMap(l => (l.tanks || []).flatMap(t => t.fish.map(f => f.img))), config.roomPlant, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.paneling, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if ((config.town && Object.values(config.town).some(name => !images[name])) || (config.square && Object.values(config.square).some(name => !images[name])) || (config.coast && Object.values(config.coast).some(name => !images[name])) || (config.rooftop && Object.values(config.rooftop).some(name => !images[name])) || (config.floor && !images[config.floor]) || (config.avenue && ['pier', 'beach', 'ocean'].some(key => !images[config.avenue[key]]))) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -933,7 +934,12 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
       continue;
     }
     const st0 = layerStats(image), st = layer.skyRow !== undefined ? { ...st0, sky: layer.skyRow } : st0, tw = width * 1.8 * (layer.fitted ? 1 : gs) * (layer.scale || 1), k = tw / image.naturalWidth, th = image.naturalHeight * k;
-    const top = terrain?.get(layer)?.top ?? base - layer.lift * gs + layer.par * shiftY - st.sky * k, bottom = top + th;
+    let top = terrain?.get(layer)?.top ?? base - layer.lift * gs + layer.par * shiftY - st.sky * k;
+    if (layer.onFloor && kit.config.floorDepth && kit.images[kit.config.floor]) { // stand on the far edge of the deep floor, whatever the screen size
+      const fi = kit.images[kit.config.floor], fm = FLOOR_DATA[kit.config.floor], tileH = (kit.config.floorTileWidth || 380) * gs * fi.naturalHeight / fi.naturalWidth;
+      top = (floorY ?? height - 40) - tileH * fm.surface - floorInset(kit) * gs + kit.config.floorDepth.par * shiftY + (layer.onFloor.overlap || 0) * gs - th;
+    }
+    const bottom = top + th;
     let reach = top; // props can stand much taller than the layer picture, so keep drawing while any of them is on screen
     for (const q of layer.props || []) { const pic = kit.images[q.img]; if (pic && q.snap === undefined) reach = Math.min(reach, top + q.row * k - q.w * tw * pic.naturalHeight / pic.naturalWidth); }
     if (reach > height) continue;
@@ -2066,10 +2072,26 @@ function drawLivePiece(ctx, kit, live, left, top, w, h, time, reduced) {
     const [x0, y0, x1, y1] = b.box; ctx.save(); ctx.fillStyle = 'rgba(30,5,10,.62)';
     ctx.beginPath(); ctx.roundRect(left + x0 * w, top + y0 * h, (x1 - x0) * w, (y1 - y0) * h, b.round * w); ctx.fill(); ctx.restore();
   }
-  const pop = live.pop, shotsPop = pop && pop.imgs.map(n => kit.images[n]);
-  if (pop && shotsPop.every(Boolean)) {
-    const c = (t / pop.every) % 1, stage = c < .12 ? 0 : c < .24 ? 1 : c < .38 ? 2 : -1;
-    if (stage >= 0) { const pic = shotsPop[stage], pw = pop.w * w, ph = pw * pic.naturalHeight / pic.naturalWidth; ctx.drawImage(pic, left + pop.x * w - pw / 2, top + pop.y * h - ph, pw, ph); }
+  const pop = live.pop; // popcorn kernels jump out of the sign's bucket, arc up and fall back
+  if (pop && !reduced) {
+    ctx.save();
+    for (let k = 0; k < pop.n; k++) {
+      const c = ((t / pop.every) + k / pop.n * .9) % 1, v = (((k * 7) % 5) - 2) / 2, up = Math.sin(Math.min(1, c * 1.15) * Math.PI) * pop.h * h; // up then down
+      const px = left + (pop.x + v * pop.spread) * w * (.4 + c * .6) + (0) , py = top + pop.y * h - up, r = pop.size * w;
+      if (c > .9) continue;
+      ctx.globalAlpha = Math.min(1, (1 - c) * 3); ctx.fillStyle = '#fff4c8'; ctx.strokeStyle = '#e0a83a'; ctx.lineWidth = Math.max(1, r * .28);
+      ctx.beginPath(); ctx.arc(px - r * .35, py, r * .7, 0, 6.3); ctx.arc(px + r * .35, py - r * .2, r * .7, 0, 6.3); ctx.arc(px, py + r * .3, r * .65, 0, 6.3); ctx.fill(); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  const add = live.glows; // warm light that breathes: serving window, floodlights, and the eave bulbs that chase each other
+  if (add) {
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    const dot = (x, y, r, a, rgb) => { const px = left + x * w, py = top + y * h, rr = r * w, g = ctx.createRadialGradient(px, py, 0, px, py, rr); g.addColorStop(0, `rgba(${rgb},${a})`); g.addColorStop(1, `rgba(${rgb},0)`); ctx.fillStyle = g; ctx.fillRect(px - rr, py - rr, rr * 2, rr * 2); };
+    for (const b of add.bulbs || []) b.xs.forEach((x, i) => dot(x, b.y, b.r, .55 * (reduced ? .6 : Math.max(0, Math.sin(t * b.speed + (i % 2) * Math.PI) * .5 + .5)), '255,205,90'));
+    for (const l of add.lights || []) l.xs.forEach((x, i) => dot(x, l.y, l.r, .42 + (reduced ? 0 : .12 * Math.sin(t * 2.3 + i * 1.7)), '255,240,190'));
+    for (const q of add.windows || []) dot(q.x, q.y, q.r, .22 + (reduced ? 0 : .08 * Math.sin(t * 1.6)), '255,190,80');
+    ctx.restore();
   }
 }
 // Rows of tables standing on a deep floor: each row rides the floor at its own depth.
