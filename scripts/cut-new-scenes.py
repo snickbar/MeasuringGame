@@ -36,7 +36,9 @@ def decontaminate(t, name):
         k = np.clip(1 - b / 255, 0, 1); a[..., 3] = np.where(pink, al * k, al)
         for i, v in enumerate((255, 50, 36)): a[..., i] = np.where(pink, v, a[..., i])
     elif "car" in name:
-        sh = pink & (np.maximum(r, b) < 215); a[..., 3] = np.where(sh, al * 0.4, al)
+        sh = pink & (np.maximum(r, b) < 215)
+        if name.split("-")[-1].isdigit() and int(name.split("-")[-1]) >= 6:   # the second set has purple bodies: only the soft shadow under the car goes
+            sh = ((np.minimum(r, b) - g) > 95) & (np.abs(r - b) < 70) & (np.arange(a.shape[0])[:, None] > a.shape[0] * (.9 if name.endswith('-6') else .55)); a[..., 3] = np.where(sh, al * 0.4, al)
         for i in range(3): a[..., i] = np.where(sh, 10, a[..., i])
     return Image.fromarray(a.clip(0, 255).astype("uint8"), "RGBA")
 def sheet(file, cols, rows, names, maxside=420):
@@ -98,27 +100,36 @@ def sky_cut(file, name, w=900, tol=11, feather=14):
     save(fit_w(out_im, w), name)
 def ground(file, name, w=1500):
     im = Image.open(src / file).convert("RGB"); im = seamless(im, round(im.width * .08)); save(fit_w(im, w), name)
-# --- drive-in
-ground("drivein-01-ground.png", "drivein-ground")
-sheet("drivein-02-cars.png", 3, 2, [f"drivein-car-{i}" for i in range(6)])
-tall("drivein-03-screen.png", "drivein-screen", True)
-tall("drivein-04-snack-stand.png", "drivein-snack-stand", True, apron=True)
-sky_cut("drivein-05-backdrop.png", "drivein-backdrop")
-frames("drivein-06-movie-frames.png", [f"drivein-movie-{i}" for i in range(6)])
-sheet("drivein-07-snack-animation.png", 4, 2, ["drivein-neon-on", "drivein-neon-off", "drivein-bulbs-a", "drivein-bulbs-b", "drivein-pop-0", "drivein-pop-1", "drivein-pop-2", "drivein-window-glow"], 300)
-# --- food trucks
-ground("foodtrucks-01-ground.png", "foodtruck-ground")
-tall("foodtrucks-02-left-trucks.png", "foodtruck-left", True)
-tall("foodtrucks-03-right-trucks.png", "foodtruck-right", True)
-tall("foodtrucks-04-backdrop.png", "foodtruck-backdrop", False)
-sheet("foodtrucks-05-park-props.png", 4, 2, ["foodtruck-bench", "foodtruck-lamppost", "foodtruck-bins", "foodtruck-hydrant", "foodtruck-picnic", "foodtruck-cafe", "foodtruck-menu-sign", "foodtruck-planter"], 300)
-sheet("foodtrucks-06-street-carts.png", 4, 2, ["foodtruck-cart-pretzel", "foodtruck-cart-hotdog", "foodtruck-cart-lemonade", "foodtruck-cart-nuts", "foodtruck-cart-icecream", "foodtruck-balloons", "foodtruck-cart-shaved", "foodtruck-cart-popcorn"], 300)
-sheet("foodtrucks-07-animation.png", 4, 2, ["foodtruck-steam-0", "foodtruck-steam-1", "foodtruck-steam-2", "foodtruck-lights-a", "foodtruck-lights-b", "foodtruck-bunting-a", "foodtruck-bunting-b", "foodtruck-open"], 300)
-# --- diner
-ground("diner-01-ground.png", "diner-ground")
-tall("diner-02-building.png", "diner-building", True)
-sheet("diner-03-roadside-props.png", 4, 2, ["diner-pole-sign", "diner-pumps", "diner-phone-booth", "diner-news-boxes", "diner-soda-machine", "diner-barrel", "diner-bench", "diner-lamp"], 300)
-sheet("diner-04-vehicles.png", 3, 2, ["diner-car-wagon", "diner-car-pickup", "diner-car-convertible", "diner-car-van", "diner-car-sidecar", "diner-car-rig"], 400)
-tall("diner-05-highway.png", "diner-highway", False)
-tall("diner-06-backdrop.png", "diner-backdrop", False)
-sheet("diner-07-animation.png", 4, 2, ["diner-sign-on", "diner-sign-off", "diner-open-on", "diner-open-off", "diner-head-0", "diner-head-1", "diner-tail", "diner-steam"], 300)
+ONLY = sys.argv[1:]
+if not ONLY:
+  pass
+  # --- drive-in
+  ground("drivein-01-ground.png", "drivein-ground")
+  sheet("drivein-02-cars.png", 3, 2, [f"drivein-car-{i}" for i in range(6)])
+  tall("drivein-03-screen.png", "drivein-screen", True)
+  tall("drivein-04-snack-stand.png", "drivein-snack-stand", True, apron=True)
+  sky_cut("drivein-05-backdrop.png", "drivein-backdrop")
+  frames("drivein-06-movie-frames.png", [f"drivein-movie-{i}" for i in range(6)])
+  sheet("drivein-07-snack-animation.png", 4, 2, ["drivein-neon-on", "drivein-neon-off", "drivein-bulbs-a", "drivein-bulbs-b", "drivein-pop-0", "drivein-pop-1", "drivein-pop-2", "drivein-window-glow"], 300)
+  # --- food trucks
+  ground("foodtrucks-01-ground.png", "foodtruck-ground")
+  tall("foodtrucks-02-left-trucks.png", "foodtruck-left", True)
+  tall("foodtrucks-03-right-trucks.png", "foodtruck-right", True)
+  tall("foodtrucks-04-backdrop.png", "foodtruck-backdrop", False)
+  sheet("foodtrucks-05-park-props.png", 4, 2, ["foodtruck-bench", "foodtruck-lamppost", "foodtruck-bins", "foodtruck-hydrant", "foodtruck-picnic", "foodtruck-cafe", "foodtruck-menu-sign", "foodtruck-planter"], 300)
+  sheet("foodtrucks-06-street-carts.png", 4, 2, ["foodtruck-cart-pretzel", "foodtruck-cart-hotdog", "foodtruck-cart-lemonade", "foodtruck-cart-nuts", "foodtruck-cart-icecream", "foodtruck-balloons", "foodtruck-cart-shaved", "foodtruck-cart-popcorn"], 300)
+  sheet("foodtrucks-07-animation.png", 4, 2, ["foodtruck-steam-0", "foodtruck-steam-1", "foodtruck-steam-2", "foodtruck-lights-a", "foodtruck-lights-b", "foodtruck-bunting-a", "foodtruck-bunting-b", "foodtruck-open"], 300)
+  # --- diner
+  ground("diner-01-ground.png", "diner-ground")
+  tall("diner-02-building.png", "diner-building", True)
+  sheet("diner-03-roadside-props.png", 4, 2, ["diner-pole-sign", "diner-pumps", "diner-phone-booth", "diner-news-boxes", "diner-soda-machine", "diner-barrel", "diner-bench", "diner-lamp"], 300)
+  sheet("diner-04-vehicles.png", 3, 2, ["diner-car-wagon", "diner-car-pickup", "diner-car-convertible", "diner-car-van", "diner-car-sidecar", "diner-car-rig"], 400)
+  tall("diner-05-highway.png", "diner-highway", False)
+  tall("diner-06-backdrop.png", "diner-backdrop", False)
+  sheet("diner-07-animation.png", 4, 2, ["diner-sign-on", "diner-sign-off", "diner-open-on", "diner-open-off", "diner-head-0", "diner-head-1", "diner-tail", "diner-steam"], 300)
+
+# --- drive-in props, more cars and light pieces (second round)
+src = root / "art-source/drivein-props-2026-11-22"
+sheet("drivein-props.png", 4, 2, ["drivein-prop-speaker", "drivein-prop-lamp", "drivein-prop-ticket", "drivein-prop-arch", "drivein-prop-fence", "drivein-prop-bin", "drivein-prop-sign", "drivein-prop-bulbpole"], 420)
+sheet("drivein-cars-2.png", 3, 2, [f"drivein-car-{i}" for i in range(6, 12)])
+sheet("drivein-lights.png", 4, 2, ["drivein-lights-a", "drivein-lights-b", "drivein-arch-on", "drivein-arch-off", "drivein-booth-bright", "drivein-booth-dim", "drivein-tail-bright", "drivein-tail-dim"], 520)
