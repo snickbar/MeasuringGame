@@ -261,13 +261,13 @@ export const SETTINGS = {
   // Drive-in theater: a night lot. Everything stands on the lot by depth (floorDepth singles), the hills behind it follow the far edge of the lot.
   drivein: { floor: 'drivein-ground', floorTileWidth: 1450, floorBehind: true, floorInset: 0, night: true, sky: ['#05084a', '#161774'], fireflies: 'always', movers: ['twinkle'],
     floorDepth: { par: .5, zoomX: true, tables: [], rows: [], singles: [
-      { img: 'drivein-screen', r: 0, x: .5, w: .94, live: { bats: { n: 4, period: 9, y: [.12, .6], size: .035 }, glows: { lights: [{ xs: [.156, .318, .499, .681, .841], y: .157, r: .12 }] },  movie: { box: [.066, .266, .934, .653], imgs: ['drivein-movie-0', 'drivein-movie-1', 'drivein-movie-2', 'drivein-movie-3', 'drivein-movie-4', 'drivein-movie-5'], plan: [[0, 3.2], [2, .35], [0, 2.2], [1, 3], [3, 3], [4, 3], [5, 3]] } } },
-      { img: 'drivein-snack-stand', r: .04, x: .84, w: .36, live: { blink: [{ box: [.26, .18, .74, .262], round: .03, speed: .22 }], pop: { n: 7, x: .49, y: .045, h: .1, spread: .14, size: .016, every: 1.5 },
+      { img: 'drivein-screen', r: 0, x: .5, w: .94, live: { search: { beams: [{ x: .05, y: .1, dir: -22, sweep: 24, speed: .55, width: 4, len: 1.6 }, { x: .95, y: .1, dir: 22, sweep: 24, speed: .47, width: 4, len: 1.6 }] }, bats: { n: 4, period: 9, y: [.12, .6], size: .035 }, glows: { lights: [{ xs: [.156, .318, .499, .681, .841], y: .157, r: .12 }] },  movie: { box: [.066, .266, .934, .653], imgs: ['drivein-movie-0', 'drivein-movie-1', 'drivein-movie-2', 'drivein-movie-3', 'drivein-movie-4', 'drivein-movie-5'], plan: [[0, 3.2], [2, .35], [0, 2.2], [1, 3], [3, 3], [4, 3], [5, 3]] } } },
+      { img: 'drivein-snack-stand', r: .04, x: .84, w: .36, live: { smoke: { x: .2, y: .3, n: 6, every: 6, rise: .45, drift: .14, size: .12 }, blink: [{ box: [.26, .18, .74, .262], round: .03, speed: .22 }], pop: { n: 7, x: .49, y: .045, h: .1, spread: .14, size: .016, every: 1.5 },
         glows: { bulbs: [{ xs: [.111, .175, .241, .307, .37, .43, .493, .554, .619, .68, .745, .815, .883], y: .303, r: .06, speed: 4.4 }], windows: [{ x: .5, y: .56, r: .3 }] } } },
-      { img: 'drivein-car-7', r: 0.225, w: 0.12, drive: { from: -.15, to: 1.15, period: 16 }, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 0 }] } } },
-      { img: 'drivein-car-0', r: 0.07, x: 0.14, w: 0.15, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 0 }] } } }, { img: 'drivein-car-7', r: 0.07, x: 0.38, w: 0.15, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 1 }] } } }, { img: 'drivein-car-1', r: 0.07, x: 0.62, w: 0.15, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 2 }] } } }, { img: 'drivein-car-9', r: 0.07, x: 0.86, w: 0.15, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 3 }] } } },
-      { img: 'drivein-car-6', r: 0.17, x: 0.2, w: 0.165, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 4 }] } } }, { img: 'drivein-car-3', r: 0.17, x: 0.4, w: 0.165, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 5 }] } } }, { img: 'drivein-car-2', r: 0.17, x: 0.6, w: 0.165, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 6 }] } } }, { img: 'drivein-car-10', r: 0.17, x: 0.8, w: 0.165, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 7 }] } } },
-      { img: 'drivein-car-4', r: 0.28, x: 0.13, w: 0.21, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 8 }] } } }, { img: 'drivein-car-8', r: 0.28, x: 0.38, w: 0.21, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 9 }] } } }, { img: 'drivein-car-5', r: 0.28, x: 0.63, w: 0.21, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 10 }] } } }, { img: 'drivein-car-11', r: 0.28, x: 0.88, w: 0.21, fan: 9, live: { glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 11 }] } } },
+      { img: 'drivein-car-7', r: 0.225, w: 0.12, drive: { from: -.15, to: 1.15, period: 16 }, live: { heads: { period: 7, phase: 0.0 }, glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 0 }] } } },
+      { img: 'drivein-car-0', r: 0.07, x: 0.14, w: 0.15, fan: 9, live: { heads: { period: 7, phase: 0.0 }, glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 0 }] } } }, { img: 'drivein-car-7', r: 0.07, x: 0.38, w: 0.15, fan: 9, live: { heads: { period: 7, phase: 0.37 }, glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 1 }] } } }, { img: 'drivein-car-1', r: 0.07, x: 0.62, w: 0.15, fan: 9, live: { heads: { period: 7, phase: 0.74 }, glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 2 }] } } }, { img: 'drivein-car-9', r: 0.07, x: 0.86, w: 0.15, fan: 9, live: { heads: { period: 7, phase: 0.11 }, glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 3 }] } } },
+      { img: 'drivein-car-6', r: 0.17, x: 0.2, w: 0.165, fan: 9, live: { heads: { period: 7, phase: 0.48 }, glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 4 }] } } }, { img: 'drivein-car-3', r: 0.17, x: 0.4, w: 0.165, fan: 9, live: { heads: { period: 7, phase: 0.85 }, glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 5 }] } } }, { img: 'drivein-car-2', r: 0.17, x: 0.6, w: 0.165, fan: 9, live: { heads: { period: 7, phase: 0.22 }, glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 6 }] } } }, { img: 'drivein-car-10', r: 0.17, x: 0.8, w: 0.165, fan: 9, live: { heads: { period: 7, phase: 0.59 }, glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 7 }] } } },
+      { img: 'drivein-car-4', r: 0.28, x: 0.13, w: 0.21, fan: 9, live: { heads: { period: 7, phase: 0.96 }, glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 8 }] } } }, { img: 'drivein-car-8', r: 0.28, x: 0.38, w: 0.21, fan: 9, live: { heads: { period: 7, phase: 0.33 }, glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 9 }] } } }, { img: 'drivein-car-5', r: 0.28, x: 0.63, w: 0.21, fan: 9, live: { heads: { period: 7, phase: 0.7 }, glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 10 }] } } }, { img: 'drivein-car-11', r: 0.28, x: 0.88, w: 0.21, fan: 9, live: { heads: { period: 7, phase: 0.07 }, glows: { reds: [{ xs: [.13, .87], y: .64, r: .17, phase: 11 }] } } },
       { img: 'drivein-prop-lamp', r: 0.06, x: 0.02, w: 0.075 },
       { img: 'drivein-prop-lamp', r: 0.06, x: 0.98, w: 0.075 },
       { img: 'drivein-prop-lamp', r: 0.22, x: 0.03, w: 0.1 },
@@ -2072,7 +2072,7 @@ function drawWorkshopPiece(ctx, image, x, y, width, anchorY = .5) {
 function floorDepthPar(depth, r, surface) { return r >= surface ? 1 : depth.par + (1 - depth.par) * Math.max(0, r) / surface; }
 // Small animations painted on top of a standing piece, placed by fractions of its picture:
 // movie: pictures that take turns inside a box (the drive-in screen); blink: a neon sign that flickers off now and then; pop: a puff of popcorn that bursts above it.
-function drawLivePiece(ctx, kit, live, left, top, w, h, time, reduced) {
+function drawLivePiece(ctx, kit, live, left, top, w, h, time, reduced, front) {
   const t = reduced ? 0 : time;
   const m = live.movie, shots = m && m.imgs.map(n => kit.images[n]);
   if (m && shots.every(Boolean)) {
@@ -2102,6 +2102,31 @@ function drawLivePiece(ctx, kit, live, left, top, w, h, time, reduced) {
       ctx.beginPath(); ctx.arc(px - r * .35, py, r * .7, 0, 6.3); ctx.arc(px + r * .35, py - r * .2, r * .7, 0, 6.3); ctx.arc(px, py + r * .3, r * .65, 0, 6.3); ctx.fill(); ctx.stroke();
     }
     ctx.restore();
+  }
+  const sl = live.search; // searchlight beams sweep the night sky from the top of the screen
+  if (sl && !reduced) {
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    sl.beams.forEach((b, i) => {
+      const ang = (b.dir + Math.sin(t * b.speed + i * 2.2) * b.sweep) * Math.PI / 180, ox = left + b.x * w, oy = top + b.y * h, len = h * b.len, half = b.width * Math.PI / 180;
+      const g = ctx.createLinearGradient(ox, oy, ox + Math.sin(ang) * len, oy - Math.cos(ang) * len); g.addColorStop(0, 'rgba(255,248,215,.6)'); g.addColorStop(1, 'rgba(255,248,215,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(ox, oy);
+      ctx.lineTo(ox + Math.sin(ang - half) * len, oy - Math.cos(ang - half) * len); ctx.lineTo(ox + Math.sin(ang + half) * len, oy - Math.cos(ang + half) * len); ctx.closePath(); ctx.fill();
+    });
+    ctx.restore();
+  }
+  const sm = live.smoke; // soft smoke puffs rise from the stand, swell, drift and fade
+  if (sm && !reduced) {
+    ctx.save();
+    for (let k = 0; k < sm.n; k++) {
+      const c = ((t / sm.every) + k / sm.n) % 1, px = left + (sm.x + c * sm.drift + Math.sin(c * 6 + k) * .01) * w, py = top + (sm.y - c * sm.rise) * h, r = (sm.size * (.5 + c * 1.4)) * w;
+      const g = ctx.createRadialGradient(px, py, 0, px, py, r); const a = Math.sin(Math.min(1, c) * Math.PI) * .8;
+      g.addColorStop(0, `rgba(225,222,235,${a})`); g.addColorStop(.55, `rgba(225,222,235,${a * .6})`); g.addColorStop(1, 'rgba(225,222,235,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(px, py, r, 0, 6.3); ctx.fill();
+    }
+    ctx.restore();
+  }
+  if (live.heads && front != null) { // headlights flick on, stutter once, stay lit a while, then go dark
+    const c = ((t / live.heads.period) + live.heads.phase) % 1, on = c < .45 && !(c > .07 && c < .1) && !(c > .13 && c < .15);
+    if (on || reduced) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; const px = left + front * w, py = top + .66 * h, rr = .2 * w, g = ctx.createRadialGradient(px, py, 0, px, py, rr); g.addColorStop(0, 'rgba(255,245,200,.7)'); g.addColorStop(1, 'rgba(255,245,200,0)'); ctx.fillStyle = g; ctx.fillRect(px - rr, py - rr, rr * 2, rr * 2); ctx.restore(); }
   }
   const bats = live.bats; // a few bats flap across in front of the screen (code-drawn, they fly past and loop)
   if (bats) {
@@ -2148,7 +2173,7 @@ export function drawFloorDepthRows(ctx, kit, { width, height, floorY, shiftY = 0
         ctx.drawImage(flip ? alt : pic, left, top, w, h);
         if (dv && dv.to > dv.from) ctx.restore();
         if (one.fan) ctx.restore();
-        if (one.live) drawLivePiece(ctx, kit, one.live, left, top, w, h, time, reduced);
+        if (one.live) drawLivePiece(ctx, kit, one.live, left, top, w, h, time, reduced, one.fan ? (one.x < .5 ? .9 : .1) : null);
       }
       continue;
     }
