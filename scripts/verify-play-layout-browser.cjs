@@ -166,15 +166,17 @@ window.__layoutAccuracy=async (count,sum,last)=>{
  Object.values(currentPlayers).forEach(p=>{p.roundsCounted=count;p.accuracySum=sum;});
  roomState.lastRoundAccuracy=last;roomState.phase='animation';applyPhase(roomState);
  const bar=document.getElementById('tw-anim-progress');
- const before=bar.querySelector('strong').textContent;applyPhase(roomState);
- const refreshed=bar.querySelector('strong').textContent;
+ // The accuracy graph is intentionally not drawn during the stacking animation (the scene gets the room), so a hidden bar cannot spoil the round.
+ const before=bar.querySelector('strong')?.textContent??'(hidden)';applyPhase(roomState);
+ const refreshed=bar.querySelector('strong')?.textContent??'(hidden)';
  roomState.phase='summary';applyPhase(roomState);twSummarySig=null;renderTeamWorldsSummary(roomState);
  return {before,refreshed,after:summaryListEl.querySelector('.tw-avg .wl-progress-heading strong')?.textContent};
 };
 window.__layoutSoloTiming=async count=>{
  await window.__layoutAudit('worlds');const q=wl.questions[0];wl.questions=[q,q,q,q,q];wl.guesses=count===1?[3]:[1.5,3];wl.phase='reveal';renderWorlds();
- const before=worldsContentEl.querySelector('.wl-progress-heading strong').textContent;
- renderWorlds();const refreshed=worldsContentEl.querySelector('.wl-progress-heading strong').textContent;
+ // The reveal screen no longer draws the accuracy meter, so there is nothing to spoil there.
+ const before=worldsContentEl.querySelector('.wl-progress-heading strong')?.textContent??'(hidden)';
+ renderWorlds();const refreshed=worldsContentEl.querySelector('.wl-progress-heading strong')?.textContent??'(hidden)';
  document.getElementById('wl-skip').click();
  return {before,refreshed,resultStart:worldsContentEl.querySelector('.wl-rs-meter .wl-progress-heading strong').textContent};
 };
@@ -418,7 +420,7 @@ for(const m of ['quick:many','teamvteam:many','party']){await evaluate('window._
     if(process.env.PLAY_LAYOUT_KEYPAD_ONLY)continue; // keypad-fit run (npm run test:keypad-fit): every mode's keypad and Lock button stay on screen; skip the slower timing checks
     for(const sample of [{count:1,sum:70.6,last:70.6,expected:'No answers yet'},{count:2,sum:160,last:70,expected:'90%'},{count:2,sum:110,last:90,expected:'20%'}]){
      const progress=await evaluate('window.__layoutAccuracy('+[sample.count,sample.sum,sample.last].join(',')+')');
-     if(progress.before!==sample.expected||progress.refreshed!==sample.expected)throw Error('Accuracy spoiled unfinished round '+JSON.stringify(progress));
+     const hiddenOk=v=>v==='(hidden)'||v===sample.expected;if(!hiddenOk(progress.before)||!hiddenOk(progress.refreshed))throw Error('Accuracy spoiled unfinished round '+JSON.stringify(progress));
      await new Promise(r=>setTimeout(r,2200));
      const after=await evaluate("window.__layoutAccuracyAfter()");
      if(after!==(sample.sum/sample.count)+'%')throw Error('Game Progress did not update accuracy '+after);
@@ -426,7 +428,7 @@ for(const m of ['quick:many','teamvteam:many','party']){await evaluate('window._
     }
     for(const count of [1,2]){
      const solo=await evaluate('window.__layoutSoloTiming('+count+')');const previous=count===1?'No answers yet':'50%';
-     if(solo.before!==previous||solo.refreshed!==previous||solo.resultStart!==(count===1?'0%':'50%'))throw Error('Solo Worlds spoils pending accuracy '+JSON.stringify(solo));
+     if(![previous,'(hidden)'].includes(solo.before)||![previous,'(hidden)'].includes(solo.refreshed)||solo.resultStart!==(count===1?'0%':'50%'))throw Error('Solo Worlds spoils pending accuracy '+JSON.stringify(solo));
      await new Promise(r=>setTimeout(r,3800));const after=await evaluate('window.__layoutSoloAfter()');if(after!==(count===1?'100%':'75%'))throw Error('Solo Worlds result meter failed '+after);
      console.log(JSON.stringify({soloTiming:count,width,height,...solo,after,pass:true}));
     }

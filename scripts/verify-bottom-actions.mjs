@@ -55,7 +55,7 @@ assert.equal(installBottomActions({ document: { getElementById: () => null } }).
 const html = fs.readFileSync('index.html', 'utf8');
 assert(/<div id="bottom-actions" data-bar-empty>/.test(html), 'The bar starts empty in the markup, before any script runs');
 assert(html.includes('import { installBottomActions } from "./anim/bottom-actions.mjs";') && /\n\s*installBottomActions\(\);/.test(html), 'The page starts the bar switches');
-for (const rule of ['#bottom-actions[data-bar-empty] { display: none; }', '#bottom-actions[data-bar-final] button {', '#bottom-actions[data-bar-reveal] #hud-auto-toggle {', '#bottom-actions[data-bar-reveal] :is(#reveal-next-btn,#reveal-all-btn) {'])
+for (const rule of ['#bottom-actions[data-bar-empty] { display: none; }', '#bottom-actions[data-bar-final] button {', '#bottom-actions #hud-auto-toggle {', '#bottom-actions[data-bar-reveal] :is(#reveal-next-btn,#reveal-all-btn) {'])
   assert(html.includes(rule), 'Bar layout rule present: ' + rule);
 
 // An attribute selector on "style" inside :has() makes the browser re-check the whole page whenever any element's

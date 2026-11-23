@@ -118,7 +118,7 @@ function actual(name) {
   return source.slice(start, source.indexOf('\n  }', start) + 4);
 }
 let pending, dbRoom = copy(betRoom), clock = 50000, writes = 0;
-const context = vm.createContext({ HS, commitHsState, electedHost, transferHost, console,
+const context = vm.createContext({ shapeConfidence: (c) => c, personalityFor: () => ({}), HS, commitHsState, electedHost, transferHost, console,
   db: {}, ref: (_, path) => path, currentRoomCode: 'TEST', currentPlayerId: 'a', roomState: betRoom,
   isHost: true, hsBusyUntil: 0, hsBusyTok: 0, leavingGame: false, nowMs: () => hs.bet.turnEndsAt + 1,
   Date: { now: () => clock }, hsHash: () => 0, hsEnsureTicker: () => {}, hostTransfers: new Set(),

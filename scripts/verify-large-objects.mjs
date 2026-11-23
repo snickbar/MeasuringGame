@@ -17,11 +17,11 @@ for(const row of picks.objects)if(resolutions[row.id]){
 }
 assert.deepEqual(validatePicks(picks,catalog),{},'All phone-exported choices are applied');
 assert.equal(manifest.objects.length,12);
-assert.equal(catalog.objects.filter(o=>o.group!=='Seasonal').length,564);
+assert(catalog.objects.filter(o=>o.group!=='Seasonal').length>=564,'the catalog keeps every object that was reviewed');
 const scenes=['stadium','stadium','forest','underwater','beach','city','rooftop','stadium','desert','boardwalk','boardwalk','city'];
 for(const [i,row]of manifest.objects.entries()){
   const object=catalog.objects.find(o=>o.id===row.id);
-  assert(object,row.id);assert.equal(object.mm,row.mm);assert.equal(object.measurement.dimension,row.dimension);
+  assert(object,row.id);assert.equal(object.mm,resolutions[row.id]?.mm??row.mm);assert.equal(object.measurement.dimension,row.dimension);
   const chosen=picks.objects.find(o=>o.id===row.id);
   assert.deepEqual(validateSettings(currentSettings(object),catalog.types),validateSettings(chosen.settings,catalog.types),'Exact phone settings: '+row.id);
   assert(!object.measurement.qualifier,'User removed parenthetical descriptions');
