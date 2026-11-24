@@ -23918,7 +23918,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const teams = Object.fromEntries(Object.entries(teamOf).map(([team, members]) => [team, {name: `${TEAM_COLOR_NAMES[team]} team`, avatars: members.map(id => currentPlayers[id].avatar)}]));
         const winningTeams = new Set(teamRanked.filter(entry => entry.rank === 1 && entry.score > 0).map(entry => entry.id));
         const mascots = [["red", "dogs", "pd-m-left"], ["blue", "cats", "pd-m-right"]].map(([team, animal, side]) => {
-          const cheers = winningTeams.has(team);
+          const cheers = winningTeams.size > 0; // the cats and dogs are the game's mascots, not a team: both celebrate whenever someone won
           const art = `anim/mode-mascots/team-${animal}`;
           return cheers ? [`${art}-cheer.webp`, side, "cheer", `${art}-clap-open.webp`] : [`${art}-clap.webp`, side, "clap", `${art}-clap-open.webp`];
         });

@@ -26,22 +26,15 @@ export function antSaying(order, nameOf = () => "", random = Math.random) {
   if (n > 1 && Number.isFinite(second) && acc - second < 5) return pick(["Tiny gap! This colony is sharp.", "So close, you two! Antsy finish."], random);
   return pick([`${name} wins the round!`, `Nice one, ${name}! Ant-tastic.`, `${name} takes the crumb!`], random);
 }
-// Cats are the blue team, dogs the red team; they talk about their own team's round. totals: {teamColor: points this round} for EVERY team in the game
-// (a game can have 3+ teams). A tie only counts when their own team shares the top score; if another team beat them it is a loss.
+// The cats and dogs are the game's mascots, not a team: they comment on the whole round. totals: {teamColor: points this round} for every team.
 export function teamSaying(set, totals, random = Math.random) {
-  const own = set === "cats" ? "blue" : "red", name = own[0].toUpperCase() + own.slice(1);
   const teams = Object.keys(totals).filter((t) => Number.isFinite(totals[t]));
   if (!teams.length) return "";
-  const top = Math.max(...teams.map((t) => totals[t])), leaders = teams.filter((t) => totals[t] === top);
-  const cheer = set === "cats" ? "Paws up!" : "Woof woof!";
-  if (!(own in totals)) { // their team is not playing: just call the round
-    if (leaders.length > 1) return set === "cats" ? "A tie! Meow-vellous." : "A tie! Bone-afide.";
-    const w = leaders[0][0].toUpperCase() + leaders[0].slice(1);
-    return pick([`${w} team takes the round!`, `Nice round, ${w} team!`], random);
-  }
-  if (!leaders.includes(own)) return pick(set === "cats" ? ["Hiss! We were robbed. Next round!", "Cat-astrophe! We'll get them."] : ["Ruff round. We'll fetch it next time!", "Bark! They got lucky."], random);
-  if (leaders.length > 1) return pick(set === "cats" ? ["Dead even. Cat nap?", "A tie! Meow-vellous."] : ["Dead even! Fetch a rematch.", "A tie! Bone-afide."], random);
-  return pick([`${cheer} ${name} team takes the round!`, set === "cats" ? "Purr-fect round!" : "That one was in the bag!"], random);
+  const cats = set === "cats", top = Math.max(...teams.map((t) => totals[t])), leaders = teams.filter((t) => totals[t] === top);
+  if (top <= 0) return pick(cats ? ["Not one point? Meow-ch.", "Nobody scored. Next round!"] : ["No points! Ruff round.", "Nobody scored. Fetch some next time!"], random);
+  if (leaders.length > 1) return pick(cats ? ["A tie! Meow-vellous.", "Dead even. Cat nap?"] : ["A tie! Bone-afide.", "Dead even! Fetch a rematch."], random);
+  const w = leaders[0][0].toUpperCase() + leaders[0].slice(1) + " team";
+  return pick(cats ? [`${w} takes it! Purr-fect.`, `Nice round, ${w}!`] : [`Woof! ${w} wins the round!`, `Good job, ${w}!`], random);
 }
 
 export function createPartyAnt({ hud, cardFor, reduceMotion = () => false }) {
