@@ -23610,16 +23610,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (mood === "win") return hlPick(bird ? ["Right on target!", "Soaring high! Nailed it.", "Perfect bracket!"] : ["Right on target!", "Deep dive! Nailed it.", "Perfect bracket!"]);
         if (mood === "soso") return hlPick(["We'll get the next one!", "Nice try, partner.", "Still in this together.", "My side was fine!"]);
         if (typeof l.high !== "number" || typeof l.low !== "number" || typeof ans !== "number") return hlPick(["Oops. Next time!", "We'll try again together."]);
-        if (l.crossed) return hlPick(["Our picks crossed. Oops!", "Wrong way round! Sorry."]);
-        if (l.tooWide) return hlPick(["Our gap was too wide!", "We stretched too far.", "Too big a gap. Sorry!"]);
         const mine = bird ? l.high >= ans : l.low <= ans;
         if (!mine) return hlPick(bird ? ["I went too low. Sorry!", "Too low, that was on me."] : ["I went too high. Sorry!", "Too high, that was on me."]);
+        if (l.tooWide) return hlPick(["Our gap was too wide!", "We stretched too far.", "Too big a gap. Sorry!"]);
         return hlPick(["Oops. We'll try again!", "We'll get it next time."]);
       };
       const hlMascotMood = (d, role) => {
         const l = d.hlLast || {}, ans = d.currentQuestion ? d.currentQuestion.answer : null;
         if (l.passed) return "win";
-        if (typeof ans !== "number" || typeof l.high !== "number" || typeof l.low !== "number" || l.crossed || l.tooWide) return "lose";
+        if (typeof ans !== "number" || typeof l.high !== "number" || typeof l.low !== "number" || l.tooWide) return "lose"; // crossed picks are judged pick by pick: a pick on the right side of the answer is not at fault
         const highOk = l.high >= ans, lowOk = l.low <= ans;
         if (highOk === lowOk) return "lose";
         return (role === "high" ? highOk : lowOk) ? "soso" : "lose";
