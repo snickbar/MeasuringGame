@@ -23598,7 +23598,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const sLi = document.createElement("li");
       sLi.className = "summary-row tw-sum";
       const hlAvg = data.hlOffRounds ? data.hlOffSum / data.hlOffRounds : null;
-      const hlPlayer = (e) => e ? `<div class="dc-card dc-hot tw-sumrow hl-sumplayer"><span class="avatar">${avatarHtml((currentPlayers[e.playerId] || {}).avatar)}</span><span class="name hl-has-chip"><span class="hl-nm">${escapeHtml(e.name || "")}</span>${e.role ? hlChipHtml(e.role) : ""}</span>${e.role ? `<span class="hl-sum-mascot hl-sum-${e.role === "high" ? "bird" : "shark"}">${mascotMarkup(e.role === "high" ? "hlbird" : "hlshark", lostOne ? "lose" : "win", { key: data.gameId + ":" + data.round + ":" + e.role, delay: 500, still: prefersReducedMotion() })}</span>` : ""}</div>` : "";
+      // Each mascot reacts to ITS player's pick: the High pick must not be under the answer, the Low pick must not be over it.
+      // Survived: both happy. Gap too big (or crossed) or both picks on the wrong side: both sad. Only one pick on the wrong side: that one sad, the other neutral ("soso") - never one happy and one sad.
+      const hlMascotMood = (d, role) => {
+        const l = d.hlLast || {}, ans = d.currentQuestion ? d.currentQuestion.answer : null;
+        if (l.passed) return "win";
+        if (typeof ans !== "number" || typeof l.high !== "number" || typeof l.low !== "number" || l.crossed || l.tooWide) return "lose";
+        const highOk = l.high >= ans, lowOk = l.low <= ans;
+        if (highOk === lowOk) return "lose";
+        return (role === "high" ? highOk : lowOk) ? "soso" : "lose";
+      };
+      const hlPlayer = (e) => e ? `<div class="dc-card dc-hot tw-sumrow hl-sumplayer"><span class="avatar">${avatarHtml((currentPlayers[e.playerId] || {}).avatar)}</span><span class="name hl-has-chip"><span class="hl-nm">${escapeHtml(e.name || "")}</span>${e.role ? hlChipHtml(e.role) : ""}</span>${e.role ? `<span class="hl-sum-mascot hl-sum-${e.role === "high" ? "bird" : "shark"}">${mascotMarkup(e.role === "high" ? "hlbird" : "hlshark", hlMascotMood(data, e.role), { key: data.gameId + ":" + data.round + ":" + e.role, delay: 500, still: prefersReducedMotion() })}</span>` : ""}</div>` : "";
       const bottlesNow = data.hlLives ?? (data.settings?.lives || HL_LIVES);
       const lostOne = (data.hlLast?.previousLives ?? bottlesNow) > bottlesNow;
       sLi.innerHTML = hlPlayer(entries[0])
