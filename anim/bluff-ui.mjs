@@ -1,6 +1,7 @@
 import {BLUFF_LABELS,bluffVoteDeadline,dealBluff,chooseBluff,revealBluff,bluffStandings,bluffStandingsBefore,bluffNewLeaders,botMakerChoice,botVoteChoice} from './bluff.mjs';
 import {setText} from './set-text.mjs';
 import {playerFrameArt} from './player-frames.mjs';
+import {mascotMarkup} from './mascot-poses.mjs';
 
 // Counts a number up from 0 (presentation only; skipped when motion is reduced).
 function countUpEl(el,ms,delay,reduced){
@@ -40,6 +41,24 @@ export function bluffVotingRaccoon(age, motion, round = 1) {
 
 export function bluffRaccoonOutcome(claim, fooled) {
   return claim === "correct" ? "notes" : fooled > 0 ? "grin" : "caught";
+}
+
+// The raccoon's mood after the votes are in: happy when the whole table was fooled, sad when the whole table got it right, neutral on a split.
+export function bluffRaccoonMood(result) {
+  const fooled = result?.wrong || 0, caught = result?.caught || 0;
+  return fooled > 0 && caught === 0 ? "win" : caught > 0 && fooled === 0 ? "lose" : "soso";
+}
+export const BLUFF_RACCOON_SAYINGS = {
+  win: ["Fooled you all. Delicious.", "Every last one of you. Easy.", "Nobody saw that coming.", "Trust me? Big mistake.", "Not a single doubt. Lovely."],
+  soso: ["Half of you bought it.", "A split room. Hmm.", "Some sharp eyes in here.", "Mixed reviews. I'll take it.", "Not everyone fell for it."],
+  lose: ["Busted. Nice catch.", "You saw right through me.", "Sharp eyes, all of you.", "The whole room knew. Ugh.", "Nobody falls for it today."],
+};
+// The same round always gets the same line, so a redraw does not change what he says.
+export function bluffRaccoonSaying(mood, key = "") {
+  const lines = BLUFF_RACCOON_SAYINGS[mood] || BLUFF_RACCOON_SAYINGS.soso;
+  let h = 0;
+  for (const c of String(key)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return lines[h % lines.length];
 }
 
 export function bluffPickHtml(s,me){
@@ -141,14 +160,15 @@ export function createBluffUI({element,context,now,transact,act,question,object,
       const ck=room.gameId+':'+s.round,sAge=ck===celebrationKey?(celebrationAbandoned?Infinity:now()-celebrationAt):0;
       const motion=!reduced()&&visible();
       const flip=motion&&Number.isFinite(sAge)&&!room.paused?bluffRevealTimes(s).answerLand-240-sAge:null;
-      const outcome=bluffRaccoonOutcome(s.claim.kind,s.result.wrong);
+      const outcome=bluffRaccoonOutcome(s.claim.kind,s.result.wrong),mood=bluffRaccoonMood(s.result);
       const reacting=motion&&Number.isFinite(sAge)&&!room.paused;
       const at=bluffRevealTimes(s).answerLand+430-sAge;
       revealRaccoon='<span class="bl-raccoon-outcome" aria-hidden="true" style="--raccoon-react-at:'+
         (reacting?Math.round(at):0)+'ms">'+
         (reacting&&at> -300 ? '<span class="bl-raccoon-outcome-before">'+bluffRaccoonHtml('reveal',flip,s.claim.kind)+'</span>' : '')+
         '<span class="bl-raccoon-outcome-after bl-raccoon-outcome-'+outcome+(reacting?' moving':'')+'">'+
-        raccoonArt(outcome)+(reacting?raccoonArt(outcome==='notes'?'glance':'notes'):'')+'</span></span>';
+        mascotMarkup('raccoon',mood,{key:ck,delay:reacting?Math.max(0,Math.round(at)):0,still:!reacting})+'</span>'+
+        '<span class="solo-bubble solo-bubble-down bl-say" style="--raccoon-say-at:'+(reacting?Math.max(0,Math.round(at))+350:0)+'ms">'+esc(bluffRaccoonSaying(mood,ck))+'</span></span>';
       content=bluffSummaryHtml(s,room.players||{},avatar,me,sAge,motion);
     }
     const stageChanged=cueKey!==key;
