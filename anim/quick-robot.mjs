@@ -25,6 +25,18 @@ const IDLE_SHEET = ["idle-sheet", 12];
 const FRAME_MS = 260;
 const ART = (id) => id === "idle-sheet" ? "anim/mode-mascots/quick-robot-idle-sheet.webp" : `anim/mode-mascots/quick-robot-react-${id}.webp`;
 
+// What the robot says about YOUR guess on the round summary (Quick is a single-player game), by accuracy.
+export const ROBOT_SAYINGS = [
+  [100, ["Beep boop: PERFECT!", "Calculations confirm: flawless!", "100%! My circuits are dancing!", "Bullseye. Beep!"]],
+  [90, ["So close! Beep boop!", "Almost perfect! My sensors tingle.", "Within the margin. Nice!", "Scanning... impressive!"]],
+  [70, ["Nice guess! Beep!", "Solid reading, human!", "Systems say: good job.", "Processing... that is respectable."]],
+  [40, ["Hmm, in the neighborhood.", "Recalibrating... a bit off.", "Warm. My sensors say warm.", "Not bad, not great. Beep."]],
+  [0, ["Error! Way off, human!", "Does not compute!", "Beep... that guess drifted.", "Rebooting hope for next round."]],
+];
+export function robotSaying(accuracy, random = Math.random) {
+  const list = ROBOT_SAYINGS.find(([min]) => accuracy >= min)[1];
+  return list[Math.floor(random() * list.length)];
+}
 export const robotTier = (accuracy) => accuracy >= 60 ? "win" : accuracy >= 40 ? "soso" : "lose";
 
 // Tier of the paper at `index` of `order` (worst first, winner last): the bottom third is upset, the middle third so-so, the top third (and the winner) happy.
@@ -44,7 +56,7 @@ export function pickRobotReaction(tier, last, random = Math.random) {
 // hud: the fixed game container the robot is added to (nothing in it clips, so he can overlap the question board).
 // cardFor(): the TOP score card element (or null). reduceMotion(): true when animation should be skipped.
 export function createQuickRobot({ hud, cardFor, reduceMotion = () => false }) {
-  let el = null, sprite = null, raf = 0, standKey = null, reactKey = null, last = null, stepTimer = 0, idleTimer = 0, reactTimer = 0, held = false, seen = 0;
+  let el = null, sprite = null, sayEl = null, sayKey = null, raf = 0, standKey = null, reactKey = null, last = null, stepTimer = 0, idleTimer = 0, reactTimer = 0, held = false, seen = 0;
 
   function build() {
     el = document.createElement("div");
@@ -88,6 +100,8 @@ export function createQuickRobot({ hud, cardFor, reduceMotion = () => false }) {
       const w = el.offsetWidth, ht = el.offsetHeight;
       const x = Math.round(c.left + c.width / 2 - h.left - w / 2), y = Math.round(c.top - h.top - ht + 5);
       if (el._x !== x || el._y !== y) { el.style.transform = `translate(${x}px, ${y}px)`; el._x = x; el._y = y; }
+      // His bubble takes the room between the question board and the screen edge (never narrower than 84px, never wider than 140px).
+      if (sayEl && board) { const room = el.getBoundingClientRect().right - 2 - board.getBoundingClientRect().right - 8; sayEl.style.maxWidth = Math.round(Math.max(84, Math.min(140, room))) + "px"; }
       // He only steps out once his feet are above the question board (he would be up in the header) or below the score column.
       const colBottom = card.parentElement ? card.parentElement.getBoundingClientRect().bottom : h.bottom;
       off = held || (board && c.top < board.getBoundingClientRect().top) || c.top > colBottom - 4;
@@ -101,6 +115,19 @@ export function createQuickRobot({ hud, cardFor, reduceMotion = () => false }) {
     standKey = reactKey = null; held = false; seen = 0;
     cancelAnimationFrame(raf); raf = 0;
     if (el) { el.classList.remove("on", "reacting"); el.classList.add("off"); }
+    say(null);
+  }
+
+  // A speech bubble above him (once per key; the same words stay for the whole summary). say(null) removes it.
+  function say(key, text = "") {
+    if (key === null || !text) { if (sayEl) { sayEl.remove(); sayEl = null; } sayKey = null; return; }
+    if (!el || sayKey === key) return;
+    sayKey = key;
+    if (sayEl) sayEl.remove();
+    sayEl = document.createElement("div");
+    sayEl.className = "qr-say";
+    sayEl.textContent = text;
+    el.appendChild(sayEl);
   }
 
   // Waiting pose for the whole reveal. key: one value per round.
@@ -159,5 +186,5 @@ export function createQuickRobot({ hud, cardFor, reduceMotion = () => false }) {
     playTier(tier, () => standKey === key && seen === revealIndex);
   }
 
-  return { stand, react, sync, hide, hold: setHeld, get reaction() { return el?.dataset.reaction || null; }, get reacting() { return !!el && el.classList.contains("reacting"); } };
+  return { stand, react, sync, hide, say, hold: setHeld, get reaction() { return el?.dataset.reaction || null; }, get reacting() { return !!el && el.classList.contains("reacting"); } };
 }

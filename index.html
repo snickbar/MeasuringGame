@@ -3835,7 +3835,7 @@ if (location.protocol === "file:") {
   .reveal-card .owner-stamp { position: absolute; top: -14px; right: -6px; z-index: 2; animation: popIn 300ms ease; }
   .reveal-card .owner-stamp .avatar-icon { width: 34px; height: 34px; }
   /* The round winner's avatar dances: hops, leans left and right, and grows a bit more with every hop, then stays big. */
-  .reveal-card.winner .owner-stamp { transform-origin: 70% 100%; animation: winnerDance 1.9s ease-in-out .15s both; }
+  .reveal-card.winner .owner-stamp { transform-origin: 70% 0%; /* the winner grows DOWN over the paper, never up under the question board */ animation: winnerDance 1.9s ease-in-out .15s both; }
   @keyframes winnerDance {
     0%   { transform: translateY(0) rotate(0) scale(1); }
     12%  { transform: translateY(-14px) rotate(0) scale(1.12); }
@@ -5551,7 +5551,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { createPlayLayout, fitRevealStage } from "./anim/play-layout.mjs";
   import { mascotMarkup, installMascotPoses } from "./anim/mascot-poses.mjs";
   import { createCoinPouch } from "./anim/coin-pouch.mjs";
-  import { createQuickRobot } from "./anim/quick-robot.mjs";
+  import { createQuickRobot, robotSaying } from "./anim/quick-robot.mjs";
   import { createPartyAnt } from "./anim/party-ant.mjs";
   import { installHomeScene } from "./anim/home-scene.mjs";
   import { bufferedGuess, quickEligible } from "./anim/powerups.mjs";
@@ -22853,10 +22853,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   // The mascots arrive when the second-chance page does (sliding in from the right, once) and stay through the reveal scene,
   // the reveals and the round summary. While the full-width reveal scene plays they only step aside (no second slide-in after).
+  let quickSayKey = null, quickSayText = "";
   function standMascots(phase) {
     const party = partyAntMode(), quick = (roomState.settings?.mode || "party") === "party" && !!roomState.settings?.solo;
     const key = `${roomState.gameId}:${roomState.round}`, held = phase === "animation";
     if (quick && currentPlayers[currentPlayerId]) { quickRobot.stand(key, held); quickRobot.hold(held); } else quickRobot.hide();
+    // Round summary (Quick is single-player): the robot comments on YOUR guess.
+    if (quick && phase === "summary" && currentPlayers[currentPlayerId]) {
+      const mine = (roomState.revealOrder || []).find((e) => e.playerId === currentPlayerId);
+      const acc = Number(mine?.accuracyPercent);
+      if (Number.isFinite(acc)) { if (quickSayKey !== key) { quickSayKey = key; quickSayText = robotSaying(acc); } quickRobot.say(key, quickSayText); } else quickRobot.say(null); // same words all summary long
+    } else quickRobot.say(null);
     if (party && Object.keys(currentPlayers || {}).length) { partyAnt.use(partyAntSet()); partyAnt.stand(key, held); partyAnt.hold(held); } else partyAnt.hide();
   }
 
@@ -23732,7 +23739,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Party finale: the top three arrive on the podium, with the remaining places below it.
   let partyFinaleToken = 0;
   function partyPodiumStage(ranked, contestants = currentPlayers, mascots = [], confetti = false) {
-    const reduce = prefersReducedMotion(), top = ranked.slice(0, 3), rest = ranked.slice(3);
+    const reduce = prefersReducedMotion(), rest = ranked.filter(e => e.rank > 3);
+    // Players who share a place stand together on that podium spot (one group per place).
+    const top = []; ranked.filter(e => e.rank <= 3).forEach(e => { const g = top.find(t => t.rank === e.rank); if (g) g.members.push(e); else top.push(Object.assign({}, e, { members: [e] })); });
     const thirdAt = 400, secondAt = thirdAt + 1600, firstAt = secondAt + 1800;
     const impactAt = firstAt + 940, doneMs = reduce ? 0 : firstAt + 1500;
     const portrait = p => (p.avatars || [p.avatar]).map(a => avatarHtml(a)).join('');
@@ -23741,7 +23750,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const slots = seats.map((e, seat) => {
       if (!e) return '';
       const p = contestants[e.id];
-      return '<div class="pd-slot pd-seat-'+seat+' r'+Math.min(e.rank,3)+'" data-id="'+escapeHtml(e.id)+'" data-rank="'+e.rank+'"><div class="pd-who">'+(e.rank===1&&e.score>0?'<img class="pd-crown" src="icons/reactions/crown.webp" alt="">':'')+'<div class="pd-portraits">'+portrait(p)+'</div></div><div class="pd-caption"><div class="pd-n">'+escapeHtml(p.name)+'</div><div class="pd-sc">'+e.score+'<small> points</small></div></div></div>';
+      return '<div class="pd-slot pd-seat-'+seat+' r'+Math.min(e.rank,3)+'" data-id="'+escapeHtml(e.id)+'" data-rank="'+e.rank+'"><div class="pd-who">'+(e.rank===1&&e.score>0?'<img class="pd-crown" src="icons/reactions/crown.webp" alt="">':'')+'<div class="pd-portraits">'+e.members.map(m=>portrait(contestants[m.id])).join('')+'</div></div><div class="pd-caption"><div class="pd-n">'+e.members.map(m=>escapeHtml(contestants[m.id].name)).join(' & ')+'</div><div class="pd-sc">'+e.score+'<small> points</small></div></div></div>';
     }).join('');
     // Artwork has fixed numbered seats. Correct its badge when places are shared.
     const badges = seats.map((e,seat) => e && e.rank !== [3,1,2][seat] ? '<div class="pd-rank-correction pd-badge-'+seat+'" aria-label="Shared place '+e.rank+'"><span class="medal '+(e.medal||'gold')+'"></span></div>' : '').join('');
