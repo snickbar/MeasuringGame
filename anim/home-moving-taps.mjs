@@ -13,6 +13,7 @@ export function installMovingHomeTaps(root,home,onTap,definitions){
       image.replaceWith(box);image.className='';image.removeAttribute('style');box.appendChild(image);body=box;
     }
     const gesture=document.createElement('div');gesture.className='hs-moving-gesture'+(def.bug?' hs-bug-gesture':'');
+    if(def.origin)gesture.style.transformOrigin=def.origin;
     while(body.firstChild)gesture.appendChild(body.firstChild);body.appendChild(gesture);
     const hit=document.createElement('button');hit.type='button';hit.className='hs-moving-hit'+(def.bug?' hs-bug-hit':'');
     hit.setAttribute('aria-label',def.label);hit.dataset.subject=def.subject;
