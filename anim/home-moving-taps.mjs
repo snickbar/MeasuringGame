@@ -5,7 +5,13 @@ export function installMovingHomeTaps(root,home,onTap,definitions){
   const visible=()=>root.isConnected&&!document.hidden&&home.classList.contains('active');
   const motion=()=>document.documentElement.dataset.motion!=='reduce'&&!media.matches;
   for(const def of definitions)for(const route of root.querySelectorAll(def.selector)){
-    const body=route.querySelector(def.body||'.hs-crit-img');if(!body)continue;
+    let body=route.querySelector(def.body||'.hs-crit-img');if(!body)continue;
+    // Some visitors are a single image rather than an articulated div. Give
+    // those the same inner reaction layer without changing their travel box.
+    if(body.tagName==='IMG'){
+      const image=body,box=document.createElement('div');box.className=image.className;box.style.cssText=image.style.cssText;box.style.aspectRatio=image.naturalWidth+'/'+image.naturalHeight;
+      image.replaceWith(box);image.className='';image.removeAttribute('style');box.appendChild(image);body=box;
+    }
     const gesture=document.createElement('div');gesture.className='hs-moving-gesture'+(def.bug?' hs-bug-gesture':'');
     while(body.firstChild)gesture.appendChild(body.firstChild);body.appendChild(gesture);
     const hit=document.createElement('button');hit.type='button';hit.className='hs-moving-hit'+(def.bug?' hs-bug-hit':'');
@@ -22,8 +28,8 @@ export function installMovingHomeTaps(root,home,onTap,definitions){
     const react=e=>{
       e.preventDefault();e.stopPropagation();if(!visible()||animation)return;
       onTap();if(!motion())return;
-      fast=[...gesture.querySelectorAll('.hs-wing,.hs-flight-wing')].flatMap(wing=>wing.getAnimations().map(a=>[a,a.playbackRate]));
-      fast.forEach(([wing,speed])=>wing.updatePlaybackRate(speed*4));
+      fast=[...gesture.querySelectorAll(def.speedSelector||'.hs-wing,.hs-flight-wing')].flatMap(wing=>wing.getAnimations().map(a=>[a,a.playbackRate]));
+      fast.forEach(([wing,speed])=>wing.updatePlaybackRate(speed*(def.speed||4)));
       if(def.spriteFrames){
         const order=[0,1,2,3,2,1,0];
         frames=[...gesture.querySelectorAll('.hs-fxf')].map((cell,i)=>cell.animate(order.map((n,j)=>({offset:j/6,opacity:n===i?1:0,easing:'steps(1,end)'})),{duration:420,iterations:3}));
