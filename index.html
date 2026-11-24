@@ -12668,33 +12668,33 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // What the Daily rooster and the Monthly squirrel say after a guess, by how close it was (same tiers as their poses). One is picked at random each time.
   const SOLO_SAYINGS = {
     rooster: {
-      cheer: ["Cock-a-doodle-NAILED it!", "Not a feather out of place!", "That is a perfect strut!"],
-      pleased: ["So close I can crow about it.", "Good guess, nearly there!", "Just a peck away!"],
-      puzzled: ["Hmm, that one ruffled me.", "Not quite what I expected.", "Close-ish? Maybe?"],
-      deflated: ["Well, that did not hatch.", "Back to the coop for you!", "We will not speak of it."],
+      cheer: ["Cock-a-doodle-NAILED it!", "Not a feather out of place!", "That is a perfect strut!", "Egg-cellent! Truly.", "I would crow, but I am speechless."],
+      pleased: ["So close I can crow about it.", "Good guess, nearly there!", "Just a peck away!", "Almost! My comb is tingling.", "One feather off perfect!"],
+      puzzled: ["Hmm, that one ruffled me.", "Not quite what I expected.", "Close-ish? Maybe?", "That guess walked funny.", "I have seen better scratching in dirt."],
+      deflated: ["Well, that did not hatch.", "Back to the coop for you!", "We will not speak of it.", "That guess laid an egg. A bad one.", "I am too young for this to hurt."],
     },
     squirrel: {
-      cheer: ["Nutty good guess!", "You found the acorn!", "Acorn-stounding!"],
-      pleased: ["Almost nutty-perfect!", "Close enough to snack on!", "Good eye, nearly there!"],
-      puzzled: ["Hmm, a bit squirrelly.", "Not quite my acorn.", "I would have guessed different..."],
-      deflated: ["I dropped my acorn.", "That was a bit nuts.", "Back up the tree with you!"],
+      cheer: ["Nutty good guess!", "You found the acorn!", "Acorn-stounding!", "I would bury that guess for later. It is gold.", "Tail-flicking good!"],
+      pleased: ["Almost nutty-perfect!", "Close enough to snack on!", "Good eye, nearly there!", "Just a shell away!", "My cheeks puff with pride!"],
+      puzzled: ["Hmm, a bit squirrelly.", "Not quite my acorn.", "I would have guessed different...", "My tail twitched. Not a good twitch.", "Interesting. Very, very interesting."],
+      deflated: ["I dropped my acorn.", "That was a bit nuts.", "Back up the tree with you!", "I need to bury my face in a log.", "Not even a chipmunk would guess that."],
     },
   };
   // The Worlds fox speaks by stars earned (0-3).
   const WORLD_FOX_SAYINGS = [
-    ["Foxes try again. So can you!", "Not this time, sly one.", "Back in the den, then back at it!"],
-    ["One star in the bag!", "A good start, clever one!", "Let me sniff out a second star."],
-    ["Two stars! Almost outfoxed it.", "So sly, so close!", "One more star, I can smell it."],
-    ["Three stars. Fox-tastic!", "You outfoxed the whole level!", "Sly, sly, sly. Perfect!"],
+    ["Foxes try again. So can you!", "Not this time, sly one.", "Back in the den, then back at it!", "Zero stars. I have seen worse. Barely.", "Even foxes trip over the first hill."],
+    ["One star in the bag!", "A good start, clever one!", "Let me sniff out a second star.", "One star! Fox approves. Slightly.", "Small paw, big step!"],
+    ["Two stars! Almost outfoxed it.", "So sly, so close!", "One more star, I can smell it.", "So close my tail is wagging.", "Two stars and one very smug fox."],
+    ["Three stars. Fox-tastic!", "You outfoxed the whole level!", "Sly, sly, sly. Perfect!", "Three stars! Can I keep one?", "Absolutely foxy. Bow, please."],
   ];
   // What the fox says after each question, by accuracy. Each tier starts with the plain verdict so it still shows up often.
   const WORLD_FOX_ROUND = [
-    [100, ["Perfect!", "Spot on! Sly work!", "Not a whisker off!", "Fox-tastic, dead center!"]],
-    [99, ["The 1%!", "A whisker from perfect!", "So sly, so close!"]],
-    [90, ["So close!", "Sniffing distance!", "Almost had it, clever one!", "Up we go, nearly perfect!"]],
-    [70, ["Nice guess", "Good nose for it!", "Solid. The balloon likes it.", "Not bad at all!"]],
-    [40, ["In the neighborhood", "Warm. Getting warmer!", "Hmm, a bit foggy up here.", "Close enough to see the rooftop."]],
-    [0, ["Way off", "Whoa, that one drifted away!", "Lost in the clouds!", "Hold on, hot air leaking!"]],
+    [100, ["Perfect!", "Spot on! Sly work!", "Not a whisker off!", "Fox-tastic, dead center!", "Did you cheat? I will not tell."]],
+    [99, ["The 1%!", "A whisker from perfect!", "So sly, so close!", "Missed perfect by a whisker hair!", "One tiny paw-step away!"]],
+    [90, ["So close!", "Sniffing distance!", "Almost had it, clever one!", "Up we go, nearly perfect!", "Even my ears twitched."]],
+    [70, ["Nice guess", "Good nose for it!", "Solid. The balloon likes it.", "Not bad at all!", "The balloon is happy. So am I."]],
+    [40, ["In the neighborhood", "Warm. Getting warmer!", "Hmm, a bit foggy up here.", "Close enough to see the rooftop.", "Meh. But a cute meh."]],
+    [0, ["Way off", "Whoa, that one drifted away!", "Lost in the clouds!", "Hold on, hot air leaking!", "I am going to pretend I did not see that."]],
   ];
   const worldFoxRound = (acc) => { const l = WORLD_FOX_ROUND.find(([min]) => acc >= min)[1]; return l[Math.floor(Math.random() * l.length)]; };
   const worldFoxSaying = (stars) => { const l = WORLD_FOX_SAYINGS[Math.max(0, Math.min(3, stars | 0))]; return l[Math.floor(Math.random() * l.length)]; };
@@ -15926,13 +15926,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function wbQuip(ok, ratio) {
     const pick = (list) => list[Math.floor(Math.random() * list.length)];
     if (ok) {
-      if (ratio < 2.5) return pick(["Sharp eyes - that was close!", "Wow, you saw that?!", "Tough one, nailed it!", "Eagle eyes!"]);
-      if (ratio < 12) return pick(["Nice pick!", "You've got a feel for this.", "Smooth.", "Right on."]);
-      return pick(["Easy one!", "Not even close, nice.", "Big and obvious!", "Piece of cake."]);
+      if (ratio < 2.5) return pick(["Sharp eyes - that was close!", "Wow, you saw that?!", "Tough one, nailed it!", "Eagle eyes!", "Are you cheating? Looks legit."]);
+      if (ratio < 12) return pick(["Nice pick!", "You've got a feel for this.", "Smooth.", "Right on.", "Look at you go."]);
+      return pick(["Easy one!", "Not even close, nice.", "Big and obvious!", "Piece of cake.", "Even my cat knew that one."]);
     }
-    if (ratio < 2.5) return pick(["So close - that was a tough call!", "Ooh, razor thin.", "Sneaky one!", "Anyone could miss that."]);
-    if (ratio < 12) return pick(["Hmm, that one fooled you.", "Not quite what it looked like!", "Good guess - wrong one!", "It happens."]);
-    return pick(["Whoa, big gap! Look again next time.", "Ouch, that one was huge!", "Surprising, right?", "Never saw it coming!"]);
+    if (ratio < 2.5) return pick(["So close - that was a tough call!", "Ooh, razor thin.", "Sneaky one!", "Anyone could miss that.", "A coin flip would be proud."]);
+    if (ratio < 12) return pick(["Hmm, that one fooled you.", "Not quite what it looked like!", "Good guess - wrong one!", "It happens.", "Plot twist!"]);
+    return pick(["Whoa, big gap! Look again next time.", "Ouch, that one was huge!", "Surprising, right?", "Never saw it coming!", "Did you see something I did not?"]);
   }
   // Callouts for long streaks (every fifth right pick in a row).
   function wbMilestone(n) {
@@ -23607,13 +23607,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // The bird (High) and shark (Low) each say a line that fits their own result and mood.
       const hlMascotSaying = (d, role, mood) => {
         const l = d.hlLast || {}, ans = d.currentQuestion ? d.currentQuestion.answer : null, bird = role === "high";
-        if (mood === "win") return hlPick(bird ? ["Right on target!", "Soaring high! Nailed it.", "Perfect bracket!"] : ["Right on target!", "Deep dive! Nailed it.", "Perfect bracket!"]);
-        if (mood === "soso") return hlPick(["We'll get the next one!", "Nice try, partner.", "Still in this together.", "My side was fine!"]);
-        if (typeof l.high !== "number" || typeof l.low !== "number" || typeof ans !== "number") return hlPick(["Oops. Next time!", "We'll try again together."]);
+        if (mood === "win") return hlPick(bird ? ["Right on target!", "Soaring high! Nailed it.", "Perfect bracket!", "Wings up! We did it.", "I did not even flap hard."] : ["Right on target!", "Deep dive! Nailed it.", "Perfect bracket!", "Fin-tastic! We did it.", "Jaw-dropping, right?"]);
+        if (mood === "soso") return hlPick(["We'll get the next one!", "Nice try, partner.", "Still in this together.", "My side was fine!", "Do not look at me. Look at them."]);
+        if (typeof l.high !== "number" || typeof l.low !== "number" || typeof ans !== "number") return hlPick(["Oops. Next time!", "We'll try again together.", "Well. That happened.", "Let us pretend that was a warm-up.", "Back to the drawing board."]);
         const mine = bird ? l.high >= ans : l.low <= ans;
-        if (!mine) return hlPick(bird ? ["I went too low. Sorry!", "Too low, that was on me."] : ["I went too high. Sorry!", "Too high, that was on me."]);
-        if (l.tooWide) return hlPick(["Our gap was too wide!", "We stretched too far.", "Too big a gap. Sorry!"]);
-        return hlPick(["Oops. We'll try again!", "We'll get it next time."]);
+        if (!mine) return hlPick(bird ? ["I went too low. Sorry!", "Too low, that was on me.", "My wings let me down!", "I flew into the ground. Oops.", "I should have gone higher!"] : ["I went too high. Sorry!", "Too high, that was on me.", "I swam too far up. Sorry!", "That fin pointed the wrong way.", "I should have dived lower!"]);
+        if (l.tooWide) return hlPick(["Our gap was too wide!", "We stretched too far.", "Too big a gap. Sorry!", "We are not a team, we are a canyon.", "The answer got lost between us."]);
+        return hlPick(["Oops. We'll try again!", "We'll get it next time.", "So close, yet so splat.", "Deep breath. Again!", "We still make a great team."]);
       };
       const hlMascotMood = (d, role) => {
         const l = d.hlLast || {}, ans = d.currentQuestion ? d.currentQuestion.answer : null;

@@ -20,21 +20,21 @@ export function antSaying(order, nameOf = () => "", random = Math.random) {
   if (!Number.isFinite(acc)) return "";
   const second = n > 1 ? Number(order[n - 2].accuracyPercent) : NaN;
   const name = nameOf(best.playerId) || "Someone";
-  if (n > 1 && Number.isFinite(second) && second === acc) return pick(["A tie! Split the crumbs.", "Dead even! Ant-ticlimactic.", "Two winners. Share the sugar!"], random);
-  if (acc >= 95) return pick([`Bullseye, ${name}! Ant-credible.`, `${name} nailed it! Antastic.`, `Wow, ${name}! Spot on.`], random);
-  if (acc < 40) return pick(["Nobody close. Even my antennae know better.", "Whoa, far off! Back to the anthill.", "Not one near it. Keep trying!"], random);
-  if (n > 1 && Number.isFinite(second) && acc - second < 5) return pick(["Tiny gap! This colony is sharp.", "So close, you two! Antsy finish."], random);
-  return pick([`${name} wins the round!`, `Nice one, ${name}! Ant-tastic.`, `${name} takes the crumb!`], random);
+  if (n > 1 && Number.isFinite(second) && second === acc) return pick(["A tie! Split the crumbs.", "Dead even! Ant-ticlimactic.", "Two winners. Share the sugar!", "Neck and neck. Antennae to antennae!", "A tie? I counted twice. Six legs, no help."], random);
+  if (acc >= 95) return pick([`Bullseye, ${name}! Ant-credible.`, `${name} nailed it! Antastic.`, `Wow, ${name}! Spot on.`, `${name}! Are you secretly a ruler?`, `Six legs up for ${name}!`], random);
+  if (acc < 40) return pick(["Nobody close. Even my antennae know better.", "Whoa, far off! Back to the anthill.", "Not one near it. Keep trying!", "You all guessed with your eyes closed, huh?", "I have tiny eyes and even I saw that."], random);
+  if (n > 1 && Number.isFinite(second) && acc - second < 5) return pick(["Tiny gap! This colony is sharp.", "So close, you two! Antsy finish.", "A hair apart! Ant-azing.", "Photo finish! Check the crumbs.", "Barely a whisker between you!"], random);
+  return pick([`${name} wins the round!`, `Nice one, ${name}! Ant-tastic.`, `${name} takes the crumb!`, `${name} gets the biggest crumb!`, `Marching to victory, ${name}!`], random);
 }
 // The cats and dogs are the game's mascots, not a team: they comment on the whole round. totals: {teamColor: points this round} for every team.
 export function teamSaying(set, totals, random = Math.random) {
   const teams = Object.keys(totals).filter((t) => Number.isFinite(totals[t]));
   if (!teams.length) return "";
   const cats = set === "cats", top = Math.max(...teams.map((t) => totals[t])), leaders = teams.filter((t) => totals[t] === top);
-  if (top <= 0) return pick(cats ? ["Not one point? Meow-ch.", "Nobody scored. Next round!"] : ["No points! Ruff round.", "Nobody scored. Fetch some next time!"], random);
-  if (leaders.length > 1) return pick(cats ? ["A tie! Meow-vellous.", "Dead even. Cat nap?"] : ["A tie! Bone-afide.", "Dead even! Fetch a rematch."], random);
+  if (top <= 0) return pick(cats ? ["Not one point? Meow-ch.", "Nobody scored. Next round!", "Zero points. I knocked it off the table.", "Not a single point. Hiss-terical.", "Even my nap was more productive."] : ["No points! Ruff round.", "Nobody scored. Fetch some next time!", "Zero points. I ate the scoreboard.", "No score? Sit. Stay. Try again.", "My tail wags for next round!"], random);
+  if (leaders.length > 1) return pick(cats ? ["A tie! Meow-vellous.", "Dead even. Cat nap?", "Tied! We share the tuna.", "Same score. Spooky. Mew-tual.", "A tie! I was going to knock it over anyway."] : ["A tie! Bone-afide.", "Dead even! Fetch a rematch.", "Tied! Everybody gets a treat.", "Same score. Paws-itively odd!", "A tie! I chased my tail, same result."], random);
   const w = leaders[0][0].toUpperCase() + leaders[0].slice(1) + " team";
-  return pick(cats ? [`${w} takes it! Purr-fect.`, `Nice round, ${w}!`] : [`Woof! ${w} wins the round!`, `Good job, ${w}!`], random);
+  return pick(cats ? [`${w} takes it! Purr-fect.`, `Nice round, ${w}!`, `${w} wins! Paw-some.`, `${w}, you are the cat's whiskers!`, `${w} gets the cream!`] : [`Woof! ${w} wins the round!`, `Good job, ${w}!`, `${w} is a good one! Who is a good one?`, `${w} gets the biggest bone!`, `Paws up for ${w}!`], random);
 }
 
 export function createPartyAnt({ hud, cardFor, reduceMotion = () => false }) {

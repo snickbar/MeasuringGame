@@ -27,11 +27,11 @@ const ART = (id) => id === "idle-sheet" ? "anim/mode-mascots/quick-robot-idle-sh
 
 // What the robot says about YOUR guess on the round summary (Quick is a single-player game), by accuracy.
 export const ROBOT_SAYINGS = [
-  [100, ["Beep boop: PERFECT!", "Calculations confirm: flawless!", "100%! My circuits are dancing!", "Bullseye. Beep!"]],
-  [90, ["So close! Beep boop!", "Almost perfect! My sensors tingle.", "Within the margin. Nice!", "Scanning... impressive!"]],
-  [70, ["Nice guess! Beep!", "Solid reading, human!", "Systems say: good job.", "Processing... that is respectable."]],
-  [40, ["Hmm, in the neighborhood.", "Recalibrating... a bit off.", "Warm. My sensors say warm.", "Not bad, not great. Beep."]],
-  [0, ["Error! Way off, human!", "Does not compute!", "Beep... that guess drifted.", "Rebooting hope for next round."]],
+  [100, ["Beep boop: PERFECT!", "Calculations confirm: flawless!", "100%! My circuits are dancing!", "Bullseye. Beep!", "Are you a robot too? Respect."]],
+  [90, ["So close! Beep boop!", "Almost perfect! My sensors tingle.", "Within the margin. Nice!", "Scanning... impressive!", "So close I almost blew a fuse."]],
+  [70, ["Nice guess! Beep!", "Solid reading, human!", "Systems say: good job.", "Processing... that is respectable.", "Beep! Upgrading you to decent."]],
+  [40, ["Hmm, in the neighborhood.", "Recalibrating... a bit off.", "Warm. My sensors say warm.", "Not bad, not great. Beep.", "My oil can says: meh."]],
+  [0, ["Error! Way off, human!", "Does not compute!", "Beep... that guess drifted.", "Rebooting hope for next round.", "Was that a guess or a sneeze? Beep."]],
 ];
 export function robotSaying(accuracy, random = Math.random) {
   const list = ROBOT_SAYINGS.find(([min]) => accuracy >= min)[1];
