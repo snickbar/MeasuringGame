@@ -22873,7 +22873,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         partySayKey = key;
         const set = partyAntSet();
         if (set === "ant") partySayText = antSaying(roomState.revealOrder || [], (id) => currentPlayers[id]?.name);
-        else { const t = { red: 0, blue: 0 }; Object.keys(currentPlayers).forEach((id) => { const tm = currentPlayers[id].team; if (tm in t && t[tm] === 0) t[tm] = roomState.lastRoundPoints?.[id] || 0; }); partySayText = teamSaying(set, t); }
+        else { const t = {}; Object.keys(currentPlayers).forEach((id) => { const tm = currentPlayers[id].team; if (tm && !(tm in t)) t[tm] = roomState.lastRoundPoints?.[id] || 0; }); partySayText = teamSaying(set, t); }
       }
       partyAnt.say(key, partySayText);
     } else partyAnt.say(null);
@@ -23767,9 +23767,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // Artwork has fixed numbered seats. Correct its badge when places are shared.
     const badges = seats.map((e,seat) => e && e.rank !== [3,1,2][seat] ? '<div class="pd-rank-correction pd-badge-'+seat+'" aria-label="Shared place '+e.rank+'"><span class="medal '+(e.medal||'gold')+'"></span></div>' : '').join('');
     const mascotDelay = reduce ? 0 : impactAt + 250;
-    const mascotHtml = mascots.map(([src, variant, reaction, openPose]) => {
+    const mascotHtml = mascots.map(([src, variant, reaction, openPose], mi) => {
       const id=variant==='pd-m-ant'?(reduce?'ant':null):src.includes('team-cats')?'cats':src.includes('team-dogs')?'dogs':null;
-      if(id)return '<span class="pd-mascot mp-podium '+variant+'" aria-hidden="true">'+mascotMarkup(id,reaction==='clap'?'soso':'win',{key:roomState.gameId+':final:'+id,delay:mascotDelay,still:reduce})+'</span>';
+      if(id)return '<span class="pd-mascot mp-podium '+variant+'" aria-hidden="true">'+mascotMarkup(id,reaction==='clap'?'soso':'win',{key:roomState.gameId+':final:'+id,delay:mascotDelay+mi*1300,still:reduce})+'</span>';
       if (variant === "pd-m-ant" && !reduce) return `<span class="pd-mascot pd-m-ant" style="--pd-at:${mascotDelay}ms" aria-hidden="true">
         <img class="pd-ant-flag" src="${src}" alt="" draggable="false">
         <img class="pd-ant-step pd-ant-step-one" src="anim/mode-mascots/classic-ant-step-one.webp" alt="" draggable="false">
