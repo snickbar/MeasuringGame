@@ -3835,7 +3835,7 @@ if (location.protocol === "file:") {
   .reveal-card .owner-stamp { position: absolute; top: -14px; right: -6px; z-index: 2; animation: popIn 300ms ease; }
   .reveal-card .owner-stamp .avatar-icon { width: 34px; height: 34px; }
   /* The round winner's avatar dances: hops, leans left and right, and grows a bit more with every hop, then stays big. */
-  .reveal-card.winner .owner-stamp { transform-origin: 70% 0%; /* the winner grows DOWN over the paper, never up under the question board */ animation: winnerDance 1.9s ease-in-out .15s both; }
+  .reveal-card.winner .owner-stamp { animation: winnerDance 1.9s ease-in-out .15s both; }
   @keyframes winnerDance {
     0%   { transform: translateY(0) rotate(0) scale(1); }
     12%  { transform: translateY(-14px) rotate(0) scale(1.12); }
@@ -22854,6 +22854,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // The mascots arrive when the second-chance page does (sliding in from the right, once) and stay through the reveal scene,
   // the reveals and the round summary. While the full-width reveal scene plays they only step aside (no second slide-in after).
   let quickSayKey = null, quickSayText = "";
+  // At the top of the result screens nothing is scrolled behind the board, so the winner's avatar may be drawn over it; once the papers scroll, they pass behind the board again.
+  (() => { const mc = document.querySelector(".main-col"); if (!mc) return; const upd = () => hudEl.classList.toggle("rv-at-top", mc.scrollTop <= 2); mc.addEventListener("scroll", upd, { passive: true }); upd(); })();
   function standMascots(phase) {
     const party = partyAntMode(), quick = (roomState.settings?.mode || "party") === "party" && !!roomState.settings?.solo;
     const key = `${roomState.gameId}:${roomState.round}`, held = phase === "animation";
