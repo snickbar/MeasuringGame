@@ -20,7 +20,7 @@ export function watermelonPushPose(time,frontX){
   };
   return{angle,dx,rear:helper(true),front:helper(false)};
 }
-export function installWatermelonPush(root,home,extras){
+export function installWatermelonPush(root,home,extras,onTap=()=>{}){
   const stage=root.querySelector('.hs-stage'),melon=stage.querySelector('.hs-back'),image=melon.querySelector('img');
   const sheet=extras.get('stories/helper-ants.webp');
   const visitors=[true,false].map(()=>{
@@ -52,7 +52,10 @@ export function installWatermelonPush(root,home,extras){
   function tick(now){if(!active()){reset();return;}start??=now;const time=now-start;render(time);if(time<DURATION)frame=requestAnimationFrame(tick);else reset();}
   function react(role){
     if(role!==1)return false;
-    if(active()&&!playing){playing=true;root.dataset.melonPushing='true';frame=requestAnimationFrame(tick);}
+    if(!playing&&!disposed&&root.isConnected&&!document.hidden&&home.classList.contains('active')){
+      onTap();
+      if(active()){playing=true;root.dataset.melonPushing='true';frame=requestAnimationFrame(tick);}
+    }
     return true;
   }
   const sync=()=>{if(!active())reset();};

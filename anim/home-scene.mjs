@@ -10,6 +10,7 @@ import { decorateHomeIdle } from './home-idle.mjs';
 import { KITCHEN_TOOL_CROPS } from './home-idle-art.mjs';
 import { decorateHomeStories } from './home-stories.mjs';
 import { installWatermelonPush } from './home-watermelon.mjs';
+import { installBackyardBugs } from './home-backyard.mjs';
 const BASE = "anim/home-art/";
 const CUSTOM_HOME_SIZE = { width: 900, height: 1950 };
 const CUSTOM_HOME = {
@@ -123,7 +124,7 @@ async function buildHomeScene(home, scene, current) {
   rig = homeRigMotion(scene, rig, art);
   const extraFiles = HOME_EXTRA_ART[scene] || [];
   // Optimized builds omit the old whole hero when a rig supplies its base.
-  const files = [scene==='house' ? null : art.plate, rig?.base ? null : art.hero, art.hero2, ...art.critters];
+  const files = [scene==='house' ? null : scene==='ants'?{file:'plate-ants-v2.webp'}:art.plate, rig?.base ? null : art.hero, art.hero2, ...art.critters];
   const rigFiles = rig ? [rig.base, rig.hero2, ...rig.parts, ...rig.patches, ...(rig.fx || []).flatMap(f => f.frames), ...(rig.critFrames || []).flatMap(f => f.frames)].filter(Boolean) : [];
   const [extraImages, [loadedPlate, originalHero, originalHero2, ...crits], rigImages] = await Promise.all([
     Promise.all(extraFiles.map(file => load(BASE + file))),
@@ -328,9 +329,10 @@ async function buildHomeScene(home, scene, current) {
   decorateHomeIdle(root,scene,extras,KITCHEN_TOOL_CROPS);
   const disposeStories=decorateHomeStories(root,home,scene,extras);
   mountHomeStage(home, scene, root, stage, HOME_ART_REF, () => {
-    const melonPush=scene==='ants'?installWatermelonPush(root,home,extras):null;
+    const melonPush=scene==='ants'?installWatermelonPush(root,home,extras,()=>boing(scene,1)):null;
+    const disposeBugs=scene==='ants'?installBackyardBugs(root,home,()=>boing(scene,0)):()=>{};
     interactions = installHomeInteractions(root, home, scene, boing, stopHomeSound, role=>melonPush?.react(role));
-    return () => { interactions.cleanup(); melonPush?.cleanup(); disposeStories(); };
+    return () => { interactions.cleanup(); melonPush?.cleanup(); disposeBugs(); disposeStories(); };
   });
 }
 function mountHomeStage(home, scene, root, stage, ref, start) {
