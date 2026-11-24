@@ -3491,6 +3491,9 @@ if (location.protocol === "file:") {
   .hl-sum-card .sv-heart { width: 56px; }
   .hl-sum-card .hl-sub { font-size: 16px; }
   .hl-sumplayer { grid-template-columns: auto minmax(0,1fr) auto; }
+  .hl-sumplayer { position: relative; }
+  .hl-say { position: absolute; left: 70px; right: 108px; top: -16px; width: fit-content; max-width: calc(100% - 178px); padding: 4px 9px; font-size: 12.5px; line-height: 1.15; text-align: center; z-index: 2; }
+  .hl-say.solo-bubble-down::before { left: 20px; margin-left: 0; }
   .hl-sum-mascot { position: relative; display: block; width: 84px; height: 84px; transform: scaleX(-1); filter: drop-shadow(0 2px 2px rgba(74,44,18,.3)); }
   .hl-sum-stats span { font-size: 12px; font-weight: 700; color: #000; }
   .hl-br { text-align: center; }
@@ -23600,6 +23603,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const hlAvg = data.hlOffRounds ? data.hlOffSum / data.hlOffRounds : null;
       // Each mascot reacts to ITS player's pick: the High pick must not be under the answer, the Low pick must not be over it.
       // Survived: both happy. Gap too big (or crossed) or both picks on the wrong side: both sad. Only one pick on the wrong side: that one sad, the other neutral ("soso") - never one happy and one sad.
+      const hlPick = (list) => list[Math.floor(Math.random() * list.length)];
+      // The bird (High) and shark (Low) each say a line that fits their own result and mood.
+      const hlMascotSaying = (d, role, mood) => {
+        const l = d.hlLast || {}, ans = d.currentQuestion ? d.currentQuestion.answer : null, bird = role === "high";
+        if (mood === "win") return hlPick(bird ? ["Right on target!", "Soaring high! Nailed it.", "Perfect bracket!"] : ["Right on target!", "Deep dive! Nailed it.", "Perfect bracket!"]);
+        if (mood === "soso") return hlPick(["We'll get the next one!", "Nice try, partner.", "Still in this together.", "My side was fine!"]);
+        if (typeof l.high !== "number" || typeof l.low !== "number" || typeof ans !== "number") return hlPick(["Oops. Next time!", "We'll try again together."]);
+        if (l.crossed) return hlPick(["Our picks crossed. Oops!", "Wrong way round! Sorry."]);
+        if (l.tooWide) return hlPick(["Our gap was too wide!", "We stretched too far.", "Too big a gap. Sorry!"]);
+        const mine = bird ? l.high >= ans : l.low <= ans;
+        if (!mine) return hlPick(bird ? ["I went too low. Sorry!", "Too low, that was on me."] : ["I went too high. Sorry!", "Too high, that was on me."]);
+        return hlPick(["Oops. We'll try again!", "We'll get it next time."]);
+      };
       const hlMascotMood = (d, role) => {
         const l = d.hlLast || {}, ans = d.currentQuestion ? d.currentQuestion.answer : null;
         if (l.passed) return "win";
@@ -23608,7 +23624,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (highOk === lowOk) return "lose";
         return (role === "high" ? highOk : lowOk) ? "soso" : "lose";
       };
-      const hlPlayer = (e) => e ? `<div class="dc-card dc-hot tw-sumrow hl-sumplayer"><span class="avatar">${avatarHtml((currentPlayers[e.playerId] || {}).avatar)}</span><span class="name hl-has-chip"><span class="hl-nm">${escapeHtml(e.name || "")}</span>${e.role ? hlChipHtml(e.role) : ""}</span>${e.role ? `<span class="hl-sum-mascot hl-sum-${e.role === "high" ? "bird" : "shark"}">${mascotMarkup(e.role === "high" ? "hlbird" : "hlshark", hlMascotMood(data, e.role), { key: data.gameId + ":" + data.round + ":" + e.role, delay: 500, still: prefersReducedMotion() })}</span>` : ""}</div>` : "";
+      const hlPlayer = (e) => e ? `<div class="dc-card dc-hot tw-sumrow hl-sumplayer"><span class="avatar">${avatarHtml((currentPlayers[e.playerId] || {}).avatar)}</span><span class="name hl-has-chip"><span class="hl-nm">${escapeHtml(e.name || "")}</span>${e.role ? hlChipHtml(e.role) : ""}</span>${e.role ? `<span class="solo-bubble solo-bubble-down hl-say">${escapeHtml(hlMascotSaying(data, e.role, hlMascotMood(data, e.role)))}</span>` : ""}${e.role ? `<span class="hl-sum-mascot hl-sum-${e.role === "high" ? "bird" : "shark"}">${mascotMarkup(e.role === "high" ? "hlbird" : "hlshark", hlMascotMood(data, e.role), { key: data.gameId + ":" + data.round + ":" + e.role, delay: 500, still: prefersReducedMotion() })}</span>` : ""}</div>` : "";
       const bottlesNow = data.hlLives ?? (data.settings?.lives || HL_LIVES);
       const lostOne = (data.hlLast?.previousLives ?? bottlesNow) > bottlesNow;
       sLi.innerHTML = hlPlayer(entries[0])
