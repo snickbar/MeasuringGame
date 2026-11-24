@@ -6,6 +6,7 @@ import { HOME_RIG } from '../anim/home-art-rig.mjs';
 import { HOME_LAYER_SHEETS } from '../anim/home-layer-sheets.mjs';
 import { HOME_LAYER_PLACEMENTS } from '../anim/home-layer-art.mjs';
 import { NEW_HOME_SPRITES } from '../anim/home-new-art.mjs';
+import { watermelonPushPose } from '../anim/home-watermelon.mjs';
 const css=['home-motion.css','home-new-scenes.css'].map(file=>fs.readFileSync(new URL('../anim/'+file,import.meta.url),'utf8')).join('\n');
 assert.equal(Object.keys(HOME_MOTION).length,18);
 for(const [scene,motion]of Object.entries(HOME_MOTION)){
@@ -13,7 +14,10 @@ for(const [scene,motion]of Object.entries(HOME_MOTION)){
  assert.equal(JSON.stringify(HOME_RIG[scene]),original,'Generated art metadata stays untouched');
  assert.equal(motion.taps.length,2);assert.notEqual(...motion.taps);
  assert(![motion.hero,motion.prop].includes('breathe'),'No old rubbery whole-object animation');
- for(const tap of motion.taps)assert(css.includes('[data-reaction~='+tap+']'),'A visual response exists for '+tap);
+ for(const tap of motion.taps){
+  if(tap==='melon-push')assert(watermelonPushPose(3450,650).angle<0&&watermelonPushPose(8000,650).front===null,'The scripted melon story leans and exits');
+  else assert(css.includes('[data-reaction~='+tap+']'),'A visual response exists for '+tap);
+ }
  for(const entry of (rig?[rig.base,rig.hero2,...rig.parts,...rig.patches,...rig.fx.flatMap(f=>f.frames)]:[]).filter(Boolean)){
   assert(entry.file.endsWith('.webp'));assert(fs.existsSync(new URL('../anim/home-art/top/'+entry.file,import.meta.url)));
  }

@@ -9,6 +9,7 @@ import { HOME_MOTION, HOME_EXTRA_ART, homeRigMotion, decorateHomeProps, decorate
 import { decorateHomeIdle } from './home-idle.mjs';
 import { KITCHEN_TOOL_CROPS } from './home-idle-art.mjs';
 import { decorateHomeStories } from './home-stories.mjs';
+import { installWatermelonPush } from './home-watermelon.mjs';
 const BASE = "anim/home-art/";
 const CUSTOM_HOME_SIZE = { width: 900, height: 1950 };
 const CUSTOM_HOME = {
@@ -327,8 +328,9 @@ async function buildHomeScene(home, scene, current) {
   decorateHomeIdle(root,scene,extras,KITCHEN_TOOL_CROPS);
   const disposeStories=decorateHomeStories(root,home,scene,extras);
   mountHomeStage(home, scene, root, stage, HOME_ART_REF, () => {
-    interactions = installHomeInteractions(root, home, scene, boing, stopHomeSound);
-    return () => { interactions.cleanup(); disposeStories(); };
+    const melonPush=scene==='ants'?installWatermelonPush(root,home,extras):null;
+    interactions = installHomeInteractions(root, home, scene, boing, stopHomeSound, role=>melonPush?.react(role));
+    return () => { interactions.cleanup(); melonPush?.cleanup(); disposeStories(); };
   });
 }
 function mountHomeStage(home, scene, root, stage, ref, start) {

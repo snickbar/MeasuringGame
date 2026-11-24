@@ -4,7 +4,7 @@ import { decorateNewHomeProp, decorateNewHomeHero } from './home-new-scenes.mjs'
 // Hand-authored motion sits beside the generated artwork recipes: rebuilding the
 // WebP rigs must not overwrite timing, attachment points or tap behaviour.
 export const HOME_MOTION = {
-  ants:       { hero: "balance", prop: null,       taps: ["ant-wave", "melon-shine"] },
+  ants:       { hero: "balance", prop: null,       taps: ["ant-wave", "melon-push"] },
   sunflower:  { hero: "balance", prop: "stem",     taps: ["ladybug-flutter", "flower-nod"] },
   games:      { hero: null,      prop: null,       taps: ["cube-turn", "board-rock"] },
   house:      { hero: null,      prop: null,       taps: ["can-fizz", "fridge-glint"] },
@@ -25,6 +25,7 @@ export const HOME_MOTION = {
 };
 export const HOME_EXTRA_ART = Object.fromEntries(Object.entries(HOME_MOTION).map(([scene]) => {
   const p=HOME_LAYER_PLACEMENTS[scene], files=p?[HOME_LAYER_SHEETS[p.id].file]:[];
+  if(scene==='ants')files.push('stories/helper-ants.webp');
   if(scene==='toy-box')files.push('refined/robot-arm-parts.webp','../../items/beach-ball.webp');
   if(scene==='corgi')files.push('refined/kibble.webp');
   if(scene==='house')files.push('refined/mouse-cheese-walk.webp','fridge-clean-v2.webp','fridge-magnets-v2.webp');
@@ -108,7 +109,7 @@ export function decorateHomeProps(scene, { hop, img, spec, extras }) {
       const pane=document.createElement('i');pane.className='hs-lamp-pane';pane.style.clipPath=`polygon(${polygon(points)})`;hop.appendChild(pane);
     }
   }
-  if (["ants", "games", "house", "space"].includes(scene)) sheen(hop, img);
+  if (["games", "house", "space"].includes(scene)) sheen(hop, img);
   if (scene === "space") {
     img.style.clipPath = "polygon(evenodd, 0 0,100% 0,100% 100%,0 100%,0 0,39% 84%,62% 84%,62% 100%,39% 100%,39% 84%,0 0)";
     hop.querySelector(".hs-sheen").style.clipPath = img.style.clipPath;
@@ -180,12 +181,13 @@ export function decorateHomeHero(scene, { hop, img, base, W, H, extras }) {
   return {};
 }
 
-export function installHomeInteractions(root, home, scene, sound, stopSound = () => {}) {
+export function installHomeInteractions(root, home, scene, sound, stopSound = () => {}, customReact = () => false) {
   const feedback=new Map();
   const refresh=()=>{const tokens=[...feedback.keys()].map(role=>HOME_MOTION[scene].taps[role]);if(tokens.length)root.dataset.reaction=tokens.join(' ');else delete root.dataset.reaction;};
   const reset = () => { for(const timer of feedback.values())clearTimeout(timer);feedback.clear();refresh(); };
   function react(role) {
     if (![0,1].includes(role)||feedback.has(role)||document.hidden || !root.isConnected || !home.classList.contains("active")) return;
+    if(customReact(role)){return;}
     const signature=el=>{const s=getComputedStyle(el);return [s.animationName,s.animationDuration,s.animationIterationCount].join('|');};
     const previous=new Map([...root.querySelectorAll('*')].map(el=>[el,signature(el)]));
     feedback.set(role,null);void root.offsetWidth;refresh();
