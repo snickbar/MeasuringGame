@@ -11,8 +11,34 @@ export function antTier(index, count) {
   return "soso";
 }
 
+// What the ant says about the round on the summary, from the reveal order (worst first, winner last).
+const pick = (list, random) => list[Math.floor(random() * list.length)];
+export function antSaying(order, nameOf = () => "", random = Math.random) {
+  const n = order.length;
+  if (!n) return "";
+  const best = order[n - 1], acc = Number(best.accuracyPercent);
+  if (!Number.isFinite(acc)) return "";
+  const second = n > 1 ? Number(order[n - 2].accuracyPercent) : NaN;
+  const name = nameOf(best.playerId) || "Someone";
+  if (n > 1 && Number.isFinite(second) && second === acc) return pick(["A tie! Split the crumbs.", "Dead even! Ant-ticlimactic.", "Two winners. Share the sugar!"], random);
+  if (acc >= 95) return pick([`Bullseye, ${name}! Ant-credible.`, `${name} nailed it! Antastic.`, `Wow, ${name}! Spot on.`], random);
+  if (acc < 40) return pick(["Nobody close. Even my antennae know better.", "Whoa, far off! Back to the anthill.", "Not one near it. Keep trying!"], random);
+  if (n > 1 && Number.isFinite(second) && acc - second < 5) return pick(["Tiny gap! This colony is sharp.", "So close, you two! Antsy finish."], random);
+  return pick([`${name} wins the round!`, `Nice one, ${name}! Ant-tastic.`, `${name} takes the crumb!`], random);
+}
+// Cats are the blue team, dogs the red team; they talk about their own team's round. totals: {red, blue} points this round.
+export function teamSaying(set, totals, random = Math.random) {
+  const mine = set === "cats" ? totals.blue : totals.red, theirs = set === "cats" ? totals.red : totals.blue;
+  if (!Number.isFinite(mine) || !Number.isFinite(theirs)) return "";
+  const team = set === "cats" ? "Blue" : "Red";
+  const cheer = set === "cats" ? "Paws up!" : "Woof woof!";
+  if (mine === theirs) return pick(set === "cats" ? ["Dead even. Cat nap?", "A tie! Meow-vellous."] : ["Dead even! Fetch a rematch.", "A tie! Bone-afide."], random);
+  if (mine > theirs) return pick([`${cheer} ${team} takes the round!`, set === "cats" ? "Purr-fect round!" : "That one was in the bag!"], random);
+  return pick(set === "cats" ? ["Hiss! We were robbed. Next round!", "Cat-astrophe! We'll get them."] : ["Ruff round. We'll fetch it next time!", "Bark! They got lucky."], random);
+}
+
 export function createPartyAnt({ hud, cardFor, reduceMotion = () => false }) {
-  let el = null, img = null, raf = 0, standKey = null, seen = 0, stepTimer = 0, calmTimer = 0, held = false, setName = "ant";
+  let el = null, img = null, sayEl = null, sayKey = null, raf = 0, standKey = null, seen = 0, stepTimer = 0, calmTimer = 0, held = false, setName = "ant";
 
   function build() {
     el = document.createElement("div");
@@ -45,6 +71,7 @@ export function createPartyAnt({ hud, cardFor, reduceMotion = () => false }) {
       const w = el.offsetWidth, ht = el.offsetHeight;
       const x = Math.round(c.left + c.width / 2 - h.left - w / 2), y = Math.round(c.top - h.top - ht + 5);
       if (el._x !== x || el._y !== y) { el.style.transform = `translate(${x}px, ${y}px)`; el._x = x; el._y = y; }
+      if (sayEl && board) { const room = el.getBoundingClientRect().right - 2 - board.getBoundingClientRect().right - 8; sayEl.style.maxWidth = Math.round(Math.max(84, Math.min(140, room))) + "px"; }
       const colBottom = card.parentElement ? card.parentElement.getBoundingClientRect().bottom : h.bottom;
       off = held || (board && c.top < board.getBoundingClientRect().top) || c.top > colBottom - 4;
     }
@@ -52,7 +79,20 @@ export function createPartyAnt({ hud, cardFor, reduceMotion = () => false }) {
     raf = requestAnimationFrame(place);
   }
 
+  // A speech bubble above the mascot, once per key (say(null) removes it). Styled like the Quick robot's.
+  function say(key, text = "") {
+    if (key === null || !text) { if (sayEl) { sayEl.remove(); sayEl = null; } sayKey = null; return; }
+    if (!el || sayKey === key) return;
+    sayKey = key;
+    if (sayEl) sayEl.remove();
+    sayEl = document.createElement("div");
+    sayEl.className = "qr-say";
+    sayEl.textContent = text;
+    el.appendChild(sayEl);
+  }
+
   function hide() {
+    say(null);
     clearTimeout(calmTimer); clearInterval(stepTimer);
     standKey = null; seen = 0;
     cancelAnimationFrame(raf); raf = 0;
@@ -96,5 +136,5 @@ export function createPartyAnt({ hud, cardFor, reduceMotion = () => false }) {
     }, 300); // `revealIndex` only counts papers that are completely revealed, flair included; a short beat, then he reacts
   }
 
-  return { stand, sync, hide, use, hold: setHeld, get reaction() { return el?.dataset.reaction || null; } };
+  return { stand, sync, hide, use, say, hold: setHeld, get reaction() { return el?.dataset.reaction || null; } };
 }

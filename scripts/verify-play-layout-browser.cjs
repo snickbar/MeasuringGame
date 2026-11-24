@@ -141,6 +141,7 @@ window.__layoutDailyResult=async()=>{await window.__layoutAudit('daily');daily.g
 window.__layoutReaction=pid=>{if(window.__rxd)return document.querySelectorAll('.rx-from').length;window.__rxd=1;const sc=document.getElementById('score-col');if(sc)sc.scrollTop=0;renderReactionBubble({playerId:pid,emoji:Object.keys(REACTIONS)[0],at:Date.now()});return document.querySelectorAll('.rx-from').length;};
 window.__layoutWorldsDone=st=>{const q={unitId:'donut',targetId:'watermelon',answer:3,prompt:'x'};wl.questions=[q,q,q];wl.guesses=[3,3,3];wl.stars=st;wl.runId='audit';wl.phase='done';renderWorlds();return 1;};
 window.__layoutWorldsResult=acc=>{const q={unitId:'donut',targetId:'watermelon',answer:3,prompt:'x'};wl.questions=[q,q,q,q,q];wl.guesses=[3*acc,3];wl.runId='audit';wl.phase='result';renderWorlds();return 1;};
+window.__layoutNotSolo=()=>{roomState.settings.solo=false;roomState.lastRoundPoints={me:5,friend:5,third:3,fourth:3};return 1;};
 window.__layoutSummaryKeep=()=>{stopAnimation();animScene=null;animSceneRound=null;roomState.phase='summary';applyPhase(roomState);return 1;};
 window.__layoutExitConfirm=async()=>{await window.__layoutAudit('daily');openExitConfirm('quickResume','Resume your Quick Game?','Round 2 of 5 is saved. Pick up where you left off, or start a new game (this drops the saved one).','Resume','Start new');};
 window.__layoutMenuShot=async kind=>{exitConfirmOverlayEl.classList.remove('show');await window.__layoutAudit(kind==='survival'?'survival':kind==='wb'?'whichbigger':'worlds');

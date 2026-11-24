@@ -5552,7 +5552,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { mascotMarkup, installMascotPoses } from "./anim/mascot-poses.mjs";
   import { createCoinPouch } from "./anim/coin-pouch.mjs";
   import { createQuickRobot, robotSaying } from "./anim/quick-robot.mjs";
-  import { createPartyAnt } from "./anim/party-ant.mjs";
+  import { createPartyAnt, antSaying, teamSaying } from "./anim/party-ant.mjs";
   import { installHomeScene } from "./anim/home-scene.mjs";
   import { bufferedGuess, quickEligible } from "./anim/powerups.mjs";
   import { createPowerupController } from "./anim/powerup-ui.mjs";
@@ -22853,7 +22853,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   // The mascots arrive when the second-chance page does (sliding in from the right, once) and stay through the reveal scene,
   // the reveals and the round summary. While the full-width reveal scene plays they only step aside (no second slide-in after).
-  let quickSayKey = null, quickSayText = "";
+  let quickSayKey = null, quickSayText = "", partySayKey = null, partySayText = "";
   // At the top of the result screens nothing is scrolled behind the board, so the winner's avatar may be drawn over it; once the papers scroll, they pass behind the board again.
   (() => { const mc = document.querySelector(".main-col"); if (!mc) return; const upd = () => hudEl.classList.toggle("rv-at-top", mc.scrollTop <= 2); mc.addEventListener("scroll", upd, { passive: true }); upd(); })();
   function standMascots(phase) {
@@ -22867,6 +22867,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (Number.isFinite(acc)) { if (quickSayKey !== key) { quickSayKey = key; quickSayText = robotSaying(acc); } quickRobot.say(key, quickSayText); } else quickRobot.say(null); // same words all summary long
     } else quickRobot.say(null);
     if (party && Object.keys(currentPlayers || {}).length) { partyAnt.use(partyAntSet()); partyAnt.stand(key, held); partyAnt.hold(held); } else partyAnt.hide();
+    // Round summary: the ant (Classic) talks about the round; the cat or dog (Team vs Team) about their own team's round. Same words all summary long.
+    if (party && phase === "summary" && Object.keys(currentPlayers || {}).length) {
+      if (partySayKey !== key) {
+        partySayKey = key;
+        const set = partyAntSet();
+        if (set === "ant") partySayText = antSaying(roomState.revealOrder || [], (id) => currentPlayers[id]?.name);
+        else { const t = { red: 0, blue: 0 }; Object.keys(currentPlayers).forEach((id) => { const tm = currentPlayers[id].team; if (tm in t && t[tm] === 0) t[tm] = roomState.lastRoundPoints?.[id] || 0; }); partySayText = teamSaying(set, t); }
+      }
+      partyAnt.say(key, partySayText);
+    } else partyAnt.say(null);
   }
 
   function renderRevealChoreography(data) {
