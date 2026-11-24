@@ -26,6 +26,7 @@ export const HOME_MOTION = {
 export const HOME_EXTRA_ART = Object.fromEntries(Object.entries(HOME_MOTION).map(([scene]) => {
   const p=HOME_LAYER_PLACEMENTS[scene], files=p?[HOME_LAYER_SHEETS[p.id].file]:[];
   if(scene==='ants')files.push('stories/helper-ants.webp');
+  if(scene==='town')files.push('stories/mail-van.webp');
   if(scene==='toy-box')files.push('refined/robot-arm-parts.webp','../../items/beach-ball.webp');
   if(scene==='corgi')files.push('refined/kibble.webp');
   if(scene==='house')files.push('refined/mouse-cheese-walk.webp','fridge-clean-v2.webp','fridge-magnets-v2.webp');
