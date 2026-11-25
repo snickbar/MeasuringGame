@@ -1701,6 +1701,13 @@ if (location.protocol === "file:") {
   #item-popup .item-popup-name { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 24px; color: var(--text); text-transform: capitalize; }
   #item-popup .item-popup-card { position: relative; }
   #item-popup .item-popup-x { position: absolute; top: -12px; right: -12px; width: 28px; height: 28px; margin: 0; padding: 0; border-radius: 50%; border: 2px solid #fff; border-image: none; background: #d9534f; color: #fff; font-size: 18px; font-weight: 700; line-height: 1; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,.35); pointer-events: none; }
+  .mp-tappable { cursor: pointer; touch-action: manipulation; }
+  .mp-tappable::after { content: "i"; position: absolute; top: 3px; right: 3px; width: 18px; height: 18px; box-sizing: border-box; border-radius: 50%; background: #2f80ed; color: #fff; border: 2px solid #fff; font: italic 700 12px/14px Georgia, serif; text-align: center; pointer-events: none; z-index: 3; animation: mpBadge 1.8s ease-in-out infinite; }
+  .mp-tappable:active { filter: brightness(1.12); }
+  @keyframes mpBadge { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.22); } }
+  @media (prefers-reduced-motion: reduce) { .mp-tappable::after { animation: none; } }
+  #item-popup .item-popup-how { display: block; margin: 10px auto 0; padding: 7px 16px; border-radius: 12px; border: 2px solid #d99a3c; background: #ffe3b4; color: #6b4a2a; font: 700 14px 'Fredoka', sans-serif; touch-action: manipulation; }
+  #item-popup .item-popup-how:active { filter: brightness(1.15); }
   #item-popup .item-popup-hint { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
   /* Long-press zoom on an avatar tile (picker grids + the "View All" collection) -
      stays up after release (tap the X, or anywhere, to close) rather than
@@ -5617,6 +5624,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { createModeAwards, MODE_AWARD_CATEGORIES } from "./anim/mode-awards.mjs";
   import { ROMAN_SUFFIX, escalateSteps, makeChainGate } from "./anim/award-tiers.mjs";
   import { installMeasurementGuides, objectEntrancePose } from "./anim/measurement-guides.mjs";
+  import { openMeasurePopup } from "./anim/measure-popup.mjs";
   import { reserveHostStart, finishHostStart, hasHostAdGame, canWatchHostAd, grantHostAdGame } from "./anim/host-allowance.mjs";
   import { isPartyRoomSettings, includesMakeBelieve, partyObjectAllowed, filterPartyObjects } from "./anim/make-believe.mjs";
   import { STARTER_AWARDS, starterAwardProfile, upgradeGuestProfile } from "./anim/starter-awards.mjs";
@@ -17830,6 +17838,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
   });
 
+  // "How is it measured?" popup (shared with the question screens): ids are one or two object ids.
+  function showMeasurePopup(ids, startId, onClose) {
+    return openMeasurePopup({ ids, startId, getObject: (x) => OBJECT_BY_ID.get(x), onClose, sound: playSound });
+  }
   function openItemPopup(id) {
     const obj = OBJECT_BY_ID.get(id) || (() => { const d = HOLIDAY_OBJECT_DEFS.find((x) => x[1] === id); return d && { name: d[2], image: `items/${d[1]}.webp` }; })();
     if (!obj) return;
@@ -17849,6 +17861,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       `<div class="item-popup-times"><strong>${times || "—"}</strong><span>${times ? (times === 1 ? "Time seen" : "Times seen") : "Previously discovered"}</span></div>
       <div class="item-popup-stats">${accuracyTile("As the small object", "u")}${accuracyTile("As the big object", "g")}</div>
       <p class="item-popup-hint">Accuracy from your recent guesses</p>`);
+    if (OBJECT_BY_ID.get(id)) {
+      const how = document.createElement("button"); how.type = "button"; how.className = "item-popup-how"; how.textContent = "How is it measured?";
+      how.addEventListener("click", (e) => { e.stopPropagation(); ov.remove(); showMeasurePopup([id], id); });
+      ov.querySelector(".item-popup-card").append(how);
+    }
     ov.addEventListener("click", () => { playSound("popup-close"); ov.remove(); });
     document.body.appendChild(ov);
   }
@@ -21633,6 +21650,42 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // Wait two frames so the screen has settled its picture sizes before the reel windows are measured.
     requestAnimationFrame(() => requestAnimationFrame(() => { if (qReel === r) attachQuestionReels(); }));
   }
+  // Tap an object box on a question screen to see how that object is measured. Only once both reels have stopped.
+  const MP_CARDS = ".dc-pic,.qp";
+  let mpByImage = null;
+  function mpObjectOf(card) {
+    const img = card.querySelector(":scope > img"); if (!img) return null;
+    if (!mpByImage) mpByImage = new Map(ALL_OBJECTS.filter(o => o.image).map(o => [new URL(o.image, document.baseURI).pathname, o]));
+    const path = new URL(img.currentSrc || img.src, document.baseURI).pathname;
+    return mpByImage.get(path) || mpByImage.get(path.replace(/-2\.webp$/, ".webp")) || null;
+  }
+  function mpPairOf(card) {
+    const cards = [...(card.parentElement?.children || [])].filter(el => el.matches(MP_CARDS));
+    if (cards.length !== 2 || cards.some(c => c.classList.contains("reeling"))) return null;
+    if (qReel && qReel.items.some(it => !it.done)) return null;
+    const objs = cards.map(mpObjectOf); return objs.every(Boolean) ? objs : null;
+  }
+  let mpFrame = 0;
+  function mpScan() {
+    mpFrame = 0;
+    for (const card of document.querySelectorAll(MP_CARDS)) {
+      const ok = !!mpPairOf(card) && !document.getElementById("measure-popup");
+      if (card.classList.contains("mp-tappable") !== ok) {
+        card.classList.toggle("mp-tappable", ok);
+        if (ok && getComputedStyle(card).position === "static") card.style.position = "relative";
+      }
+    }
+  }
+  const mpSchedule = () => { if (!mpFrame) mpFrame = requestAnimationFrame(mpScan); };
+  new MutationObserver(mpSchedule).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "src"] });
+  document.addEventListener("click", (e) => {
+    const card = e.target.closest?.(MP_CARDS);
+    if (!card || !card.classList.contains("mp-tappable")) return;
+    const objs = mpPairOf(card); if (!objs) return;
+    const me = mpObjectOf(card);
+    openMeasurePopup({ ids: objs.map(o => o.id), startId: me.id, getObject: (x) => OBJECT_BY_ID.get(x), sound: playSound, brightClock: true, onClose: mpSchedule });
+    mpSchedule();
+  });
   const twQuestionProgressEl = document.getElementById("tw-question-progress");
   const twQuestionPicsEl = document.getElementById("tw-question-pics");
   const twQuestionPromptEl = document.getElementById("tw-question-prompt");
