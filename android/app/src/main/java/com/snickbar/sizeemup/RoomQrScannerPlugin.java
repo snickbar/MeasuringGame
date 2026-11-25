@@ -31,7 +31,7 @@ public class RoomQrScannerPlugin extends Plugin {
       result.put("value", prefs.getString("value", ""));
       result.put("id", prefs.getString("id", ""));
     } else {
-      prefs.edit().clear().commit();
+      prefs.edit().clear().apply();
     }
     call.resolve(result);
   }
@@ -40,7 +40,7 @@ public class RoomQrScannerPlugin extends Plugin {
   public void clearPendingResult(PluginCall call) {
     String id = call.getString("id");
     if (id != null && id.equals(results().getString("id", ""))) {
-      results().edit().clear().commit();
+      results().edit().clear().apply();
     }
     call.resolve();
   }
@@ -50,7 +50,7 @@ public class RoomQrScannerPlugin extends Plugin {
     getActivity().runOnUiThread(() -> {
       if (scanning) { call.reject("A scan is already open.", "SCAN_BUSY"); return; }
       scanning = true;
-      results().edit().clear().commit();
+      results().edit().clear().apply();
       try {
         GmsBarcodeScannerOptions options = new GmsBarcodeScannerOptions.Builder()
           .setBarcodeFormats(Barcode.FORMAT_QR_CODE).enableAutoZoom().build();
@@ -64,7 +64,7 @@ public class RoomQrScannerPlugin extends Plugin {
             }
             String id = UUID.randomUUID().toString();
             results().edit().putString("value", value).putString("id", id)
-              .putLong("at", System.currentTimeMillis()).commit();
+              .putLong("at", System.currentTimeMillis()).apply();
             JSObject result = new JSObject();
             result.put("value", value);
             result.put("id", id);

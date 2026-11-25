@@ -51,6 +51,20 @@ const real = splitIndex(source);
 assert(real, 'index.html has exactly one inline module, so it can ship as ' + FILE + '. Without that, the page loads about 14% slower on a slow phone: see scripts/pack-index.cjs');
 assert.equal(assertPacked(source, real.html, real.appModule), true);
 assert(real.appModule.length > 500000, FILE + ' holds the game');
+// The shipped page carries a Content-Security-Policy that allows each inline script by hash and nothing else inline, so injected
+// HTML (onerror=, javascript:) cannot run. It replaces the marker line one for one, so line numbers still match.
+{
+  const { CSP_MARK, CSP_START } = require('./pack-index.cjs');
+  assert(source.includes(CSP_MARK), 'index.html keeps the line that becomes the Content-Security-Policy (see scripts/pack-index.cjs)');
+  const meta = real.html.slice(real.html.indexOf(CSP_START)).split('\n')[0];
+  assert(real.html.includes(CSP_START) && !real.html.includes(CSP_MARK), 'The shipped page has its Content-Security-Policy');
+  const scriptSrc = meta.match(/script-src ([^;"]*)/)[1];
+  assert(!/unsafe-inline|unsafe-eval/.test(scriptSrc), 'Scripts are never allowed inline wholesale');
+  const inline = [...real.html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)].filter(m => !/\bsrc\s*=/i.test(m[1]));
+  assert.equal((scriptSrc.match(/'sha256-/g) || []).length, inline.length, 'Every inline script in the shipped page has its hash');
+  assert.equal(real.html.split('\n').length, splitIndex(source).html.split('\n').length, 'Same number of lines');
+  assert.equal(real.html.indexOf(TAG) >= 0 && real.html.split('\n').findIndex(l => l.includes(TAG)), source.split('\n').findIndex(l => l.includes('<script type="module">')), 'The module tag stays on its line');
+}
 assert(real.html.length < source.length / 2, 'The packaged page is less than half the size');
 for (const m of real.html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
   assert(m[2].length < 100000, 'No large inline script is left in the packaged page: ' + m[1].trim().slice(0, 60) + ' has ' + m[2].length + ' bytes');

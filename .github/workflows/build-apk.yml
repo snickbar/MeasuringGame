@@ -16,6 +16,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
+          # The whole history, not just the last commit: android/app/build.gradle sets the version code from the commit
+          # count, which was always 1 in a shallow checkout (so every APK got version code 2 and kept stale live updates).
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
