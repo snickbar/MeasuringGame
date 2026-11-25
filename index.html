@@ -13692,8 +13692,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function hsTablePig(hs, me, result) {
     const own=!result?'idle':HS.hsPayout(hs,me)>0?'win':!result.winners?.length?'soso':'lose';
-    const on=result&&hsPigSeqOn(hs), mood=on?hsPigSeq.mood:own;
-    return '<span class="hs-table-pig" data-mood="'+mood+'" aria-hidden="true">'+mascotMarkup('pig',mood,{key:roomState.gameId+':'+hs.round+':'+mood+(on?':'+hsPigSeq.step:''),delay:result?500:0})+'</span>';
+    // While he looks at each player in turn (and for the moment before that) he HOLDS a pose; his full gesture plays only once he settles on yours.
+    const started=hsPigSeq.key===roomState.gameId+':'+hs.round, seatedN=(hs.seats||[]).filter((id)=>roomState.players?.[id]).length;
+    const pending=!!result&&(started?!hsPigSeq.done:seatedN>=2);
+    const on=result&&hsPigSeqOn(hs), mood=on?hsPigSeq.mood:pending?'idle':own;
+    return '<span class="hs-table-pig" data-mood="'+mood+'" aria-hidden="true">'+mascotMarkup('pig',mood,{key:roomState.gameId+':'+hs.round+':'+mood+(on?':'+hsPigSeq.step:''),delay:result?500:0,still:on||pending})+'</span>';
   }
   function hsPigApplyLook() {
     hsContentEl.querySelectorAll(".hs-pl.hs-pig-look").forEach((el) => el.classList.remove("hs-pig-look"));
@@ -13711,12 +13714,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const apply = () => {
       const pig = hsContentEl.querySelector(".hs-table-pig"), sprite = pig && pig.querySelector("[data-mascot-id]");
       if (pig) pig.dataset.mood = hsPigSeq.mood || pig.dataset.mood;
-      if (sprite && hsPigSeq.mood) { sprite.dataset.mascotMood = hsPigSeq.mood; sprite.dataset.mascotKey = `${data.gameId}:${hs.round}:${hsPigSeq.mood}:${hsPigSeq.step}`; }
+      if (sprite && hsPigSeq.mood) { sprite.dataset.mascotStill = "true"; sprite.dataset.mascotMood = hsPigSeq.mood; sprite.dataset.mascotKey = `${data.gameId}:${hs.round}:${hsPigSeq.mood}:${hsPigSeq.step}`; }
       hsPigApplyLook();
     };
     const alive = () => hsPigSeq.key === key && roomState.hs?.round === hs.round && roomState.hs?.stage === "reveal";
     order.forEach((id, i) => hsPigSeq.timers.push(setTimeout(() => { if (!alive()) return; Object.assign(hsPigSeq, { mood: moodAt(i), step: i + 1, look: id }); apply(); }, 1500 + i * 1200)));
-    hsPigSeq.timers.push(setTimeout(() => { if (hsPigSeq.key !== key) return; Object.assign(hsPigSeq, { mood: null, look: null, done: true }); hsPigApplyLook(); const foot = hsContentEl.querySelector(".hs-table-foot"); if (foot && !hsContentEl.querySelector(".hs-say-anchor")) foot.insertAdjacentHTML("afterend", hsPigSayHtml(hs, currentPlayerId, hs.result)); const pig = hsContentEl.querySelector(".hs-table-pig"); if (pig) { const own = hsPigOwnMood(hs, currentPlayerId); pig.dataset.mood = own; const sp = pig.querySelector("[data-mascot-id]"); if (sp) { sp.dataset.mascotMood = own; sp.dataset.mascotKey = `${data.gameId}:${hs.round}:${own}`; } } }, 1500 + n * 1200 + 300));
+    hsPigSeq.timers.push(setTimeout(() => { if (hsPigSeq.key !== key) return; Object.assign(hsPigSeq, { mood: null, look: null, done: true }); hsPigApplyLook(); const foot = hsContentEl.querySelector(".hs-table-foot"); if (foot && !hsContentEl.querySelector(".hs-say-anchor")) foot.insertAdjacentHTML("afterend", hsPigSayHtml(hs, currentPlayerId, hs.result)); const pig = hsContentEl.querySelector(".hs-table-pig"); if (pig) { const own = hsPigOwnMood(hs, currentPlayerId); pig.dataset.mood = own; const sp = pig.querySelector("[data-mascot-id]"); if (sp) { sp.dataset.mascotStill = "false"; sp.dataset.mascotMood = own; sp.dataset.mascotKey = `${data.gameId}:${hs.round}:${own}`; } } }, 1500 + n * 1200 + 300));
   }
   function hsStartTablePig(pig, gameId, round) {
     const expanded = pig.querySelector("[data-mascot-id]");
