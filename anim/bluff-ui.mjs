@@ -1,7 +1,6 @@
 import {BLUFF_LABELS,bluffVoteDeadline,dealBluff,chooseBluff,revealBluff,bluffStandings,bluffStandingsBefore,bluffNewLeaders,botMakerChoice,botVoteChoice} from './bluff.mjs';
 import {setText} from './set-text.mjs';
 import {playerFrameArt} from './player-frames.mjs';
-import {mascotMarkup} from './mascot-poses.mjs';
 
 // Counts a number up from 0 (presentation only; skipped when motion is reduced).
 function countUpEl(el,ms,delay,reduced){
@@ -47,6 +46,13 @@ export function bluffRaccoonOutcome(claim, fooled) {
 export function bluffRaccoonMood(result) {
   const fooled = result?.wrong || 0, caught = result?.caught || 0;
   return fooled > 0 && caught === 0 ? "win" : caught > 0 && fooled === 0 ? "lose" : "soso";
+}
+// One held pose per mood (no cycling): laughing when the table was fooled, arms crossed on a split, the sheepish drawn pose when caught.
+const RACCOON_SHEET_FRAME = { win: 3, soso: 6 };
+export function bluffRaccoonResultArt(mood) {
+  if (mood === 'lose') return '<img class="bl-raccoon-result bl-raccoon-result-caught" src="anim/bluff-raccoon/caught.png" width="192" height="220" alt="" draggable="false">';
+  const i = RACCOON_SHEET_FRAME[mood] ?? 6;
+  return '<span class="bl-raccoon-result bl-raccoon-result-sheet" style="background-position:' + (i / 11 * 100) + '% 0"></span>';
 }
 export const BLUFF_RACCOON_SAYINGS = {
   win: ["Fooled you all. Delicious.", "Every last one of you. Easy.", "Nobody saw that coming.", "Trust me? Big mistake.", "Not a single doubt. Lovely."],
@@ -167,7 +173,7 @@ export function createBluffUI({element,context,now,transact,act,question,object,
         (reacting?Math.round(at):0)+'ms">'+
         (reacting&&at> -300 ? '<span class="bl-raccoon-outcome-before">'+bluffRaccoonHtml('reveal',flip,s.claim.kind)+'</span>' : '')+
         '<span class="bl-raccoon-outcome-after bl-raccoon-outcome-'+outcome+(reacting?' moving':'')+'">'+
-        mascotMarkup('raccoon',mood,{key:ck,delay:reacting?Math.max(0,Math.round(at)):0,still:!reacting})+'</span>'+
+        bluffRaccoonResultArt(mood)+'</span>'+
         '<span class="solo-bubble solo-bubble-down bl-say" style="--raccoon-say-at:'+(reacting?Math.max(0,Math.round(at))+350:0)+'ms">'+esc(bluffRaccoonSaying(mood,ck))+'</span></span>';
       content=bluffSummaryHtml(s,room.players||{},avatar,me,sAge,motion);
     }
