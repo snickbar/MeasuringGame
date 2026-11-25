@@ -21581,10 +21581,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const W = img.offsetWidth, H = img.offsetHeight;
       card.classList.add("reeling");   // positions the card, so the window is measured and placed against it
       if (getComputedStyle(card).position === "static") card.style.position = "relative";
-      const cr = card.getBoundingClientRect(), ir = img.getBoundingClientRect(), sx = cr.width / (card.offsetWidth || 1) || 1, sy = cr.height / (card.offsetHeight || 1) || 1;
+      // Layout offsets (not on-screen rectangles): a box that is still sliding or scaling in would put the window in the wrong place.
       const win = document.createElement("div");
       win.className = "qp-win";
-      win.style.cssText = `left:${(ir.left - cr.left) / sx - card.clientLeft}px;top:${(ir.top - cr.top) / sy - card.clientTop}px;width:${W}px;height:${H}px`;
+      win.style.cssText = `left:${img.offsetParent === card ? img.offsetLeft : 0}px;top:${img.offsetParent === card ? img.offsetTop : 0}px;width:${W}px;height:${H}px`;
       const last = it.strip.length - 1;   // the object that lands keeps the pose the picture has on this card
       win.innerHTML = `<div class="qp-reel">${it.strip.map((src, k) => `<img src="${src}" alt="" draggable="false" style="width:${W}px;height:${H}px${k === last && img.style.transform ? ";transform:" + img.style.transform : ""}">`).join("")}</div>`;
       it.card = card; it.win = win; it.H = H; it.reel = win.firstChild;

@@ -62,8 +62,9 @@ export function installMeasurementGuides({objects,document:doc=document}) {
     // One uniform guide per card, spanning the box rather than tracing the artwork: a left-hand card puts a vertical guide on
     // its right edge, a right-hand card on its left edge; a horizontal guide always runs along the bottom, above the caption.
     const sy=b.height/card.offsetHeight||1;
-    const caption=card.querySelector('span:not(.wb-tag),figcaption')?.getBoundingClientRect();
-    const yMax=Math.min(card.clientHeight-3,caption?(caption.top-b.top)/sy-card.clientTop-3:card.clientHeight-3);
+    // Both cards share one baseline: a two-line name starts higher, and must not lift its guide above the other card's.
+    const yOf=c=>{const cb=c.getBoundingClientRect(),csy=cb.height/c.offsetHeight||1,cap=c.querySelector('span:not(.wb-tag),figcaption')?.getBoundingClientRect();return Math.min(c.clientHeight-3,cap?(cap.top-cb.top)/csy-c.clientTop-3:c.clientHeight-3);};
+    const yMax=Math.min(...cards.map(yOf));
     const pad=6,W=card.clientWidth,H=card.clientHeight;
     const mapped=vertical?[[onRight?pad:W-pad,pad],[onRight?pad:W-pad,yMax]]:[[pad,yMax],[W-pad,yMax]];
     const signature=JSON.stringify([mapped,W,H]);if(painted.get(card)===signature)return;painted.set(card,signature);
