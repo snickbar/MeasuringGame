@@ -10,8 +10,8 @@ export const MASCOT_POSES = {
   bigger:{count:8,idle:[0,1],win:[2,3,4],soso:[0,1],lose:[5,6,7]},
   worlds:{count:6,idle:[0,1],win:[2,3],soso:[4,1],lose:[5]},
   teamworlds:{count:8,idle:[0,1],win:[2,3],soso:[4,5],lose:[6,7]},
-  hlbird:{count:6,idle:[0,1],win:[2,3],soso:[0,1],lose:[4,5]},
-  hlshark:{count:6,idle:[0,1],win:[2,3],soso:[0,1],lose:[4,5]},
+  hlbird:{count:6,idle:[0,1],win:[2,3],soso:[1],lose:[4,5]}, // so-so was [0,1]; 0 is the resting picture, so half the time nothing moved
+  hlshark:{count:6,idle:[0,1],win:[2,3],soso:[1],lose:[4,5]}, // so-so was [0,1]; 0 is the resting picture, so half the time nothing moved
   pig:{count:6,idle:[1,2],win:[0,3],soso:[1,2],lose:[5]}, // drawing 4 (upside-down slip) is not used
 };
 // The recent expansion has two drawn connecting frames for every target pose.
@@ -52,7 +52,8 @@ export function mascotFrame(id,mood,age,key='',still=false) {
     const rest=spec.idle[0],a=spec.count+selected*2,b=a+1;
     if(sad!==null)return age<650?rest:age<770?16:sad; // worried, then the balloon sags halfway and stays there
     // The squirrel throws his nut once; after that his hands stay empty (no nut popping back in) until the next answer.
-    if(id==='squirrel'&&(selected===3||selected===5)&&age>=2190)return spec.idle[2];
+    // He leaves through his two empty-handed "so-so" in-between drawings (frames 24, 23) instead of cutting to the tail hug, so the nut never pops back.
+    if(id==='squirrel'&&(selected===3||selected===5)&&age>=2190)return age<2310?spec.count+6*2+1:age<2430?spec.count+6*2:spec.idle[2];
     // One selected gesture per answer, with a quiet beat between repetitions.
     // The return path uses the same drawings in reverse, avoiding a snap to rest.
     const beat=age%3600;
