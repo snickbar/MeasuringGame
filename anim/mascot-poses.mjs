@@ -12,7 +12,7 @@ export const MASCOT_POSES = {
   teamworlds:{count:8,idle:[0,1],win:[2,3],soso:[4,5],lose:[6,7]},
   hlbird:{count:6,idle:[0,1],win:[2,3],soso:[0,1],lose:[4,5]},
   hlshark:{count:6,idle:[0,1],win:[2,3],soso:[0,1],lose:[4,5]},
-  pig:{count:6,idle:[1,2],win:[0,3],soso:[1,2],lose:[4,5]},
+  pig:{count:6,idle:[1,2],win:[0,3],soso:[1,2],lose:[5]}, // drawing 4 (upside-down slip) is not used
 };
 // The recent expansion has two drawn connecting frames for every target pose.
 // Older Survival/Which Is Bigger rigs are intentionally outside this atlas.
