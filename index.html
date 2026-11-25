@@ -1036,6 +1036,10 @@ if (location.protocol === "file:") {
   .hs-pot-num { font-size: 40px; line-height: 1; color: #000; text-shadow: 0 2px 0 rgba(255,255,255,.6); font-variant-numeric: tabular-nums; }
   #hs-content .hs-board--pick .hs-opts { gap: 5px; }
   #hs-content .hs-board--pick button.hs-opt { min-height: 44px; margin: 0; }
+  /* The pig's line sits in the empty strip under him: a zero-height anchor, so nothing below it moves. Tail points up at him (he is centred at 20% of the row). */
+  .hs-say-anchor { position: relative; height: 0; z-index: 3; width: 100%; align-self: stretch; }
+  .hs-say-anchor .hs-say { position: absolute; left: 0; top: 4px; width: 64%; max-width: 64%; padding: 5px 9px; font-size: 13px; line-height: 1.15; text-align: center; animation-delay: .15s; }
+  .hs-say-anchor .hs-say.solo-bubble::before { left: calc(31% - 7px); }
   .hs-table-foot { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 6fr); align-items: center; gap: 4px; margin-top: 6px; container-type: inline-size; }
   #hs-content .hs-table-foot > #hs-pot { display: flex; flex-direction: column; justify-content: flex-start; margin: 0; padding: 5px 2px 7px; min-height: clamp(62px, 46cqw, 106px); border-width: 7px; border-image-width: 10px 12px; gap: 0; }
   .hs-pot-total { display: flex; align-items: center; justify-content: center; min-width: 0; max-width: 100%; gap: clamp(2px, 2cqw, 6px); flex: 1; }
@@ -13669,6 +13673,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Local only: nothing is written to the database. hsPigSeq.mood overrides the pig's own-result mood while the walk-through runs.
   const hsPigSeq = { key: null, mood: null, step: 0, look: null, timers: [] };
   const hsPigSeqOn = (hs) => hsPigSeq.mood && hsPigSeq.key === `${roomState.gameId}:${hs.round}`;
+  // The pig's line once he has settled on YOUR result (same mood as his pose): you took the pot / nobody did / someone else did.
+  const HS_PIG_SAYINGS = {
+    win: ["Cha-ching! The pot is yours.", "You hog all the glory!", "Oink-credible bluff!", "That pot looks good on you.", "Ham-azing. Truly."],
+    soso: ["Nobody took it? I keep it.", "No winner. Snout of luck.", "Everyone busted. Oink.", "The pot is staying put.", "A whole table of oopsies."],
+    lose: ["Ouch. That one squealed.", "Better oink next time.", "The pot slipped away.", "Do not pig out on regret.", "Chin up, the next hand is yours."],
+  };
+  const hsPigOwnMood = (hs, id) => HS.hsPayout(hs, id) > 0 ? "win" : !hs.result?.winners?.length ? "soso" : "lose";
+  function hsPigSayHtml(hs, me, result) {
+    if (!result || hsPigSeqOn(hs)) return "";
+    // wait until he has looked at every player (the walkthrough only runs with 2+ seated players)
+    const started = hsPigSeq.key === `${roomState.gameId}:${hs.round}`, seated = (hs.seats || []).filter((id) => roomState.players?.[id]).length;
+    if (started ? !hsPigSeq.done : seated >= 2) return "";
+    if ((result.pots || []).length > 1) return ""; // side pots are listed under the pot, leave that readable
+    const mood = hsPigOwnMood(hs, me), l = HS_PIG_SAYINGS[mood];
+    let h = 0; for (const c of `${roomState.gameId}:${hs.round}:${mood}`) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+    return `<div class="hs-say-anchor"><div class="solo-bubble hs-say" aria-hidden="true">${escapeHtml(l[h % l.length])}</div></div>`;
+  }
   function hsTablePig(hs, me, result) {
     const own=!result?'idle':HS.hsPayout(hs,me)>0?'win':!result.winners?.length?'soso':'lose';
     const on=result&&hsPigSeqOn(hs), mood=on?hsPigSeq.mood:own;
@@ -13682,10 +13703,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const key = `${data.gameId}:${hs.round}`;
     if (hsPigSeq.key === key) return;
     hsPigSeq.timers.forEach(clearTimeout); hsPigSeq.timers = [];
-    Object.assign(hsPigSeq, { key, mood: null, step: 0, look: null });
+    Object.assign(hsPigSeq, { key, mood: null, step: 0, look: null, done: false });
     const net = (id) => HS.hsPayout(hs, id) - (hs.bet?.put?.[id] || 0);
     const order = (hs.seats || []).filter((id) => data.players?.[id]).sort((a, b) => net(a) - net(b));
-    const n = order.length; if (n < 2) return;
+    const n = order.length; if (n < 2) { hsPigSeq.done = true; return; }
     const moodAt = (i) => n < 3 ? (net(order[i]) > 0 ? "win" : net(order[i]) < 0 ? "lose" : "soso") : i < n / 3 ? "lose" : i >= n * 2 / 3 ? "win" : "soso";
     const apply = () => {
       const pig = hsContentEl.querySelector(".hs-table-pig"), sprite = pig && pig.querySelector("[data-mascot-id]");
@@ -13695,7 +13716,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     };
     const alive = () => hsPigSeq.key === key && roomState.hs?.round === hs.round && roomState.hs?.stage === "reveal";
     order.forEach((id, i) => hsPigSeq.timers.push(setTimeout(() => { if (!alive()) return; Object.assign(hsPigSeq, { mood: moodAt(i), step: i + 1, look: id }); apply(); }, 1500 + i * 1200)));
-    hsPigSeq.timers.push(setTimeout(() => { if (hsPigSeq.key !== key) return; Object.assign(hsPigSeq, { mood: null, look: null }); hsPigApplyLook(); const pig = hsContentEl.querySelector(".hs-table-pig"); if (pig) { const own = HS.hsPayout(hs, currentPlayerId) > 0 ? "win" : !hs.result?.winners?.length ? "soso" : "lose"; pig.dataset.mood = own; const sp = pig.querySelector("[data-mascot-id]"); if (sp) { sp.dataset.mascotMood = own; sp.dataset.mascotKey = `${hs.round}:${data.gameId}:me`; } } }, 1500 + n * 1200 + 300));
+    hsPigSeq.timers.push(setTimeout(() => { if (hsPigSeq.key !== key) return; Object.assign(hsPigSeq, { mood: null, look: null, done: true }); hsPigApplyLook(); const foot = hsContentEl.querySelector(".hs-table-foot"); if (foot && !hsContentEl.querySelector(".hs-say-anchor")) foot.insertAdjacentHTML("afterend", hsPigSayHtml(hs, currentPlayerId, hs.result)); const pig = hsContentEl.querySelector(".hs-table-pig"); if (pig) { const own = hsPigOwnMood(hs, currentPlayerId); pig.dataset.mood = own; const sp = pig.querySelector("[data-mascot-id]"); if (sp) { sp.dataset.mascotMood = own; sp.dataset.mascotKey = `${hs.round}:${data.gameId}:me`; } } }, 1500 + n * 1200 + 300));
   }
   function hsStartTablePig(pig, gameId, round) {
     const expanded = pig.querySelector("[data-mascot-id]");
@@ -14195,7 +14216,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const pig = stage === "pick" || result ? hsTablePig(hs, me, result) : "";
     const potBody = pig ? `${potLabel}<div class="hs-pot-total">${chipStack}${potNumber}</div>` : `${chipStack}<div>${potLabel}${potNumber}</div>`;
     const potHtml = `<div class="hs-potbox" id="hs-pot">${potBody}</div>`;
-    const tableFoot = pig ? `<div class="hs-table-foot">${pig}${potHtml}</div>` : potHtml;
+    const tableFoot = pig ? `<div class="hs-table-foot">${pig}${potHtml}</div>${hsPigSayHtml(hs, me, result)}` : potHtml;
     const pickStatus = stage === "pick" && seated && mine !== undefined && myAt
       ? `<div class="hs-pick-status">${pickLocked ? '<p class="hs-hint"><b>Locked in!</b> Waiting for the others...</p>'
         : `<p class="hs-hint">Picked! Locks in <b class="hs-timer" data-hs-ends="${myAt + HS_CHANGE_MS}">${Math.max(0, Math.ceil((myAt + HS_CHANGE_MS - nowMs()) / 1000))}</b>s</p><div class="lock-bar${myAt + HS_CHANGE_MS - nowMs() <= 3000 ? " low" : ""}" data-hs-bar="${myAt + HS_CHANGE_MS}"><i style="transform:scaleX(${Math.max(0, Math.min(1, (myAt + HS_CHANGE_MS - nowMs()) / HS_CHANGE_MS)).toFixed(3)})"></i></div>`}</div>` : "";
