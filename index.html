@@ -6749,8 +6749,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       .finally(() => monthlyRepairJobs.delete(profileId));
     monthlyRepairJobs.set(profileId, job);
   }
+  let latestProfileData = null, latestProfileOwner = null; // the last profile the live watcher delivered (read by the receipt check)
   function applyProfileData(profileId, data) {
     if (profileId !== deviceId) return;
+    latestProfileData = data; latestProfileOwner = profileId;
     const repaired = repairMonthlyRewards(data, MONTH_BACKGROUNDS.map(b => b.id));
     if (repaired !== data) { data = repaired; saveMonthlyRewardRepairs(profileId); }
     homePrefsPlaceholder = !data;
@@ -24898,7 +24900,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     go: "sfx/go.mp3",
     timesup: "sfx/timesup.mp3",
     join: "sfx/join.mp3",
-    leave: "sfx/crisp/leave.flac",
+    leave: "sfx/crisp/cancel.flac",
     perfect: "sfx/crisp/perfect.flac",
     streak: "sfx/reviewed/streak.flac",
     answers: "sfx/answers.mp3",
@@ -24912,7 +24914,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const ANIM_SFX_FILES = {
     swipe: "sfx/crisp/anim-swipe.flac",
     tap: "sfx/tap.mp3",
-    tick: "sfx/crisp/anim-tick.flac",
+    tick: "sfx/crisp/tick.flac",
     cardflip: "sfx/cardflip.mp3",
     zoomback: "sfx/crisp/anim-zoomback.flac",
   };
@@ -25631,7 +25633,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   setInterval(() => botReactions.tick(), 400);
   powerups.render();
   // Retry old pending receipts even when the profile itself has not changed.
-  setInterval(async () => { try { const owner = deviceId; const p = (await get(ref(db, 'profiles/' + owner))).val(); await powerups.recover(p, owner); } catch {} }, 60000);
+  // A power-up purchase is only refunded once it is a minute old, and the profile may not change again after that, so this still
+  // looks every minute. It uses the profile the live watcher already has instead of downloading the whole profile again.
+  setInterval(async () => { try { if (latestProfileOwner === deviceId) await powerups.recover(latestProfileData, deviceId); } catch {} }, 60000);
 
   careerLedger=createCareerLedger({owner:()=>deviceId,transaction:(id,fn)=>changeProfile(id,fn),
     onPending:(n,why)=>{let node=document.getElementById('progress-sync');if(!node){node=document.createElement('div');node.id='progress-sync';node.setAttribute('role','status');document.body.append(node);}node.hidden=!n;node.textContent=n?'Saving progress…'+(why?' ('+why+')':''):'';node.dataset.diag=syncDiag();if(!node.onclick){node.style.pointerEvents='auto';node.onclick=()=>showAchToast(node.dataset.diag||'no info');}},
@@ -25893,8 +25897,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
   }
 
+  // The offline cache is for the website. Inside the Android/iOS app every file is already on the phone, and the worker only
+  // copied each one into a second cache that never emptied, so the app removes any worker (and its cache) an older version left.
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js").catch(() => {});
+    if (isNativeApp) {
+      navigator.serviceWorker.getRegistrations().then((regs) => regs.forEach((r) => r.unregister())).catch(() => {});
+      if (window.caches) caches.keys().then((keys) => keys.filter((k) => k.startsWith("measuring-game-")).forEach((k) => caches.delete(k))).catch(() => {});
+    } else {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    }
   }
 </script>
 </body>

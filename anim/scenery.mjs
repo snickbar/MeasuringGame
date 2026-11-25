@@ -177,9 +177,10 @@ export const SETTINGS = {
     ],
     pieces: [
       { img: 'underwater-n-movers-0', cell: 520, prob: .50, w: 53, speed: 42, bob: 4, sway: .025, minH: 60, face: 1 },
-      { img: 'underwater-solo-clownfish', cell: 400, prob: .80, w: 28, speed: 35, bob: 5, sway: .04, minH: 60, face: 1 },
-      { img: 'underwater-solo-goldfish', cell: 465, prob: .75, w: 24, speed: 28, bob: 7, sway: .05, minH: 80, face: 1 },
-      { img: 'underwater-solo-tropical-fish', cell: 365, prob: .75, w: 25, speed: 48, bob: 3, sway: .035, minH: 100, face: 1 },
+      // The solo fish are the same pictures as the objects, so they load from items/ (one file, not two).
+      { img: '../../items/clownfish', cell: 400, prob: .80, w: 28, speed: 35, bob: 5, sway: .04, minH: 60, face: 1 },
+      { img: '../../items/goldfish', cell: 465, prob: .75, w: 24, speed: 28, bob: 7, sway: .05, minH: 80, face: 1 },
+      { img: '../../items/tropical-fish', cell: 365, prob: .75, w: 25, speed: 48, bob: 3, sway: .035, minH: 100, face: 1 },
       { img: 'underwater-n-movers-1', cell: 1100, prob: .35, w: 67, speed: 29, bob: 5, sway: .04, minH: 170, face: 1 },
     ] },
   space: { floor: 'space-n-floor', floorTileWidth: 640,  sky: ['#242341', '#383453'], texture: 'star-field', movers: ['twinkle'],
