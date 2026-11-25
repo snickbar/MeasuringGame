@@ -7,10 +7,14 @@ function git(args) { return execFileSync('git', args, { cwd: ROOT, encoding: 'ut
 try {
   let old = {};
   try { old = JSON.parse(fs.readFileSync(OUT, 'utf8').match(/RECENCY = (\{[^\n]*\});/)[1]); } catch (e) { /* first run */ }
-  const latest = {}; let stamp = 0;
-  for (const line of git(['log', '--no-renames', '--name-only', '--format=@%ct', '--', 'items']).split('\n')) {
-    if (line[0] === '@') stamp = Number(line.slice(1));
-    else { const m = /^items\/([^/]+)\.webp$/.exec(line.trim()); if (m && !latest[m[1]]) latest[m[1]] = stamp; }
+  // Commits that only re-encoded or resized pictures (the object did not change), so they must not make it "new" in the picker.
+  const SAME_PICTURE_COMMITS = new Set([
+    '4c405680', // 2026-11-25: 56 items resized from 1254 px to 512 px to save 33 MB
+  ]);
+  const latest = {}; let stamp = 0, skip = false;
+  for (const line of git(['log', '--no-renames', '--name-only', '--format=@%ct %H', '--', 'items']).split('\n')) {
+    if (line[0] === '@') { const [t, hash] = line.slice(1).split(' '); stamp = Number(t); skip = [...SAME_PICTURE_COMMITS].some(c => hash.startsWith(c)); }
+    else if (!skip) { const m = /^items\/([^/]+)\.webp$/.exec(line.trim()); if (m && !latest[m[1]]) latest[m[1]] = stamp; }
   }
   if (Object.keys(latest).length < 50) process.exit(0); // not enough history to say anything
   const now = Math.floor(Date.now() / 1000);
