@@ -1742,6 +1742,10 @@ if (location.protocol === "file:") {
   #avatar-zoom-overlay .avatar-zoom-rarity.tier-common { background: #dfe8d2; color: #3f6226; }
   #avatar-zoom-overlay .avatar-zoom-rarity.tier-rare { background: #d3e3f4; color: #1f5a99; }
   #avatar-zoom-overlay .avatar-zoom-rarity.tier-ultra { background: #f6e2a8; color: #8a5a00; }
+  #avatar-zoom-overlay .avatar-zoom-ap { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 70%; font-size: 13px; }
+  #avatar-zoom-overlay .avatar-zoom-apbar { display: block; width: 100%; height: 8px; border-radius: 4px; background: #efe2c8; overflow: hidden; }
+  #avatar-zoom-overlay .avatar-zoom-apbar i { display: block; height: 100%; background: #e0a526; }
+  #avatar-zoom-overlay .avatar-zoom-ap small { font-size: 11px; opacity: .75; }
   #avatar-zoom-overlay .avatar-zoom-pers { font-size: 13px; }
   #avatar-zoom-overlay .avatar-zoom-blurb { font-size: 12px; opacity: .8; }
   #avatar-zoom-overlay .avatar-zoom-card img.zoom-dim { opacity: .4; filter: grayscale(1); }
@@ -6313,7 +6317,24 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Rounds this player has played against each avatar as a bot (saved on the profile). After PERSONALITY_UNLOCK_ROUNDS of them
   // that avatar's personality shows on its card; until then it reads ???.
   const botRoundsAgainst = (id) => Number((myProfile.botRounds || {})[id]) || 0;
-  const personalityKnown = (id) => botRoundsAgainst(id) >= PERSONALITY_UNLOCK_ROUNDS;
+  // Avatar Points (AP): every avatar earns AP on this profile. A finished game gives +AP_PLAY to the avatar you played as and +AP_AGAINST to
+  // each other avatar that was in the game (human or bot), once per avatar per game. AP_PER_LEVEL AP is one level.
+  const AP_PLAY = 2, AP_AGAINST = 5, AP_PER_LEVEL = 20;
+  const avatarPoints = (id) => Number((myProfile.avatarPoints || {})[id]) || 0;
+  const avatarLevel = (id) => Math.floor(avatarPoints(id) / AP_PER_LEVEL);
+  // Level 1 shows the personality. Anyone who already earned it the old way (25 rounds against that avatar) keeps it.
+  const personalityKnown = (id) => avatarLevel(id) >= 1 || botRoundsAgainst(id) >= PERSONALITY_UNLOCK_ROUNDS;
+  // Who earns what for one finished game: { avatarId: ap }. Pure, so it can be tested without the game running.
+  function avatarPointAwards(room, meId) {
+    const out = {}, players = (room && room.players) || {};
+    const mine = players[meId] && players[meId].avatar;
+    Object.entries(players).forEach(([pid, p]) => {
+      if (!p || !p.avatar || pid === meId) return;
+      out[p.avatar] = Math.max(out[p.avatar] || 0, AP_AGAINST);
+    });
+    if (mine) out[mine] = Math.max(out[mine] || 0, AP_PLAY);
+    return out;
+  }
   let botRoundsNoted = null;
   // How many rounds a finished game had, for counting rounds against bots.
   function roundsPlayedIn(room) {
@@ -6325,17 +6346,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function noteBotRounds(room, key, rounds) {
     try {
-      if (!key || !room || !(rounds > 0)) return;
+      if (!key || !room) return;
       const seenKey = "mg_botRoundsNoted";
       let seen = []; try { seen = JSON.parse(localStorage.getItem(seenKey) || "[]") || []; } catch (e) { seen = []; }
       if (botRoundsNoted === key || seen.includes(key)) return;
       botRoundsNoted = key; try { localStorage.setItem(seenKey, JSON.stringify(seen.concat(key).slice(-30))); } catch (e) {}
-      const mine = { ...(myProfile.botRounds || {}) }, updates = {};
-      Object.values(room.players || {}).forEach((p) => { if (p && p.isBot && p.avatar) { mine[p.avatar] = (Number(mine[p.avatar]) || 0) + rounds; updates[`botRounds/${p.avatar}`] = mine[p.avatar]; } });
+      const updates = {};
+      if (rounds > 0) {
+        const mine = { ...(myProfile.botRounds || {}) };
+        Object.values(room.players || {}).forEach((p) => { if (p && p.isBot && p.avatar) { mine[p.avatar] = (Number(mine[p.avatar]) || 0) + rounds; updates[`botRounds/${p.avatar}`] = mine[p.avatar]; } });
+        myProfile = { ...myProfile, botRounds: mine };
+      }
+      const ap = { ...(myProfile.avatarPoints || {}) }, gained = avatarPointAwards(room, currentPlayerId);
+      Object.entries(gained).forEach(([id, n]) => { ap[id] = (Number(ap[id]) || 0) + n; updates[`avatarPoints/${id}`] = ap[id]; });
+      myProfile = { ...myProfile, avatarPoints: ap };   // shown at once; the save goes out in the background
       if (!Object.keys(updates).length) return;
-      myProfile = { ...myProfile, botRounds: mine };   // shown at once; the save goes out in the background
       update(ref(db, `profiles/${deviceId}`), updates).catch(() => {});
-    } catch (e) { /* counting rounds must never break a final screen */ }
+    } catch (e) { /* counting rounds and AP must never break a final screen */ }
   }
   function toggleFavAvatar(id) {
     if (!id || !isAvatarUnlocked(id)) return;
@@ -6574,6 +6601,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       coins: 0,
       favAvatars: {},
       botRounds: {},
+      avatarPoints: {},
       freePulls: 0,
       booster: 0,
       tipCount: 0,
@@ -6871,6 +6899,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         achClaimed: { ...(data.achClaimed || {}) },
         favAvatars: { ...(data.favAvatars || {}) },
         botRounds: { ...(data.botRounds || {}) },
+        avatarPoints: { ...(data.avatarPoints || {}) },
         accountUpgrade: data.accountUpgrade || null,
         // Were missing from this normalization entirely until now - every real
         // profile update from the server was silently dropping them back to
@@ -18000,13 +18029,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const m = img && pictureSrc(img).match(/avatars\/([^/]+)\.webp/); // a picture that has not woken up yet only has data-src
     return m ? m[1] : null;
   }
+  // Level and progress toward the next level, shown on the avatar card (never on player cards).
+  function avatarLevelHtml(id) {
+    const ap = avatarPoints(id), lv = avatarLevel(id), into = ap - lv * AP_PER_LEVEL;
+    return `<span class="avatar-zoom-ap"><b>Level ${lv}</b><span class="avatar-zoom-apbar" aria-hidden="true"><i style="width:${Math.round(into / AP_PER_LEVEL * 100)}%"></i></span><small>${into} / ${AP_PER_LEVEL} AP to Level ${lv + 1}</small></span>`;
+  }
   function openAvatarZoom(tile, id) {
     const dim = tile.classList.contains("locked") || tile.classList.contains("taken");
     const ov = document.createElement("div");
     ov.id = "avatar-zoom-overlay";
     const canFav = !dim && isAvatarUnlocked(id);
     const tier = AVATAR_TIERS[id], tierLabel = { default: "Starter", common: "Common", rare: "Rare", ultra: "Ultra-rare" }[tier] || "";
-    const info = `<div class="avatar-zoom-info"><b class="avatar-zoom-name">${escapeHtml(BOT_NAME_BY_AVATAR[id] || "")}</b><span class="avatar-zoom-rarity tier-${tier}">${tierLabel}</span><span class="avatar-zoom-pers">Personality: <b>${personalityKnown(id) ? escapeHtml(personalityFor(id).label) : "???"}</b></span>${personalityKnown(id) ? `<span class="avatar-zoom-blurb">${escapeHtml(personalityFor(id).blurb)}</span>` : ""}</div>`;
+    const info = `<div class="avatar-zoom-info"><b class="avatar-zoom-name">${escapeHtml(BOT_NAME_BY_AVATAR[id] || "")}</b><span class="avatar-zoom-rarity tier-${tier}">${tierLabel}</span>${avatarLevelHtml(id)}<span class="avatar-zoom-pers">Personality: <b>${personalityKnown(id) ? escapeHtml(personalityFor(id).label) : "???"}</b></span>${personalityKnown(id) ? `<span class="avatar-zoom-blurb">${escapeHtml(personalityFor(id).blurb)}</span>` : ""}</div>`;
     ov.innerHTML = `<div class="avatar-zoom-card"><div class="avatar-zoom-pic">${avatarHtml(id, dim ? "zoom-dim" : "")}</div>${info}${canFav ? `<button type="button" class="avatar-zoom-fav${isFavAvatar(id) ? " on" : ""}" aria-label="Favorite" aria-pressed="${isFavAvatar(id)}">${FAV_HEART}</button>` : ""}<button type="button" class="avatar-zoom-close" aria-label="Close">&times;</button></div>`;
     ov.addEventListener("click", (e) => {
       const heart = e.target.closest(".avatar-zoom-fav");
