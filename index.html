@@ -17323,6 +17323,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const recent = (allFound ? recentlySeen : recentDiscoveries)(myProfile,{limit:6,allowed:new Set(listIds)});
     const recentHtml = `<section class="recent-discoveries"><h3>${allFound ? "Most recently seen" : "Recently discovered"}</h3>${recent.length?`<div class="discovery-grid">${discoveryTiles(recent,id=>OBJECT_BY_ID.get(id))}</div>`:'<p class="cs-note">New discoveries will appear here as you play.</p>'}</section>`;
     const normalTotal = NORMAL_LIST.length, holidayTotal = HOLIDAY_OBJECT_DEFS.length;
+    // Two objects of the same size are never paired (the answer would just be 1), so those pairs are left out of the total, and
+    // any a player saw before that rule are left out of their count, so 100% stays reachable and seen never passes total.
+    const sizeCount = (ids) => ids.reduce((m, id) => { const mm = (OBJECT_BY_ID.get(id) || {}).mm; m.set(mm, (m.get(mm) || 0) + 1); return m; }, new Map());
+    const normalSizes = sizeCount(NORMAL_LIST.map((o) => o.id)), holidaySizes = sizeCount(HOLIDAY_OBJECT_DEFS.map((d) => d[1]));
+    const sameSizeKey = (k) => { const [a, b] = k.split("|").map((id) => (OBJECT_BY_ID.get(id) || {}).mm); return a !== undefined && a === b; };
     let seenCount, totalCount, seenComboCount, comboCount, listHtml;
     if (!isHoliday) {
       const groups = {};
@@ -17334,8 +17339,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       letters.forEach((l) => groups[l].sort((a, b) => a.display.localeCompare(b.display)));
       totalCount = normalTotal;
       seenCount = NORMAL_LIST.filter((o) => seenSet[o.id]).length;
-      comboCount = (normalTotal * (normalTotal - 1)) / 2;
-      seenComboCount = comboKeys.filter((k) => !k.split("|").some((id) => holidayIds.has(id))).length;
+      comboCount = (normalTotal * (normalTotal - 1)) / 2 - [...normalSizes.values()].reduce((t, n) => t + (n * (n - 1)) / 2, 0);
+      seenComboCount = Math.min(comboCount, comboKeys.filter((k) => !k.split("|").some((id) => holidayIds.has(id)) && !sameSizeKey(k)).length);
       listHtml = letters.map((letter) => `
         <div class="items-letter-group">
           <div class="items-letter-title">${letter}</div>
@@ -17345,8 +17350,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       totalCount = holidayTotal;
       seenCount = HOLIDAY_OBJECT_DEFS.filter((d) => seenSet[d[1]]).length;
       // every pair that includes at least one holiday object (holiday+holiday and holiday+normal)
-      comboCount = (holidayTotal * (holidayTotal - 1)) / 2 + holidayTotal * normalTotal;
-      seenComboCount = comboKeys.filter((k) => k.split("|").some((id) => holidayIds.has(id))).length;
+      comboCount = (holidayTotal * (holidayTotal - 1)) / 2 + holidayTotal * normalTotal
+        - [...holidaySizes].reduce((t, [mm, h]) => t + (h * (h - 1)) / 2 + h * (normalSizes.get(mm) || 0), 0);
+      seenComboCount = Math.min(comboCount, comboKeys.filter((k) => k.split("|").some((id) => holidayIds.has(id)) && !sameSizeKey(k)).length);
       const owned = (myProfile.holidayPacks || {});
       const season = seasonPackIds(new Date());
       listHtml = MONTH_PACKS.map((p) => {
