@@ -45,7 +45,7 @@ button.sv-battle:focus-visible { outline:2px solid #37679f; outline-offset:2px; 
 }
 .sv-meter[data-zone="safe"] { --flourish:#aa6a12; --ember:#ffd34d; }
 .sv-meter[data-zone="great"] { --flourish:#2a853e; --ember:#a6ff8a; }
-.sv-meter-track { position:relative; aspect-ratio:1000/128; isolation:isolate; }
+.sv-meter-track { position:relative; aspect-ratio:1000/128; isolation:isolate; container-type:inline-size; } /* cqw = 1% of the track: svMeterSlide */
 .sv-meter-wall, .sv-meter-wash, .sv-meter-fill { position:absolute; inset:0; }
 .sv-meter-wall { background:url("../icons/survival-wall.webp") center/100% 100% no-repeat; }
 .sv-meter-wash, .sv-meter-fill {
@@ -117,7 +117,8 @@ html[data-motion=reduce] .sv-meter-flag > .cl { animation:none !important; }
 .sv-meter.revealing .sv-meter-ring { animation:svMeterRing .45s var(--meter-land) ease-out both; }
 .sv-meter.revealing .sv-meter-sparks i { animation:svMeterSparks .49s var(--meter-land) ease-out both; }
 @keyframes svMeterFill { from{clip-path:inset(0 100% 0 0)} to{clip-path:inset(0 calc(100% - var(--accuracy)) 0 0)} }
-@keyframes svMeterSlide { from{left:0} to{left:clamp(4px,var(--accuracy),calc(100% - 4px))} }
+/* The marker sits at its final place (left:clamp(...)) and slides there from the left end with translate (no re-layout per frame). */
+@keyframes svMeterSlide { from{translate:calc(-1 * clamp(4px, var(--acc-n,0) * 1cqw, 100cqw - 4px)) 0} to{translate:0 0} }
 @keyframes svMeterLand {
   0%,100% { transform:translate(-50%,-50%); }
   30% { transform:translate(-50%,-50%) scale(1.7); }

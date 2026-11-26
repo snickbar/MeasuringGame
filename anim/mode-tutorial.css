@@ -29,8 +29,9 @@
 .mt-type.t1{animation-delay:.4s}.mt-type.t2{animation-delay:.9s}.mt-type.t3{animation-delay:1.4s}
 @keyframes mtType{0%{opacity:0;transform:translateY(8px)}6%,85%{opacity:1;transform:none}100%{opacity:0}}
 .mt-gauge{position:relative;width:78%;height:26px;border-radius:13px;background:#fffdf7;border:2px solid #b49a70}
-.mt-fill{position:absolute;left:0;top:0;bottom:0;border-radius:11px;background:#e5694f;width:0;animation:mtFill 3.6s ease-out infinite}
-@keyframes mtFill{0%{width:0}55%,100%{width:45%}}
+/* The fills grow with transform (scaleX / a slide) instead of width, so the looping demos never re-lay out the page. */
+.mt-fill{position:absolute;left:0;top:0;bottom:0;border-radius:11px;background:#e5694f;width:45%;transform-origin:0 50%;transform:scaleX(0);animation:mtFill 3.6s ease-out infinite}
+@keyframes mtFill{0%{transform:scaleX(0)}55%,100%{transform:scaleX(1)}}
 .mt-mark{position:absolute;left:60%;top:-6px;bottom:-6px;width:3px;background:#3b2718}
 .mt-mark em{position:absolute;top:34px;left:-14px;font:600 14px Fredoka,sans-serif;color:#3b2718}
 .mt-heartswap{position:relative;width:62px;height:62px;margin-top:10px}
@@ -116,8 +117,8 @@
 @keyframes mtLit0{0%,31%{filter:grayscale(1) brightness(1.3);opacity:.55;transform:none}36%{transform:scale(1.35)}42%,92%{filter:none;opacity:1;transform:none}100%{filter:grayscale(1) brightness(1.3);opacity:.55}}
 @keyframes mtLit1{0%,41%{filter:grayscale(1) brightness(1.3);opacity:.55;transform:none}46%{transform:scale(1.35)}52%,92%{filter:none;opacity:1;transform:none}100%{filter:grayscale(1) brightness(1.3);opacity:.55}}
 @keyframes mtLit2{0%,100%{filter:grayscale(1) brightness(1.3);opacity:.55}}
-.mt-sm-bar{position:relative;height:22px;border-radius:11px;background:#fffdf7;border:2px solid #b49a70;overflow:hidden}.mt-sm-fill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(#a9d86a,#7db03f);animation:mtSmFill 4.6s ease-out infinite}
-@keyframes mtSmFill{0%{width:0}55%,92%{width:82%}100%{width:0}}
+.mt-sm-bar{position:relative;height:22px;border-radius:11px;background:#fffdf7;border:2px solid #b49a70;overflow:hidden}.mt-sm-fill{position:absolute;left:0;top:0;bottom:0;width:82%;transform:translateX(-100%);background:linear-gradient(#a9d86a,#7db03f);animation:mtSmFill 4.6s ease-out infinite}
+@keyframes mtSmFill{0%{transform:translateX(-100%)}55%,92%{transform:translateX(0)}100%{transform:translateX(-100%)}} /* slides in from behind the bar's clipped left edge */
 .mt-sm-label{margin-top:6px;font-size:15px;font-weight:600}.mt-sm-label b{font-size:20px;color:#5c7f2d}
 .mt-line{position:relative;width:86%;height:74px;border-bottom:4px solid #b49a70;margin-top:10px}
 .mt-pt{position:absolute;bottom:-12px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;line-height:1;padding:2px 8px;border-radius:12px;background:#fffdf7;border:2px solid #d5bc91;opacity:0;animation:mtPop 4.6s infinite}
@@ -283,8 +284,8 @@ button.dc-btn.tour-btn span{pointer-events:none}
 .xt-stars .xt-earned img{animation:xtStar .7s .8s both}.xt-stars .xt-earned:nth-child(2) img{animation-delay:1.6s}
 @keyframes xtStar{from{filter:grayscale(1);opacity:.35;transform:scale(.8)}to{filter:none;opacity:1;transform:scale(1)}}
 .xt-meter{width:90%;height:24px;background:#fffaf0;border:2px solid #ad9471;border-radius:14px;position:relative}
-.xt-meter>i{display:block;height:100%;width:var(--fill);border-radius:12px;background:linear-gradient(#a9d86a,#7db03f);animation:xtFill 2s ease-out both}
-@keyframes xtFill{from{width:0}to{width:var(--fill)}}
+.xt-meter>i{display:block;height:100%;width:var(--fill);border-radius:12px;background:linear-gradient(#a9d86a,#7db03f);transform-origin:0 50%;animation:xtFill 2s ease-out both}
+@keyframes xtFill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 .xt-survival{background:linear-gradient(to right,#edb4a7 60%,#d9ecc1 60%)}
 .xt-survival>span{position:absolute;left:60%;top:-5px;height:30px;border-left:3px solid #765336;font-size:12px;padding-left:4px;line-height:58px}
 .xt-survival.xt-fail>i{background:#e17b67}

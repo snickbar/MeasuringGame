@@ -9,7 +9,7 @@ import { createRequire } from 'node:module';
 const { list } = createRequire(import.meta.url)('./production-files.cjs');
 
 const SAFE = new Set(['transform', 'opacity', 'filter', 'translate', 'scale', 'rotate', 'offset-distance', 'offset-rotate', 'visibility', 'animation-timing-function', 'animation-composition']);
-const KNOWN = new Set(`anim/game-polish.css|wlSceneCloud anim/home-motion.css|hsLampSwitch anim/mode-tutorial.css|mtFill anim/mode-tutorial.css|mtSel anim/mode-tutorial.css|mtSmFill
+const KNOWN = new Set(`anim/game-polish.css|wlSceneCloud anim/home-motion.css|hsLampSwitch anim/mode-tutorial.css|mtSel
 anim/party-finale.css|winnerCardShine anim/ui-delight.css|skelShimmer anim/ui-delight.css|bdShine anim/which-bigger-summary.css|svShieldShine
 index.html|hostUnlockGlow index.html|gachaFreeGlow index.html|hsActGlow index.html|hsMineGlow index.html|hsWinGlow index.html|hsShine index.html|wbSpot index.html|wbBestGlow
 index.html|wbShineText index.html|achReady index.html|achShine index.html|winnerInset index.html|hlPulseLow index.html|hlPulseHigh index.html|hlGoldShine index.html|starOrbit
