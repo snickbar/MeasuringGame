@@ -4456,6 +4456,18 @@ if (location.protocol === "file:") {
   .wl-rocket { position:absolute; top:-24px; left:max(var(--accuracy,0%),14px); width:0; height:0; pointer-events:none; z-index:3; transition:left var(--wl-t,.3s ease); }
   .wl-rocket img { position:absolute; left:-18px; top:-18px; width:36px; height:36px; transform:rotate(45deg); }
   .wl-rocket::after { content:''; position:absolute; left:0; top:12px; height:10px; border-left:2px dotted #ffb23a; }
+  /* Rocket exhaust: a pulsing glow at the flame plus thin speed lines streaming back from it (transform + opacity only). */
+  .wl-rocket { --fx:-18px; }
+  .wl-glow { position:absolute; left:calc(var(--fx) - 15px); top:-13px; width:30px; height:26px; border-radius:50%; pointer-events:none; background:radial-gradient(closest-side,rgba(255,236,150,.95),rgba(255,170,50,.6) 45%,rgba(255,120,30,0)); animation:wlGlow .42s ease-in-out infinite alternate; }
+  .wl-streak { position:absolute; left:calc(var(--fx) - 26px); width:28px; height:2px; border-radius:2px; pointer-events:none; background:linear-gradient(90deg,rgba(255,200,90,0),#ffd27a 55%,#fff3c4); opacity:0; animation:wlStreak .8s linear infinite; }
+  .wl-streak.s1 { top:-7px; }
+  .wl-streak.s2 { top:-1px; width:34px; animation-duration:.65s; animation-delay:-.3s; }
+  .wl-streak.s3 { top:5px; width:22px; animation-duration:.95s; animation-delay:-.55s; }
+  .wl-trail { animation:wlTrailShimmer 1.1s ease-in-out infinite alternate; }
+  @keyframes wlGlow { from { transform:scale(.85,.9); opacity:.7; } to { transform:scale(1.25,1.05); opacity:1; } }
+  @keyframes wlStreak { 0% { transform:translateX(14px); opacity:0; } 20% { opacity:.9; } 100% { transform:translateX(-30px); opacity:0; } }
+  @keyframes wlTrailShimmer { from { opacity:.78; } to { opacity:1; } }
+  @media (prefers-reduced-motion:reduce) { .wl-glow, .wl-trail { animation:none; } .wl-streak { display:none; } }
   /* Accuracy label + percent live under the meter (same row as the star thresholds), in Team Worlds and solo Worlds. */
   .wl-sky .wl-progress-heading { position:absolute; left:10px; bottom:5px; justify-content:flex-start; gap:8px; align-items:baseline; font-size:12px; }
   .wl-sky .wl-progress-heading strong { font-size:15px; }
@@ -14448,7 +14460,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ${day ? '<i class="wl-cloud c1"></i><i class="wl-cloud c2"></i><i class="wl-cloud c3"></i>' : ''}
       <div class="wl-progress-heading"><span>Accuracy so far</span><strong>${sky && avg == null ? '0%' : text}</strong></div>
       <div class="wl-progress-scale" role="progressbar" aria-label="Average accuracy" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${avg ?? 0}" aria-valuetext="${avg == null ? text : text + ' accurate, currently ' + stars + ' of 3 stars'}">
-        <span class="wl-progress-fill" style="--accuracy:${avg ?? 0}%">${day ? '<span class="wl-bar"></span><span class="wl-balloon"><i class="wl-puff p1"></i><i class="wl-puff p2"></i><i class="wl-puff p3"></i><img src="items/hot-air-balloon.webp" alt=""></span>' : sky ? '<span class="wl-bar"></span><span class="wl-trail"></span><span class="wl-rocket"><img src="icons/flair/rocket.webp" alt=""></span>' : ''}</span>
+        <span class="wl-progress-fill" style="--accuracy:${avg ?? 0}%">${day ? '<span class="wl-bar"></span><span class="wl-balloon"><i class="wl-puff p1"></i><i class="wl-puff p2"></i><i class="wl-puff p3"></i><img src="items/hot-air-balloon.webp" alt=""></span>' : sky ? '<span class="wl-bar"></span><span class="wl-trail"></span><span class="wl-rocket"><i class="wl-glow"></i><i class="wl-streak s1"></i><i class="wl-streak s2"></i><i class="wl-streak s3"></i><img src="icons/flair/rocket.webp" alt=""></span>' : ''}</span>
         ${WORLD_STAR_AT.map((at, i) => `<span class="wl-progress-marker${i < stars ? ' earned' : ''}" style="left:${at}%" aria-label="${i + 1} star${i ? 's' : ''}: above ${at}%"><span class="wl-progress-star"><img src="icons/flair/star.webp" alt=""><b>${i + 1}</b></span><span class="wl-progress-threshold">&gt;${at}%</span></span>`).join('')}
       </div></div>`;
   }
