@@ -35,6 +35,17 @@ Object.assign(SCENERY_BY_OBJECT, {
   'roller-coaster':'city','airport-runway':'city',
   'sugar-cube':'kitchen','harp':'living','briefcase':'living','axolotl-plush':'tabletop','dumpling-squishy':'tabletop','roadside-diner':'city','double-cheeseburger':'restaurant','weed-whacker':'grass','leaf-blower':'grass','pruning-shears':'grass','hay-bale':'farm','gallon-of-milk':'kitchen','recycling-bin':'town','retro-game-system':'living','portable-cassette-player':'living','classic-bug-car':'city','rubber-wristband':'tabletop','baggy-pants':'living','yarn-hair-doll':'living','fashion-doll':'living','wall-payphone':'city','cat-wall-clock':'kitchen','coil-spring-toy':'tabletop','fortune-ball':'tabletop','drawing-screen-toy':'tabletop','potato-toy':'tabletop','egg-digital-pet':'tabletop','handheld-game-system':'living','red-toy-wagon':'grass','videotape':'living','floor-jukebox':'restaurant','stuffed-bean-toy':'living','bean-bag-chair':'living','tv-dinner':'kitchen','smiley-pin':'tabletop','plastic-food-container':'kitchen','roller-skate':'stadium','mood-ring':'tabletop','pet-rock':'tabletop','three-ring-binder':'library','calculator-watch':'tabletop','slap-bracelet':'tabletop','quarter-gumball-machine':'town','transforming-robot-toy':'tabletop','plastic-army-man':'tabletop','combo-video-player':'living','school-folder':'library','pump-water-blaster':'grass','video-rental-card':'tabletop','disposable-camera':'tabletop','photo-booth-strip':'tabletop','graphing-calculator':'library','plasma-globe':'living','kids-meal-toy':'restaurant','worlds-fair-globe':'city','comic-book':'tabletop'
 });
+// Monthly pack objects that had no scene and fell back to grass (2026-11-25 pre-launch check). Grass stays only where a
+// backyard is right (barbecue, picnic, kite, rain boots, above-ground pool).
+Object.assign(SCENERY_BY_OBJECT, {
+  snowman:'snow','ice-skates':'snow',skis:'snow','christmas-lights':'snow',
+  menorah:'living',ornament:'living','hot-cocoa-mug':'living','football-tv':'living',
+  wishbone:'kitchen','gravy-boat':'kitchen','pie-server':'kitchen','apple-pie':'kitchen',tamale:'kitchen','clover-cookie':'kitchen',
+  'beach-bucket':'beach','sun-hat':'beach','kiddie-pool':'beach','ice-cream-sandwich':'beach','horseshoe-crab':'beach','sparkling-lemonade':'beach','tie-dye-shirt':'beach',
+  serape:'desert','green-top-hat':'enchanted',bagpipes:'mountain','baby-lamb':'farm','apple-with-worm':'farm',
+  'spider-web':'forest','camping-lantern':'forest','trick-or-treat-bucket':'town','parade-puppy-balloon':'city','bicycle-bell':'city',
+  'barbecue-tongs':'grass','picnic-basket':'grass','rainbow-kite':'grass','rain-boot':'grass','above-ground-pool':'grass'
+});
 for (const [scene, words] of Object.entries(OBJECT_GROUPS)) for (const id of words.split(/\s+/)) {
   if (SCENERY_BY_OBJECT[id]) throw new Error('Duplicate scenery assignment: ' + id);
   SCENERY_BY_OBJECT[id] = scene;

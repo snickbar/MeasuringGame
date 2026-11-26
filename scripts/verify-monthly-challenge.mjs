@@ -114,7 +114,7 @@ ctx.screenApi.setSaved({key,done:false,guesses:[1,2]});active=false;await ctx.sc
 // Exercise actual completion through the atomic attempt ledger, level by level.
 let wallet={coins:0,stats:{},monthly:{key:'2026-10',best:400,bestRounds:5}};const attempts=[];
 const runtime=vm.createContext({roundAccuracy,monthlyBoardScore,MONTHLY_FORMAT,monthlyBoardKey,monthlyLevelCoins,monthlyReplayCoins,Date,Math,checkName:()=>null,
- deviceId:'test',currentName:'Player',soloDisplayName:()=> 'Player',updateDailyBadge:()=>{},
+ deviceId:'test',boardKey:()=>'test',boardMark:()=>({}),currentName:'Player',soloDisplayName:()=> 'Player',updateDailyBadge:()=>{},
  completedAttempt:record=>{attempts.push(record);wallet=applyCareerRecord(wallet,{...record,kind:'attempt',t:1});}});
 vm.runInContext(';let mo=null;'+['monthlyAccs','monthlyFinish','monthlyPracticeFinish'].map(fn).join('\n')+';globalThis.runtime={setRun:r=>mo=r,getRun:()=>mo,finish:monthlyFinish,practice:monthlyPracticeFinish};',runtime);
 const mk=(level,n,g)=>({key:'2026-10',level,combos:Array.from({length:10},(_,i)=>({unitId:'m'+i,targetId:'base'+i})),prog:{},questions:Array.from({length:n},(_,i)=>({unitId:'m'+i,targetId:'base'+i,answer:1})),guesses:Array(n).fill(g)});

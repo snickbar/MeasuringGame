@@ -5699,6 +5699,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { createLocalRooms } from "./anim/local-rooms.mjs";
   import { createOfflineProfile } from "./anim/offline-profile.mjs";
   import { writeProfile } from "./anim/profile-writes.mjs";
+  import { boardId, isGuestId } from "./anim/board-id.mjs";
   // Kept pinned to the exact same build as firebase-app/firebase-database above
   // (not the newer version the native @capacitor-firebase/authentication plugin's
   // own npm package wants) - these CDN modules only guarantee mutual
@@ -6339,6 +6340,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // uid once Sign-In is added) - sign-out needs to be able to point back at
   // this device's own local progress rather than losing track of it.
   const localDeviceId = deviceId;
+  // Leaderboard key: a guest is listed under a one-way hash of the device id (which also guards their profile), never the id
+  // itself; a signed-in player under their account uid. h:1 marks a hashed guest entry (database rules and the migration use it).
+  const boardKey = () => boardId(deviceId);
+  const boardMark = () => (isGuestId(deviceId) ? { h: 1 } : {});
 
   function defaultCosmeticState() {
     return {
@@ -8878,7 +8883,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     ["axolotl-plush", "axolotl plush", "axolotl plushies", 300, "width", "toy-box"],
     ["dumpling-squishy", "dumpling squishy", "dumpling squishies", 90, "width", "toy-box"],
     ["roadside-diner", "roadside diner", "roadside diners", 18000, "length", "town"],
-    ["double-cheeseburger", "double cheeseburger", "double cheeseburgers", 120, "diameter", "food"],
+    ["double-cheeseburger", "double cheeseburger", "double cheeseburgers", 120, "height", "food"],
     ["weed-whacker", "weed whacker", "weed whackers", 1700, "length", "gadgets"],
     ["leaf-blower", "leaf blower", "leaf blowers", 700, "length", "gadgets"],
     ["pruning-shears", "pruning shears", "pairs of pruning shears", 220, "length", "gadgets"],
@@ -8904,10 +8909,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     ["videotape", "videotape", "videotapes", 190, "length", "retro"],
     ["floor-jukebox", "floor-standing jukebox", "floor-standing jukeboxes", 1500, "height", "retro"],
     ["stuffed-bean-toy", "stuffed bean toy", "stuffed bean toys", 200, "height", "retro"],
-    ["bean-bag-chair", "bean bag chair", "bean bag chairs", 900, "width", "retro"],
+    ["bean-bag-chair", "bean bag chair", "bean bag chairs", 900, "height", "retro"],
     ["tv-dinner", "TV dinner", "TV dinners", 230, "length", "retro"],
     ["smiley-pin", "smiley face pin", "smiley face pins", 55, "diameter", "retro"],
-    ["plastic-food-container", "plastic food container", "plastic food containers", 180, "length", "retro"],
+    ["plastic-food-container", "plastic food container", "plastic food containers", 180, "height", "retro"],
     ["roller-skate", "roller skate", "roller skates", 280, "length", "retro"],
     ["mood-ring", "mood ring", "mood rings", 20, "diameter", "retro"],
     ["pet-rock", "pet rock", "pet rocks", 90, "length", "retro"],
@@ -9038,7 +9043,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     ["halloween", "bat", "bat", "bats", 250],
     ["halloween", "candy-corn", "candy corn", "candy corn", 25],
     ["halloween", "coffin", "coffin", "coffins", 2000],
-    ["halloween", "black-cat", "black cat", "black cats", 450],
+    ["halloween", "black-cat", "black cat", "black cats", 750], // nose to tail tip, the same as the domestic cat
     ["halloween", "tombstone", "tombstone", "tombstones", 900],
     ["thanksgiving", "turkey", "roast turkey", "roast turkeys", 400],
     ["thanksgiving", "pilgrim-hat", "Pilgrim hat", "Pilgrim hats", 250],
@@ -9236,9 +9241,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Each mm value represents one declared dimension, not a universal bounding-box size.
   // Unlisted objects use end-to-end length; explicit groups describe other dimensions.
   const MEASUREMENT_GROUPS = {
-    height: `arcade-machine earbuds-case light-bulb soda-can baby-bottle wine-glass boba-tea ice-cream-cone pineapple wine-bottle cotton-candy lava-lamp daisy long-stem-rose foam-finger trash-can traffic-cone barstool fire-hydrant folding-chair lawn-flamingo barrel penguin newspaper-box pogo-stick traffic-light stork mailbox flamingo mop parking-meter broom giant-anthill kangaroo unicycle adult-human gorilla refrigerator robot scarecrow vending-machine ladder door stop-sign ostrich phone-booth porta-potty corn-stalk sunflower moai teepee giraffe cactus streetlight palm-tree telephone-pole flagpole oak-tree barn-silo hot-air-balloon lighthouse windmill christ-statue water-tower power-line-tower statue-of-liberty castle niagara-falls leaning-tower-of-pisa notre-dame taj-mahal tower-crane big-ben saturn-rocket wind-turbine london-eye great-pyramid washington-monument space-needle gateway-arch hoover-dam eiffel-tower empire-state-building cn-tower burj-khalifa angel-falls mount-fuji mount-kilimanjaro mount-everest christmas-tree christmas-stocking santa-hat reindeer witch-hat skeleton ghost pilgrim-hat tombstone cupid candle leprechaun-hat pot-of-gold green-beer-mug leprechaun chocolate-bunny bunny-ears marshmallow-chick baby-chick champagne-glass party-hat balloon countdown-sign tulip handbag coffee-mug lemonade-pitcher ketchup-bottle uncle-sam-hat beach-umbrella sandcastle suitcase backpack locker goblin yeti bigfoot fairy baby-dragon garden-gnome dwarf alien mermaid mummy werewolf unicorn minotaur centaur troll cyclops kaiju snowman nutcracker camping-lantern flower-pot watering-can rain-boot menorah parade-puppy-balloon haunted-house sparkling-lemonade hot-cocoa-mug trick-or-treat-bucket beach-bucket heart-balloon rainbow-kite`.split(/\s+/),
-    width: `fake-mustache game-controller laptop basketball-backboard soccer-goal jumbotron billboard american-flag novelty-glasses sunglasses snorkel-mask shamrock four-leaf-clover heart football-tv graduation-cap`.split(/\s+/),
-    diameter: `grain-of-sand poppy-seed blueberry cheerio penny button quarter checkers-piece poker-chip ping-pong-ball golf-ball clown-nose hockey-puck sand-dollar apple scrunchie donut bagel dvd dog-bowl volleyball bowling-ball soccer-ball basketball cream-pie frisbee starfish vinyl-record pizza-pie watermelon cheese-wheel manhole-cover car-tire carousel snow-globe cauldron pumpkin pumpkin-pie cranberry gold-coin clock disco-ball times-square-ball beach-ball hamburger globe flying-saucer wedding-ring ornament apple-with-worm clover-cookie above-ground-pool kiddie-pool apple-pie bicycle-bell sun-hat green-top-hat`.split(/\s+/),
+    height: `arcade-machine earbuds-case light-bulb soda-can baby-bottle wine-glass boba-tea ice-cream-cone pineapple wine-bottle cotton-candy lava-lamp daisy long-stem-rose foam-finger trash-can traffic-cone barstool fire-hydrant folding-chair lawn-flamingo barrel penguin newspaper-box pogo-stick traffic-light stork mailbox flamingo mop parking-meter broom giant-anthill kangaroo unicycle adult-human gorilla refrigerator robot scarecrow vending-machine ladder door stop-sign ostrich phone-booth porta-potty corn-stalk sunflower moai teepee giraffe cactus streetlight palm-tree telephone-pole flagpole oak-tree barn-silo hot-air-balloon lighthouse windmill christ-statue water-tower power-line-tower statue-of-liberty castle niagara-falls leaning-tower-of-pisa notre-dame taj-mahal tower-crane big-ben saturn-rocket wind-turbine london-eye great-pyramid washington-monument space-needle gateway-arch hoover-dam eiffel-tower empire-state-building cn-tower burj-khalifa angel-falls mount-fuji mount-kilimanjaro mount-everest christmas-tree christmas-stocking santa-hat reindeer witch-hat skeleton ghost pilgrim-hat tombstone cupid candle leprechaun-hat pot-of-gold green-beer-mug leprechaun chocolate-bunny bunny-ears marshmallow-chick baby-chick champagne-glass party-hat balloon tulip handbag coffee-mug lemonade-pitcher ketchup-bottle uncle-sam-hat beach-umbrella sandcastle suitcase backpack locker goblin yeti bigfoot fairy baby-dragon garden-gnome dwarf alien mermaid mummy werewolf unicorn minotaur centaur troll cyclops kaiju snowman nutcracker camping-lantern flower-pot watering-can rain-boot menorah parade-puppy-balloon haunted-house sparkling-lemonade hot-cocoa-mug trick-or-treat-bucket beach-bucket heart-balloon rainbow-kite whiskey-glass chocolate-drop jack-in-the-box beer-bottle fire-extinguisher scooter jewelry-box easter-basket sunscreen-bottle firecracker barbecue-grill glue-stick school-desk countdown-sign`.split(/\s+/),
+    width: `fake-mustache game-controller laptop basketball-backboard soccer-goal jumbotron billboard american-flag novelty-glasses sunglasses snorkel-mask shamrock four-leaf-clover football-tv graduation-cap cowboy-hat heart chocolate conversation-heart spider-web`.split(/\s+/),
+    diameter: `grain-of-sand poppy-seed blueberry cheerio penny button quarter checkers-piece poker-chip ping-pong-ball golf-ball clown-nose hockey-puck sand-dollar apple scrunchie donut bagel dvd dog-bowl volleyball bowling-ball soccer-ball basketball cream-pie frisbee starfish vinyl-record pizza-pie watermelon cheese-wheel manhole-cover car-tire carousel snow-globe cauldron pumpkin pumpkin-pie cranberry gold-coin clock disco-ball times-square-ball beach-ball hamburger globe flying-saucer wedding-ring ornament apple-with-worm clover-cookie above-ground-pool kiddie-pool apple-pie bicycle-bell sun-hat green-top-hat marble tennis-ball baseball town-fountain sombrero`.split(/\s+/),
     edge: ["ice-cube", "letter-block", "rubiks-cube", "wooden-block"],
     depth: ["grand-canyon", "mariana-trench"],
     wingspan: ["bat", "phoenix"],
@@ -9837,7 +9842,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     },
     "black-cat": {
       "dimension": "length",
-      "qualifier": "body only, excluding the tail"
+      "qualifier": "including the tail"
+    },
+    "domestic-cat": {
+      "dimension": "length",
+      "qualifier": "including the tail"
     },
     "rainbow": {
       "dimension": "width"
@@ -9911,6 +9920,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const allPairs = [];
     for (let i = 0; i < objects.length; i++) {
       for (let j = i + 1; j < objects.length; j++) {
+        if (objects[i].mm === objects[j].mm) continue; // never two objects of the same size (the answer would just be 1)
         const [unit, target] = objects[i].mm <= objects[j].mm ? [objects[i], objects[j]] : [objects[j], objects[i]];
         allPairs.push([unit, target, unit.mm / target.mm]);
       }
@@ -9961,13 +9971,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function pickRandomPair(pool) {
     const seasonal = o => pool.seasonal.includes(o) ? 1 + SEASON_BOOST_CHANCE : 1;
     const a = objectMemory.pickObject(pool.objects, seasonal);
-    const b = objectMemory.pickObject(pool.objects.filter(o=>o.id!==a.id),o=>seasonal(o)*objectMemory.pairWeight(a.id,o.id)/Math.sqrt(objectMemory.objectWeight(o.id)));
+    // Never two objects of the same size (the answer would just be 1); only a pool with nothing else falls back to any other object.
+    const others = pool.objects.filter(o=>o.id!==a.id&&o.mm!==a.mm);
+    const b = objectMemory.pickObject(others.length ? others : pool.objects.filter(o=>o.id!==a.id),o=>seasonal(o)*objectMemory.pairWeight(a.id,o.id)/Math.sqrt(objectMemory.objectWeight(o.id)));
     return a.mm <= b.mm ? [a, b] : [b, a];
   }
   function pickRelativePair(pool) {
     if (!pool.partners) pool.partners = buildRelativeIndex(pool.objects);
     const anchor = objectMemory.pickObject(pool.objects,o=>pool.seasonal.includes(o)?1+SEASON_BOOST_CHANCE:1);
     const candidates = pool.partners.get(anchor.name);
+    if (!candidates || !candidates.length) return pickRandomPair(pool); // every other object is the same size as this one
     return objectMemory.pickPair(candidates);
   }
 
@@ -12952,14 +12965,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if(replay){daily.replay=true;updateDailyBadge();return;}
     const name=(!currentName||checkName(currentName))?soloDisplayName():currentName.trim().slice(0,12);
     completedAttempt({key:'daily_'+daily.date,mode:'daily',date:daily.date,yesterday:dailyShiftDate(daily.date,-1),accuracy:total/3,perfect:accs.every((x)=>x>=90),
-      saved:{date:daily.date,guesses:daily.guesses,done:true,total},board:{path:'daily/'+daily.date+'/'+deviceId,value:{n:name,s:total,a:accs.map(Math.round),t:Date.now()}}});
+      saved:{date:daily.date,guesses:daily.guesses,done:true,total},board:{path:'daily/'+daily.date+'/'+boardKey(),value:{n:name,s:total,a:accs.map(Math.round),t:Date.now(),...boardMark()}}});
     updateDailyBadge();
   }
   // Shown under a top-50 board when you're not on it: your own row, plus how many scores beat it (counted up to a cap).
   async function boardMyRankHtml(path, rows, fmt) {
-    if (rows.some((r) => r.id === deviceId)) return "";
+    if (rows.some((r) => r.id === boardKey())) return "";
     try {
-      const mine = (await get(ref(db, `${path}/${deviceId}`))).val();
+      const mine = (await get(ref(db, `${path}/${boardKey()}`))).val();
       if (!mine || typeof mine.s !== "number") return "";
       const CAP = 1000;
       const above = await get(query(ref(db, path), orderByChild("s"), startAfter(mine.s), limitToFirst(CAP)));
@@ -13003,7 +13016,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!rows) { now.innerHTML = emptyHtml("icons/shop-host-crown.webp", "Can't reach the leaderboard", "Check your connection and try again later."); return; }
     if (!rows.length) { now.innerHTML = emptyHtml("icons/shop-host-crown.webp", "No scores yet", "You could be first!"); return; }
     const medal = (n) => (n >= 1 && n <= 3 ? `<span class="medal ${["gold", "silver", "bronze"][n - 1]}" style="display:inline-block;width:24px;height:24px;vertical-align:middle"></span>` : String(n));
-    const html = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-em">${r.a.map((a) => markSvg(a)).join("")}</span><span class="dc-lb-score">${formatAccuracy(r.s / 3)}%</span></div>`).join("");
+    const html = rows.map((r, i) => `<div class="dc-lb-row${r.id === boardKey() ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-em">${r.a.map((a) => markSvg(a)).join("")}</span><span class="dc-lb-score">${formatAccuracy(r.s / 3)}%</span></div>`).join("");
     now.innerHTML = html;
     const mineHtml = await boardMyRankHtml(`daily/${date}`, rows, (v) => formatAccuracy(v / 3)+"%");
     const again = document.getElementById("dc-board");
@@ -15238,7 +15251,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const name = (!currentName || checkName(currentName)) ? soloDisplayName() : currentName.trim().slice(0, 12);
     completedAttempt({ key: 'monthly_' + mo.key + '_L' + mo.level + '_v' + MONTHLY_FORMAT, mode: 'monthly', month: mo.key, format: MONTHLY_FORMAT, level: mo.level, accuracy: avg, coins,
       combos: mo.combos.map(q => ({ unitId: q.unitId, targetId: q.targetId })), saved: { guesses: mo.guesses.slice(), total, coins },
-      board: { path: 'monthly/' + monthlyBoardKey(mo.key, mo.level) + '/' + deviceId, value: { n: name, s: monthlyBoardScore(total, mo.questions.length), a: accs.map(Math.round), t: Date.now() } } });
+      board: { path: 'monthly/' + monthlyBoardKey(mo.key, mo.level) + '/' + boardKey(), value: { n: name, s: monthlyBoardScore(total, mo.questions.length), a: accs.map(Math.round), t: Date.now(), ...boardMark() } } });
     mo.prog[mo.level] = { ...(mo.prog[mo.level] || {}), guesses: mo.guesses.slice(), done: true, coins, total };
     updateDailyBadge();
   }
@@ -15273,7 +15286,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!rows) { now.innerHTML = emptyHtml("icons/shop-host-crown.webp", "Can't reach the leaderboard", "Check your connection and try again later."); return; }
     if (!rows.length) { now.innerHTML = emptyHtml("icons/shop-host-crown.webp", "No scores yet", "You could be first!"); return; }
     const medal = (n) => (n >= 1 && n <= 3 ? `<span class="medal ${["gold", "silver", "bronze"][n - 1]}" style="display:inline-block;width:24px;height:24px;vertical-align:middle"></span>` : String(n));
-    const html = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-em">${r.a.map((a) => markSvg(a)).join("")}</span><span class="dc-lb-score">${Math.round(r.s / 5 * 10) / 10}%</span></div>`).join("");
+    const html = rows.map((r, i) => `<div class="dc-lb-row${r.id === boardKey() ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-em">${r.a.map((a) => markSvg(a)).join("")}</span><span class="dc-lb-score">${Math.round(r.s / 5 * 10) / 10}%</span></div>`).join("");
     now.innerHTML = html;
     const mineHtml = await boardMyRankHtml(`monthly/${monthlyBoardKey(key, level)}`, rows, (v) => `${Math.round(v / 5 * 10) / 10}%`);
     if (mineHtml && document.getElementById("mo-board") === now && mo && mo.key === key && mo.level === level) now.innerHTML = html + mineHtml;
@@ -15823,7 +15836,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const old=survivalBest(),score=sv.survived;sv.prevBest=old;sv.newBest=score>old;sv.gain=Math.max(0,score)*SURVIVAL_COINS_PER+(sv.bonusWins||0)*(SURVIVAL_THEME_COINS-SURVIVAL_COINS_PER);
     const name=(!currentName||checkName(currentName))?soloDisplayName():currentName.trim().slice(0,12);
     completedAttempt({key:sv.runId,mode:'survival',survived:score,themedWins:sv.bonusWins||0,accuracy:svRunAcc(sv.accs.length)||0,
-      ...(score>0?{board:{path:'survival/'+deviceId,value:{n:name,s:score,t:Date.now()},best:true}}:{})});
+      ...(score>0?{board:{path:'survival/'+boardKey(),value:{n:name,s:score,t:Date.now(),...boardMark()},best:true}}:{})});
     clearSoloSession('survival');
   }
   async function survivalLoadBoard() {
@@ -15840,7 +15853,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!rows) { host.innerHTML = emptyHtml("icons/shop-host-crown.webp", "Can't reach the leaderboard", "Check your connection and try again later."); return; }
     if (!rows.length) { host.innerHTML = emptyHtml("icons/shop-host-crown.webp", "No scores yet", "Be the first on the board!"); return; }
     const medal = (n) => (n >= 1 && n <= 3 ? `<span class="medal ${["gold", "silver", "bronze"][n - 1]}" style="display:inline-block;width:24px;height:24px;vertical-align:middle"></span>` : String(n));
-    const html = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-score">${r.s}</span></div>`).join("");
+    const html = rows.map((r, i) => `<div class="dc-lb-row${r.id === boardKey() ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-score">${r.s}</span></div>`).join("");
     host.innerHTML = html;
     const boardArrive = () => { const lb = host.querySelectorAll(".dc-lb-row"), step = Math.min(0.12, 1.2 / Math.max(1, lb.length)); lb.forEach((r, i) => { r.classList.add("wl-row-arr"); r.style.setProperty("--a", ((lb.length - 1 - i) * step).toFixed(2) + "s"); }); };
     if (sv && sv.phase === "over") boardArrive();

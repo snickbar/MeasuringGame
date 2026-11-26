@@ -1,0 +1,24 @@
+# One-off: moves Daily / Monthly / Survival leaderboard entries off guests' raw device ids onto the hashed keys
+# the game now uses (scripts/migrate-board-ids.mjs). Run it by hand from the Actions tab: first with "dry run"
+# ticked to see what it would move, then again with it unticked. Safe to run more than once.
+name: Migrate leaderboard ids
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (only list what would be moved)"
+        type: boolean
+        default: true
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-save --no-audit --no-fund firebase-admin@13
+      - run: node scripts/migrate-board-ids.mjs
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_ADMIN_KEY || secrets.FIREBASE_SERVICE_ACCOUNT_MEASURING_GAME }}
+          DRY_RUN: ${{ inputs.dry_run }}

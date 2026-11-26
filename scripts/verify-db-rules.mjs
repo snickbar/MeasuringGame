@@ -37,29 +37,33 @@ await allowed('deleting an empty room', 'DELETE', 'rooms/ABCD');
 
 // ---- Daily ----
 const day = '2026-11-25';
-await allowed('a Daily score', 'PUT', `daily/${day}/${ID}`, { n: 'Sam', s: 251.4, a: [88, 79, 85], t: Date.now() });
-await denied('a second Daily score', 'PUT', `daily/${day}/${ID}`, { n: 'Sam', s: 290, a: [99, 95, 96], t: Date.now() });
-await denied('Daily over 300', 'PUT', `daily/${day}/${OTHER}`, { n: 'Cheat', s: 301, a: [100, 100, 100], t: Date.now() });
-await denied('Daily score above its own accuracies', 'PUT', `daily/${day}/${OTHER}`, { n: 'Cheat', s: 300, a: [10, 10, 10], t: Date.now() });
-await denied('Daily extra field', 'PUT', `daily/${day}/${OTHER}`, { n: 'Cheat', s: 30, a: [10, 10, 10], t: Date.now(), x: 1 });
-await denied('Daily 13-character name', 'PUT', `daily/${day}/${OTHER}`, { n: 'x'.repeat(13), s: 30, a: [10, 10, 10], t: Date.now() });
-await denied('Daily accuracy over 100', 'PUT', `daily/${day}/${OTHER}`, { n: 'Cheat', s: 30, a: [150, 0, 0], t: Date.now() });
+await allowed('a Daily score', 'PUT', `daily/${day}/${ID}`, { h: 1, n: 'Sam', s: 251.4, a: [88, 79, 85], t: Date.now() });
+await denied('a second Daily score', 'PUT', `daily/${day}/${ID}`, { h: 1, n: 'Sam', s: 290, a: [99, 95, 96], t: Date.now() });
+await denied('Daily over 300', 'PUT', `daily/${day}/${OTHER}`, { h: 1, n: 'Cheat', s: 301, a: [100, 100, 100], t: Date.now() });
+await denied('Daily score above its own accuracies', 'PUT', `daily/${day}/${OTHER}`, { h: 1, n: 'Cheat', s: 300, a: [10, 10, 10], t: Date.now() });
+await denied('Daily extra field', 'PUT', `daily/${day}/${OTHER}`, { h: 1, n: 'Cheat', s: 30, a: [10, 10, 10], t: Date.now(), x: 1 });
+await denied('Daily 13-character name', 'PUT', `daily/${day}/${OTHER}`, { h: 1, n: 'x'.repeat(13), s: 30, a: [10, 10, 10], t: Date.now() });
+await denied('Daily accuracy over 100', 'PUT', `daily/${day}/${OTHER}`, { h: 1, n: 'Cheat', s: 30, a: [150, 0, 0], t: Date.now() });
 await denied('deleting a Daily score', 'DELETE', `daily/${day}/${ID}`);
 assert.equal((await req('GET', `daily/${day}/${ID}`)).body.s, 251.4, 'the first Daily score stands');
 
 // ---- Monthly (Mega level has 15 questions) ----
-await allowed('a Monthly score', 'PUT', `monthly/2026-11-L4/${ID}`, { n: 'Sam', s: 412.5, a: Array.from({ length: 15 }, () => 82), t: Date.now() });
-await denied('Monthly over 500', 'PUT', `monthly/2026-11-L4/${OTHER}`, { n: 'Cheat', s: 501, a: [100], t: Date.now() });
-await denied('a second Monthly score', 'PUT', `monthly/2026-11-L4/${ID}`, { n: 'Sam', s: 499, a: [100], t: Date.now() });
+await allowed('a Monthly score', 'PUT', `monthly/2026-11-L4/${ID}`, { h: 1, n: 'Sam', s: 412.5, a: Array.from({ length: 15 }, () => 82), t: Date.now() });
+await denied('Monthly over 500', 'PUT', `monthly/2026-11-L4/${OTHER}`, { h: 1, n: 'Cheat', s: 501, a: [100], t: Date.now() });
+await denied('a second Monthly score', 'PUT', `monthly/2026-11-L4/${ID}`, { h: 1, n: 'Sam', s: 499, a: [100], t: Date.now() });
+
+// ---- Old-style entries under a raw device id (no h:1) are refused for guests ----
+await denied('a Daily score without the hashed-key marker', 'PUT', `daily/${day}/${OTHER}`, { n: 'Old', s: 30, a: [10, 10, 10], t: Date.now() });
+await denied('a Survival score without the hashed-key marker', 'PUT', `survival/${OTHER}`, { n: 'Old', s: 3, t: Date.now() });
 
 // ---- Survival (best score only) ----
-await allowed('a Survival score', 'PUT', `survival/${ID}`, { n: 'Sam', s: 10, t: Date.now() });
-await denied('a lower Survival score over it', 'PUT', `survival/${ID}`, { n: 'Faker', s: 5, t: Date.now() });
-await denied('an equal Survival score over it', 'PUT', `survival/${ID}`, { n: 'Faker', s: 10, t: Date.now() });
-await allowed('a new Survival best', 'PUT', `survival/${ID}`, { n: 'Sam', s: 12, t: Date.now() });
-await denied('Survival over 5000', 'PUT', `survival/${OTHER}`, { n: 'Cheat', s: 5001, t: Date.now() });
-await denied('Survival extra field', 'PUT', `survival/${OTHER}`, { n: 'Cheat', s: 3, t: Date.now(), x: 1 });
-await denied('a Survival time far in the future', 'PUT', `survival/${OTHER}`, { n: 'Cheat', s: 3, t: Date.now() + 7 * 86400000 });
+await allowed('a Survival score', 'PUT', `survival/${ID}`, { h: 1, n: 'Sam', s: 10, t: Date.now() });
+await denied('a lower Survival score over it', 'PUT', `survival/${ID}`, { h: 1, n: 'Faker', s: 5, t: Date.now() });
+await denied('an equal Survival score over it', 'PUT', `survival/${ID}`, { h: 1, n: 'Faker', s: 10, t: Date.now() });
+await allowed('a new Survival best', 'PUT', `survival/${ID}`, { h: 1, n: 'Sam', s: 12, t: Date.now() });
+await denied('Survival over 5000', 'PUT', `survival/${OTHER}`, { h: 1, n: 'Cheat', s: 5001, t: Date.now() });
+await denied('Survival extra field', 'PUT', `survival/${OTHER}`, { h: 1, n: 'Cheat', s: 3, t: Date.now(), x: 1 });
+await denied('a Survival time far in the future', 'PUT', `survival/${OTHER}`, { h: 1, n: 'Cheat', s: 3, t: Date.now() + 7 * 86400000 });
 await denied('deleting a Survival score', 'DELETE', `survival/${ID}`);
 assert.equal((await req('GET', `survival/${ID}`)).body.s, 12, 'the best Survival score stands');
 

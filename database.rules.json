@@ -79,7 +79,7 @@
           "s"
         ],
         "$id": {
-          ".write": "($id.matches(/^[a-f0-9]{32}$/) || (auth != null && auth.uid === $id)) && !data.exists() && $date.matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)",
+          ".write": "(($id.matches(/^[a-f0-9]{32}$/) && newData.child('h').val() === 1) || (auth != null && auth.uid === $id)) && !data.exists() && $date.matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)",
           ".validate": "newData.hasChildren(['n','s','a','t']) && newData.child('s').val() <= newData.child('a/0').val() + newData.child('a/1').val() + newData.child('a/2').val() + 2",
           "n": {
             ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 12"
@@ -94,6 +94,9 @@
           },
           "t": {
             ".validate": "newData.isNumber() && newData.val() <= now + 86400000"
+          },
+          "h": {
+            ".validate": "newData.val() === 1"
           },
           "$other": {
             ".validate": false
@@ -118,7 +121,7 @@
           "s"
         ],
         "$id": {
-          ".write": "($id.matches(/^[a-f0-9]{32}$/) || (auth != null && auth.uid === $id)) && !data.exists()",
+          ".write": "(($id.matches(/^[a-f0-9]{32}$/) && newData.child('h').val() === 1) || (auth != null && auth.uid === $id)) && !data.exists()",
           ".validate": "newData.hasChildren(['n','s','a','t'])",
           "n": {
             ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 12"
@@ -134,6 +137,9 @@
           "t": {
             ".validate": "newData.isNumber() && newData.val() <= now + 86400000"
           },
+          "h": {
+            ".validate": "newData.val() === 1"
+          },
           "$other": {
             ".validate": false
           }
@@ -146,7 +152,7 @@
         "s"
       ],
       "$id": {
-        ".write": "($id.matches(/^[a-f0-9]{32}$/) || (auth != null && auth.uid === $id)) && (!data.exists() || newData.child('s').val() > data.child('s').val())",
+        ".write": "(($id.matches(/^[a-f0-9]{32}$/) && newData.child('h').val() === 1) || (auth != null && auth.uid === $id)) && (!data.exists() || newData.child('s').val() > data.child('s').val())",
         ".validate": "newData.hasChildren(['n','s','t'])",
         "n": {
           ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 12"
@@ -156,6 +162,9 @@
         },
         "t": {
           ".validate": "newData.isNumber() && newData.val() <= now + 86400000"
+        },
+        "h": {
+          ".validate": "newData.val() === 1"
         },
         "$other": {
           ".validate": false
