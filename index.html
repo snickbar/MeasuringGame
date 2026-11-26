@@ -23705,8 +23705,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const speed = 2.5 + Math.random() * 4, phase = Math.random() * speed;
       return `<i style="left:${x}%;top:${y}%;--star-size:${size}px;--twinkle-speed:${speed.toFixed(2)}s;--twinkle-offset:-${phase.toFixed(2)}s"></i>`;
     }).join("");
+    // Drifting layer: small stars and a few asteroids glide left on their own loops (like the balloon clouds) and slope with the score (CSS, by data-mood).
+    const lane = (kind, i, size, d, dy, extra = "") => `<b class="tw-space-lane" style="--y:${(8 + Math.random() * 78).toFixed(1)}%;--d:${d.toFixed(1)}s;--dl:-${(Math.random() * d).toFixed(1)}s;--dy:${dy.toFixed(0)}px"><b class="tw-space-body"><i class="tw-space-${kind}${extra}" style="--s:${size.toFixed(1)}px;--spin:${(14 + Math.random() * 18).toFixed(1)}s"></i></b></b>`;
+    const drift = Array.from({ length: final ? 12 : 8 }, (_, i) => lane("dstar", i, 1.6 + Math.random() * 1.6, 28 + Math.random() * 26, 14 + Math.random() * 18)).join("") +
+      Array.from({ length: final ? 4 : 3 }, (_, i) => lane("rock", i, 11 + Math.random() * 11, 17 + Math.random() * 12, 30 + Math.random() * 30, i % 2 ? " b" : "")).join("");
     return `<div class="tw-space${final ? " tw-space--final" : ""}" data-mood="${mood}" aria-hidden="true">
-      <div class="tw-space-stars"><div class="tw-space-set">${stars}</div><div class="tw-space-set">${stars}</div></div><div class="tw-space-planet"></div>${final ? '<i class="tw-space-shoot"></i>' : ""}
+      <div class="tw-space-stars"><div class="tw-space-set">${stars}</div><div class="tw-space-set">${stars}</div></div><div class="tw-space-planet"></div><div class="tw-space-drift">${drift}</div><i class="tw-space-shoot"></i>
       <div class="tw-space-flight"><div class="tw-space-float">
         ${mascotMarkup("teamworlds",mood==="up"?"win":mood==="down"?"lose":"soso",{key:reactionKey||String(final)+":"+mood,delay:650,still:reduced})}
         ${!reduced && mood === "up" ? '<i class="tw-space-spark"></i>' : ""}
@@ -23716,7 +23720,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function twSpaceScene(row) {
     const scene = row.querySelector(".tw-space"), pose = scene.querySelector(".tw-space-reaction");
     if (pose) pose.decode().then(() => scene.classList.add("pose-ready"), () => {});
-    // Final results: an occasional shooting star at a random spot and time.
+    // An occasional shooting star at a random spot and time.
     const shoot = scene.querySelector(".tw-space-shoot");
     if (shoot && !prefersReducedMotion()) {
       const fire = () => {
