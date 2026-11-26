@@ -3620,10 +3620,16 @@ if (location.protocol === "file:") {
      and the typed answer drops to the bottom (left) with the grace countdown beside it on the right. The keypad is hidden meanwhile. Only while .q-waiting. */
   #question-view .qw-timer { display: none; }
   #hud #question-view.tw-mode.q-waiting #q-wait-scene { display: contents; }
-  #hud #question-view.tw-mode.q-waiting .qw-facts { grid-column: 1 / -1; grid-row: 4; justify-self: center; width: min(100%, 266px); gap: 10px; margin: 0; }
-  #hud #question-view.tw-mode.q-waiting .qw-fact { padding: 3px 4px 4px; }
+  #hud #question-view.tw-mode.q-waiting.active { grid-template-rows: auto minmax(auto, 1fr) auto auto minmax(88px, .7fr) auto auto auto; } /* rows: progress, board, objects, fact boxes, monkeys, (keypad row, empty), answer + timer, status */
+  #hud #question-view.tw-mode.q-waiting .tw-qs-half { padding: 4px; gap: 1px; } /* both player cards must fit the column beside the objects, facts and monkeys */
+  #hud #question-view.tw-mode.q-waiting .tw-qs-half .avatar { width: 42px; height: 42px; }
+  #hud #question-view.tw-mode.q-waiting #tw-question-pics { grid-column: 1; } /* the objects and their fact boxes move left into the keypad column, so the player cards keep the whole height beside them */
+  #hud #question-view.tw-mode.q-waiting .qw-facts { grid-column: 1; grid-row: 4; gap: 10px; margin: 0; }
+  #hud #question-view.tw-mode.q-waiting .qw-fact { padding: 3px 3px 4px; font-size: 10px; }
+  #hud #question-view.tw-mode.q-waiting .qw-fact b { font-size: 12px; }
+  #hud #question-view.tw-mode.q-waiting .qw-fact small { font-size: 9.5px; }
   #hud #question-view.tw-mode.q-waiting .qw-mascot { grid-column: 1; grid-row: 5 / span 2; align-self: stretch; }
-  #hud #question-view.tw-mode.q-waiting #tw-question-stats { grid-row: 5 / span 2; }
+  #hud #question-view.tw-mode.q-waiting #tw-question-stats { grid-row: 3 / span 4; }
   #hud #question-view.tw-mode.q-waiting #tw-guess-display { grid-column: 1; grid-row: 7; justify-self: center; margin: 2px 0; }
   #hud #question-view.tw-mode.q-waiting .qw-timer { display: flex; grid-column: 2; grid-row: 7; justify-self: center; align-self: center; width: 58px; height: 58px; font-size: 21px; padding-top: 10px; visibility: hidden; }
   .qw-mascot > .mp-sprite[data-mascot-id="teamworlds"] { width: min(84cqh, 100cqw); height: min(84cqh, 100cqw); } /* a little smaller than their space so the float never touches the boxes around them */
@@ -22066,6 +22072,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       qv.classList.remove("q-waiting", "q-wait-ready"); scene.hidden = true; return; }
     const answer = roomState.settings?.mode === "teamworlds" ? twGuessDisplayEl : document.getElementById("guess-display"), status = document.getElementById("guess-status"); // Team Worlds types into its own answer box
     const beforeBox = answer.getBoundingClientRect(), before = beforeBox.top;
+    const picsBefore = roomState.settings?.mode === "teamworlds" ? [...twQuestionPicsEl.querySelectorAll(".dc-pic")].map((el) => el.getBoundingClientRect()) : []; // Team Worlds' objects slide left into the keypad column
     [["u", q.unitId], ["g", q.targetId]].forEach(([side, id]) => {
       const box = scene.querySelector(`.qw-fact[data-side="${side}"]`), f = qWaitFact(id, side);
       box.className = "qw-fact" + (f.cls || ""); box.innerHTML = f.html;
@@ -22077,6 +22084,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (still) { qv.classList.add("q-wait-ready"); return; }
     const afterBox = answer.getBoundingClientRect(), dy = before - afterBox.top, dx = beforeBox.left - afterBox.left; // Team Worlds' answer also moves sideways (to the middle)
     if (Math.abs(dy) > 2 || Math.abs(dx) > 2) [answer, status].forEach((el) => el.animate([{ transform: `translate(${el === answer ? dx : 0}px, ${dy}px)` }, { transform: "none" }], { duration: 420, easing: "cubic-bezier(.2,.8,.2,1)" }));
+    twQuestionPicsEl.querySelectorAll(".dc-pic").forEach((el, i) => { const b = picsBefore[i], a = el.getBoundingClientRect(), d = b ? (b.left + b.width / 2) - (a.left + a.width / 2) : 0; if (Math.abs(d) > 2) el.animate([{ transform: `translateX(${d}px)` }, { transform: "none" }], { duration: 420, easing: "cubic-bezier(.2,.8,.2,1)" }); });
     const pop = (el, delay) => el.animate([{ opacity: 0, transform: "scale(.82) translateY(6px)" }, { opacity: 1, transform: "scale(1.04)", offset: .7 }, { opacity: 1, transform: "none" }], { duration: 360, delay, easing: "ease-out", fill: "backwards" });
     scene.querySelectorAll(".qw-fact").forEach((el, i) => pop(el, 380 + i * 140));
     pop(scene.querySelector(".qw-mascot"), 700);
