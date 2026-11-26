@@ -3616,6 +3616,21 @@ if (location.protocol === "file:") {
   #question-view.q-waiting.q-wait-ready .qw-fact, #question-view.q-waiting.q-wait-ready .qw-mascot { opacity: 1; }
   @keyframes qwSway { 0%, 100% { transform: rotate(-1.5deg) translateY(0); } 50% { transform: rotate(1.5deg) translateY(-2px); } }
   html[data-motion=reduce] .qw-mascot img { animation: none; }
+  /* Team Worlds after Lock it in: the object fact boxes sit right under the objects, the monkeys float in the space between, the two player cards stay on the right,
+     and the typed answer drops to the bottom (left) with the grace countdown beside it on the right. The keypad is hidden meanwhile. Only while .q-waiting. */
+  #question-view .qw-timer { display: none; }
+  #hud #question-view.tw-mode.q-waiting #q-wait-scene { display: contents; }
+  #hud #question-view.tw-mode.q-waiting .qw-facts { grid-column: 1 / -1; grid-row: 4; justify-self: center; width: min(100%, 266px); gap: 10px; margin: 0; }
+  #hud #question-view.tw-mode.q-waiting .qw-fact { padding: 3px 4px 4px; }
+  #hud #question-view.tw-mode.q-waiting .qw-mascot { grid-column: 1; grid-row: 5 / span 2; align-self: stretch; }
+  #hud #question-view.tw-mode.q-waiting #tw-question-stats { grid-row: 5 / span 2; }
+  #hud #question-view.tw-mode.q-waiting #tw-guess-display { grid-column: 1; grid-row: 7; justify-self: center; margin: 2px 0; }
+  #hud #question-view.tw-mode.q-waiting .qw-timer { display: flex; grid-column: 2; grid-row: 7; justify-self: center; align-self: center; width: 58px; height: 58px; font-size: 21px; padding-top: 10px; visibility: hidden; }
+  .qw-mascot > .mp-sprite[data-mascot-id="teamworlds"] { width: min(84cqh, 100cqw); height: min(84cqh, 100cqw); } /* a little smaller than their space so the float never touches the boxes around them */
+  .qw-mascot > .mp-sprite[data-mascot-id="teamworlds"][data-mascot-still="false"] { transform-origin: 50% 50%; animation: mpBreathe 3.4s ease-in-out infinite, qwFloat 3.4s ease-in-out infinite; } /* the monkeys float up and down in space (on top of the usual breathing) */
+  @keyframes qwFloat { 0%, 100% { transform: translateY(7%) rotate(-1.5deg); } 50% { transform: translateY(-7%) rotate(1.5deg); } }
+  html[data-motion=reduce] .qw-mascot > .mp-sprite[data-mascot-id="teamworlds"] { animation: none; }
+  @media (prefers-reduced-motion: reduce) { .qw-mascot > .mp-sprite[data-mascot-id="teamworlds"] { animation: none; } }
   @media (prefers-reduced-motion: reduce) { .qw-mascot img { animation: none; } }
   #question-view #guess-display.answer-slot { margin: 3px 0; aspect-ratio: 3.4; }
   #question-view #guess-display .hand-num { padding: 4% 8%; }
@@ -5453,7 +5468,7 @@ if (location.protocol === "file:") {
 
       <div id="question-view">
         <div id="q-preview" aria-hidden="true"></div>
-        <div id="q-wait-scene" hidden><div class="qw-facts"><div class="qw-fact" data-side="u"></div><div class="qw-fact" data-side="g"></div></div><div class="qw-mascot" aria-hidden="true"></div></div>
+        <div id="q-wait-scene" hidden><div class="qw-facts"><div class="qw-fact" data-side="u"></div><div class="qw-fact" data-side="g"></div></div><div class="qw-mascot" aria-hidden="true"></div><div class="qw-timer hud-timer" id="qw-timer" aria-hidden="true">10</div></div>
         <!-- Team Worlds mimics Solo Worlds' own screen directly instead of Party's decorated
              prompt board/picture cards/paper guess display - in this exact order: star progress
              meter, the two objects, the question, both players' avatar+accuracy, then the guess
@@ -10756,6 +10771,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const hudGuestControlsEl = document.getElementById("hud-guest-controls");
   const hudAutoToggleEl = document.getElementById("hud-auto-toggle");
   const hudTimerEl = document.getElementById("hud-timer");
+  // Team Worlds hides the round timer row, but the short countdown once everyone has locked in is shown on its wait screen (inside #q-wait-scene).
+  const qwTimerEl = document.getElementById("qw-timer");
+  function setQwTimer(show, seconds, low) {
+    if (!qwTimerEl) return;
+    qwTimerEl.style.visibility = show ? "visible" : "hidden";
+    if (show) { setText(qwTimerEl, String(seconds)); qwTimerEl.classList.toggle("low", !!low); }
+  }
   const hudTimerColEl = document.querySelector(".hud-timer-col");
   const pauseBtn = document.getElementById("pause-btn");
   const exitBtn = document.getElementById("exit-btn");
@@ -20634,6 +20656,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
       const noTimer = roomState.settings?.mode === "teamworlds";
       hudTimerEl.style.visibility = noTimer ? "hidden" : "";
+      const twGrace = noTimer && roomState.phase === "question" && !!roomState.graceEndsAt;
+      if (!twGrace) setQwTimer(false);
       let deadline = null;
       if (roomState.phase === "question") deadline = noTimer && !roomState.graceEndsAt ? null : (roomState.graceEndsAt || roomState.questionEndsAt);
       else if (roomState.phase === "answers") deadline = roomState.answersEndsAt;
@@ -20650,6 +20674,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const remaining = Math.max(0, deadline - nowMs());
       setText(hudTimerEl, Math.ceil(remaining / 1000).toString());
       hudTimerEl.classList.toggle("low", remaining <= 5000);
+      if (twGrace) setQwTimer(true, Math.ceil(remaining / 1000), remaining <= 5000);
       // Shrinking bar under the number: the share of this phase's time that is left (same bar as the 10-second change windows).
       if (timerBar) {
         if (deadline !== timerBarDeadline) { timerBarDeadline = deadline; timerBarTotal = Math.max(remaining, 1000); }
@@ -21983,7 +22008,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       numpadEl.style.display = waiting ? "none" : "grid";
       submitGuessBtn.style.display = waiting ? "none" : "flex";
     }
-    qWaitScene(waiting && hudEl.dataset.playLayout === "party" && !hlRole);
+    qWaitScene(waiting && (hudEl.dataset.playLayout === "party" || roomState.settings?.mode === "teamworlds") && !hlRole);
     powerups?.render();
   }
 
@@ -22039,19 +22064,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!key) {
       if (wasOn && roomState?.phase && roomState.phase !== "question" && roomState.phase !== "countdown") qWaitExit(roomState.phase); // the phase moved on: slide the waiting mascot out before the scene is hidden
       qv.classList.remove("q-waiting", "q-wait-ready"); scene.hidden = true; return; }
-    const answer = document.getElementById("guess-display"), status = document.getElementById("guess-status");
-    const before = answer.getBoundingClientRect().top;
+    const answer = roomState.settings?.mode === "teamworlds" ? twGuessDisplayEl : document.getElementById("guess-display"), status = document.getElementById("guess-status"); // Team Worlds types into its own answer box
+    const beforeBox = answer.getBoundingClientRect(), before = beforeBox.top;
     [["u", q.unitId], ["g", q.targetId]].forEach(([side, id]) => {
       const box = scene.querySelector(`.qw-fact[data-side="${side}"]`), f = qWaitFact(id, side);
       box.className = "qw-fact" + (f.cls || ""); box.innerHTML = f.html;
     });
     const mode = roomState.settings?.mode, art = QW_MASCOTS[mode === "teamvteam" ? "teamvteam" : roomState.settings?.solo ? "quick" : "party"] || QW_MASCOTS.quick;
-    scene.querySelector(".qw-mascot").innerHTML = roomState.settings?.solo ? art.map((src) => `<img src="${src}" alt="" draggable="false">`).join("") : mascotMarkup(mode==='teamvteam'?(roomState.round%2?'cats':'dogs'):'ant','idle',{key});
+    scene.querySelector(".qw-mascot").innerHTML = roomState.settings?.solo ? art.map((src) => `<img src="${src}" alt="" draggable="false">`).join("") : mascotMarkup(mode==='teamvteam'?(roomState.round%2?'cats':'dogs'):mode==='teamworlds'?'teamworlds':'ant','idle',{key});
     scene.hidden = false; qv.classList.add("q-waiting");
     const still = wasOn || prefersReducedMotion() || !answer.animate;
     if (still) { qv.classList.add("q-wait-ready"); return; }
-    const dy = before - answer.getBoundingClientRect().top;
-    if (Math.abs(dy) > 2) [answer, status].forEach((el) => el.animate([{ transform: `translateY(${dy}px)` }, { transform: "none" }], { duration: 420, easing: "cubic-bezier(.2,.8,.2,1)" }));
+    const afterBox = answer.getBoundingClientRect(), dy = before - afterBox.top, dx = beforeBox.left - afterBox.left; // Team Worlds' answer also moves sideways (to the middle)
+    if (Math.abs(dy) > 2 || Math.abs(dx) > 2) [answer, status].forEach((el) => el.animate([{ transform: `translate(${el === answer ? dx : 0}px, ${dy}px)` }, { transform: "none" }], { duration: 420, easing: "cubic-bezier(.2,.8,.2,1)" }));
     const pop = (el, delay) => el.animate([{ opacity: 0, transform: "scale(.82) translateY(6px)" }, { opacity: 1, transform: "scale(1.04)", offset: .7 }, { opacity: 1, transform: "none" }], { duration: 360, delay, easing: "ease-out", fill: "backwards" });
     scene.querySelectorAll(".qw-fact").forEach((el, i) => pop(el, 380 + i * 140));
     pop(scene.querySelector(".qw-mascot"), 700);

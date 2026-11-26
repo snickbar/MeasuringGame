@@ -360,16 +360,24 @@ for(const m of ['quick:many','teamvteam:many','party']){await evaluate('window._
       if(n===4){const rb=await evaluate('window.__layoutRobotIdle()');if(!rb||!rb.on||rb.off||!rb.visible||!rb.card||Math.abs(rb.rect.b-rb.card.t)>10)throw Error('Quick robot must still stand on your Player card on the round summary '+width+'x'+height+': '+JSON.stringify(rb));await evaluate('window.__layoutRobotHide()');}
      }
      // After Lock it in: the answer sits at the bottom with the fact boxes and mascot above it, and nothing overflows.
-     for(const mode of ['quick','party','teamvteam']){
+     for(const mode of ['quick','party','teamvteam','teamworlds']){
+      const bodySel=mode==='teamworlds'?'#question-view':'.play-input-body',ansSel=mode==='teamworlds'?'#tw-guess-display':'#guess-display'; // Team Worlds has its own grid and answer box
       await evaluate('window.__layoutAudit('+JSON.stringify(mode)+')');await new Promise(r=>setTimeout(r,200));
-      await evaluate(`document.querySelector('#numpad [data-val="2"]').click();document.getElementById('submit-guess-btn').click();new Promise(r=>setTimeout(r,1500))`);
-      const w=await evaluate(`(()=>{const r=e=>{const b=document.querySelector(e)?.getBoundingClientRect();return b?{top:Math.round(b.top),bottom:Math.round(b.bottom)}:null},body=document.querySelector('.play-input-body');return {waiting:document.getElementById('question-view').classList.contains('q-waiting'),facts:r('.qw-facts'),answer:r('#guess-display'),status:r('#guess-status'),body:r('.play-input-body'),preview:r('#q-preview'),overflow:body.scrollHeight-body.clientHeight}})()`);
+      await evaluate(`document.getElementById('hud-auto-toggle').style.display='none';document.querySelector('#numpad [data-val="2"]').click();document.getElementById('submit-guess-btn').click();new Promise(r=>setTimeout(r,1500))`); // the Auto toggle only exists on reveal/summary (an earlier step may have left it showing)
+      const w=await evaluate(`(()=>{const r=e=>{const b=document.querySelector(e)?.getBoundingClientRect();return b?{top:Math.round(b.top),bottom:Math.round(b.bottom)}:null},body=document.querySelector('${bodySel}');return {waiting:document.getElementById('question-view').classList.contains('q-waiting'),facts:r('.qw-facts'),answer:r('${ansSel}'),status:r('#guess-status'),body:r('${bodySel}'),preview:r('#q-preview'),overflow:body.scrollHeight-body.clientHeight}})()`);
       if(!w.waiting||!w.facts||!w.answer)throw Error(mode+' '+width+'x'+height+': wait screen missing '+JSON.stringify(w));
       const mc=await evaluate(`(()=>{const box=document.querySelector('.qw-mascot').getBoundingClientRect();document.querySelectorAll('.qw-mascot img').forEach(i=>{i.style.animation='none';i.style.transform='none'});return [...document.querySelectorAll('.qw-mascot img')].map(i=>{const b=i.getBoundingClientRect();return {l:Math.round(b.left-box.left),r:Math.round(box.right-b.right)}})})()`);
       if(mc.some(m=>m.l<-1||m.r<-1))throw Error(mode+' '+width+'x'+height+': wait screen mascot is cut off at the edge '+JSON.stringify(mc));
-      const ov=await evaluate(`(()=>{const b=document.querySelector('.play-input-body'),h=document.getElementById('hud');return {ov:getComputedStyle(b).overflowX,density:h.dataset.playDensity||''}})()`);
+      const ov=await evaluate(`(()=>{const b=document.querySelector('${bodySel}'),h=document.getElementById('hud');return {ov:getComputedStyle(b).overflowX,density:h.dataset.playDensity||''}})()`);
       if(ov.ov!=='visible'&&ov.density!=='tight')throw Error(mode+' '+width+'x'+height+': the question card box clips its edges (invisible edge) '+JSON.stringify(ov));
       if(w.overflow>1||w.answer.bottom>w.body.bottom+1||w.facts.top<w.preview.bottom-1)throw Error(mode+' '+width+'x'+height+': wait screen does not fit '+JSON.stringify(w));
+      if(mode==='teamworlds'){ // the monkeys float between the fact boxes and the answer, the two player cards stay on screen beside them, and the grace stopwatch is not shown until the countdown starts
+       const tw=await evaluate(`(()=>{document.querySelectorAll('.qw-mascot .mp-sprite').forEach(s=>{s.style.animation='none';s.style.transform='none'});const r=e=>{const b=document.querySelector(e)?.getBoundingClientRect();return b?{t:Math.round(b.top),b:Math.round(b.bottom),l:Math.round(b.left),r:Math.round(b.right)}:null},t=document.getElementById('qw-timer');return {sprite:r('.qw-mascot .mp-sprite'),box:r('.qw-mascot'),facts:r('.qw-facts'),answer:r('#tw-guess-display'),stats:r('#tw-question-stats'),timerShown:!!t&&getComputedStyle(t).visibility!=='hidden'}})()`);
+       if(!tw.sprite||tw.sprite.t<tw.facts.b-1||tw.sprite.b>tw.answer.t+1)throw Error('teamworlds '+width+'x'+height+': the monkeys are not between the fact boxes and the answer '+JSON.stringify(tw));
+       if(tw.sprite.b-tw.sprite.t>(tw.box.b-tw.box.t)*0.9)throw Error('teamworlds '+width+'x'+height+': the monkeys fill their whole space, so the float would touch the boxes around them '+JSON.stringify(tw));
+       if(tw.sprite.r>tw.stats.l+1||tw.stats.b>tw.answer.t+40)throw Error('teamworlds '+width+'x'+height+': monkeys and player cards overlap or the cards sit past the answer '+JSON.stringify(tw));
+       if(tw.timerShown)throw Error('teamworlds '+width+'x'+height+': the grace stopwatch must stay hidden until the countdown starts');
+      }
       console.log(JSON.stringify({waitScreen:mode,width,height,pass:true}));
      }
      continue;
