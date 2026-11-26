@@ -3620,7 +3620,7 @@ if (location.protocol === "file:") {
      and the typed answer drops to the bottom (left) with the grace countdown beside it on the right. The keypad is hidden meanwhile. Only while .q-waiting. */
   #question-view .qw-timer { display: none; }
   #hud #question-view.tw-mode.q-waiting #q-wait-scene { display: contents; }
-  #hud #question-view.tw-mode.q-waiting.active { grid-template-rows: auto minmax(auto, 1fr) auto auto minmax(88px, .7fr) auto auto auto; } /* rows: progress, board, objects, fact boxes, monkeys, (keypad row, empty), answer + timer, status */
+  #hud #question-view.tw-mode.q-waiting.active { grid-template-rows: auto auto auto auto minmax(88px, 1fr) auto auto auto; } /* rows: progress, board, objects, fact boxes, monkeys, (keypad row, empty), answer + timer, status */
   #hud #question-view.tw-mode.q-waiting .tw-qs-half { padding: 4px; gap: 1px; } /* both player cards must fit the column beside the objects, facts and monkeys */
   #hud #question-view.tw-mode.q-waiting .tw-qs-half .avatar { width: 42px; height: 42px; }
   #hud #question-view.tw-mode.q-waiting .qw-facts { grid-column: 1; grid-row: 4; gap: 10px; margin: 0; }
@@ -22077,6 +22077,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const mode = roomState.settings?.mode, art = QW_MASCOTS[mode === "teamvteam" ? "teamvteam" : roomState.settings?.solo ? "quick" : "party"] || QW_MASCOTS.quick;
     scene.querySelector(".qw-mascot").innerHTML = roomState.settings?.solo ? art.map((src) => `<img src="${src}" alt="" draggable="false">`).join("") : mascotMarkup(mode==='teamvteam'?(roomState.round%2?'cats':'dogs'):mode==='teamworlds'?'teamworlds':'ant','idle',{key});
     scene.hidden = false; qv.classList.add("q-waiting");
+    if (roomState.settings?.mode === "teamworlds") { // the question card may have shrunk a step during the lock-in change and then stayed small: forget that and let it grow back into the free space, so no empty gap is left around it
+      const fm = qFit[qFitKey]; if (fm) fm.bad = 9999;
+      requestAnimationFrame(() => requestAnimationFrame(() => getPlayLayout().measure()));
+    }
     const still = wasOn || prefersReducedMotion() || !answer.animate;
     if (still) { qv.classList.add("q-wait-ready"); return; }
     const afterBox = answer.getBoundingClientRect(), dy = before - afterBox.top, dx = beforeBox.left - afterBox.left; // Team Worlds' answer also moves sideways (to the middle)
