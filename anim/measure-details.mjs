@@ -711,7 +711,7 @@ export const MEASURE_DETAILS = {"aa-battery":["Measured from the flat end to the
 "three-ring-binder":["Measured along the longest edge."],
 "tie-dye-shirt":["Measured from the shoulders to the bottom hem."],
 "tiger":["Measured from the nose to the tip of the tail."],
-"times-square-ball":["Measured straight across, from edge to edge."],
+"times-square-ball":["Measured from the bottom of the base to the top of the pole.",["✓ Includes the pole"]],
 "titanic":["Measured from the bow to the stern."],
 "toaster":["Measured from the left edge to the right edge."],
 "toilet":["Measured from the ground to the top."],
