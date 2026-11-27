@@ -5528,12 +5528,12 @@ if (location.protocol === "file:") {
     <div class="frame-picker-avatar-slot"><div id="name-avatar-big" class="settings-avatar-big" aria-hidden="true"></div><button type="button" id="room-frame-edit" class="frame-edit-btn" aria-haspopup="dialog">Edit</button></div>
     <button id="name-avatar-random" type="button" class="avatar-random-btn" aria-label="Random avatar" title="Random avatar"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="5" width="38" height="38" rx="9" fill="#fff8e6" stroke="#4a2c12" stroke-width="3.5"/><g fill="#4a2c12"><circle cx="16" cy="16" r="3.6"/><circle cx="32" cy="16" r="3.6"/><circle cx="24" cy="24" r="3.6"/><circle cx="16" cy="32" r="3.6"/><circle cx="32" cy="32" r="3.6"/></g></svg></button>
     <div class="settings-profile-name">
-      <label for="name-input">Your name</label>
-      <input id="name-input" placeholder="Your name" maxlength="12" readonly inputmode="none" />
+      <input id="name-input" placeholder="Your name" aria-label="Your name" maxlength="12" readonly inputmode="none" />
+      <button type="button" id="name-edit-btn" class="settings-cream-btn na-edit-name-btn" aria-controls="name-keyboard" aria-expanded="false">Edit name</button>
     </div>
   </div>
   </div>
-  <div id="name-keyboard" class="custom-kbd"></div>
+  <div id="name-keyboard" class="custom-kbd" hidden></div>
 
   <div id="avatar-grid"></div>
 
@@ -20162,6 +20162,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     nameAvatarCameFrom = cameFrom;
     nameAvatarStatusEl.textContent = "";
     nameInput.value = currentName;
+    setNameKeyboardOpen(false);
     setFlowBanner(document.getElementById("na-banner"), pendingSettings || flowBannerSettings || roomState?.settings);
     // Quick Game also goes through a lobby, so the button always says Join Lobby.
     joinLobbyBtn.textContent = "Join Lobby";
@@ -20459,6 +20460,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   });
   // Name entry: a CAPS key instead of Done (Done jumped to the next screen; "Join Lobby" at the top is how you continue).
   renderCustomKeyboard(nameKeyboardEl, nameInput, { maxLength: 12, charset: null, caps: true });
+  // The keyboard stays tucked away until Edit name is tapped; while it is out the button reads Save name, and Save name tucks it away again.
+  const nameEditBtn = document.getElementById("name-edit-btn");
+  function setNameKeyboardOpen(open) {
+    nameKeyboardEl.hidden = !open;
+    nameEditBtn.textContent = open ? "Save name" : "Edit name";
+    nameEditBtn.setAttribute("aria-expanded", String(open));
+  }
+  nameEditBtn.addEventListener("click", () => {
+    if (nameKeyboardEl.hidden) { setNameKeyboardOpen(true); return; }
+    const name = nameInput.value.trim().slice(0, 12);
+    if (!name) { nameAvatarStatusEl.textContent = "Enter your name first."; return; }
+    const badName = checkName(name);
+    if (badName) { nameAvatarStatusEl.textContent = badName; return; }
+    nameInput.value = name; currentName = name;
+    localStorage.setItem("mg_name", name);
+    settingsNameInput.value = name;
+    nameAvatarStatusEl.textContent = "";
+    setNameKeyboardOpen(false);
+  });
 
   // One-tap shortcut from "Last game" — bypasses the code/name/avatar screens
   // entirely and rejoins under the remembered name/avatar.
