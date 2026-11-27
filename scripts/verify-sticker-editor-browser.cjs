@@ -10,6 +10,7 @@ const code = [
   grab('  function avatarHtml(id, extraClass, position, colorOverride) {', '  // Escapes any free-text value'),
   grab('  const COLOR_LEVEL = 4;', "  // Each player's border is recoloured"),
   grab('  // ---- The sticker editor', '  // Choose your avatar shows the avatar'),
+  grab('  function popupHost() {', '  function closeAvatarZoom() {'),   // the editor opens inside an open modal dialog when there is one
   grab('  function renderCustomKeyboard(', '  const lobbyScreenEl'),
 ].join('\n');
 const items = fs.readdirSync(path.join(root, 'items')).filter((f) => f.endsWith('.webp')).map((f) => f.slice(0, -5)).slice(0, 90);

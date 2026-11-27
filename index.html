@@ -5105,7 +5105,8 @@ if (location.protocol === "file:") {
       <div class="settings-keyboard-tools"><span>Type your name</span><button id="settings-name-clear" type="button" class="settings-cream-btn">Clear</button><button id="settings-name-cancel" type="button" class="settings-cream-btn">Cancel</button><button id="settings-name-save" type="button" class="settings-cream-btn">Save</button></div>
       <div id="settings-name-keyboard" class="custom-kbd"></div>
     </div>
-    <dialog id="settings-avatar-picker" class="cozy-dialog" aria-labelledby="settings-avatar-title">
+  </div>
+  <dialog id="settings-avatar-picker" aria-labelledby="settings-avatar-title">
       <div class="avatar-picker-heading">
         <div class="ap-stage"><span id="settings-avatar-current" class="avatar-picker-current" aria-hidden="true"></span></div>
         <div class="ap-side">
@@ -5116,7 +5117,6 @@ if (location.protocol === "file:") {
       </div>
       <div id="settings-avatar-grid"></div>
     </dialog>
-  </div>
 
   <div class="settings-card" id="settings-account-card">
   <h3>Account</h3>
@@ -12335,7 +12335,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (e.target.closest("[data-sdone]")) { const v = value$(); ov.remove(); onSave(v); return; }
       if (e.target.closest("[data-sx]")) ov.remove();
     });
-    document.body.appendChild(ov);
+    popupHost().appendChild(ov);
     place(); drawTray();
   }
   // Choose your avatar shows the avatar with its border (default, or this game's pick). Edit opens the popup below.
@@ -12402,7 +12402,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
       if (e.target === ov || e.target.closest("[data-zdone]")) closeAvatarZoom();
     });
-    document.body.appendChild(ov);
+    popupHost().appendChild(ov);
   }
   document.getElementById("room-frame-edit")?.addEventListener("click", openGameEdit);
 
@@ -18520,7 +18520,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // eventual pointerup/click from that same touch lands on the overlay
   // itself (not the button underneath), so there's no extra step needed to
   // stop it from also selecting/equipping that avatar.
-  let avatarZoomTimer = null;
+  let avatarZoomTimer = null, avatarZoomHeld = false;
+  // Where a popup that opens from an avatar tile goes. Normally the page, but the Settings avatar picker is a modal <dialog>: it is drawn above the
+  // whole page and makes everything outside it untouchable, so a card added to the page would sit hidden underneath it (and could not be tapped).
+  // Inside the open dialog it shows on top and works.
+  function popupHost() {
+    const open = [...document.querySelectorAll("dialog[open]")].filter((d) => { try { return d.matches(":modal"); } catch (e) { return true; } });
+    return open[open.length - 1] || document.body;
+  }
   function closeAvatarZoom() {
     const ov = document.getElementById("avatar-zoom-overlay");
     if (ov) ov.remove();
@@ -18611,7 +18618,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (heart) { toggleFavAvatar(id); const on = isFavAvatar(id); heart.classList.toggle("on", on); heart.setAttribute("aria-pressed", String(on)); return; } // stays open so you can see it filled
       closeAvatarZoom();
     });
-    document.body.appendChild(ov);
+    popupHost().appendChild(ov);
   }
   // Picker grids (join/name screen, settings default-avatar grid): tapping a
   // tile selects it, so zooming needs a long-press instead so a normal tap
@@ -18622,8 +18629,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const id = avatarIdFromTile(tile);
     if (!id) return;
     clearTimeout(avatarZoomTimer);
-    avatarZoomTimer = setTimeout(() => openAvatarZoom(tile, id), 400);
+    avatarZoomTimer = setTimeout(() => { avatarZoomHeld = true; openAvatarZoom(tile, id); }, 400);
   });
+  // A hold that opened the card must not also count as a tap on that avatar when the finger lifts (that picked it and closed the picker).
+  // The next press starts clean; any click ends the hold.
+  document.addEventListener("pointerdown", () => { avatarZoomHeld = false; }, true);
+  document.addEventListener("click", (e) => {
+    if (avatarZoomHeld && e.target.closest?.(".avatar-choice")) { e.stopPropagation(); e.preventDefault(); }
+    avatarZoomHeld = false;
+  }, true);
   // Only cancels the pending long-press timer for an early release - the
   // already-open popup (if any) is untouched, see above.
   ["pointerup", "pointercancel", "pointerleave"].forEach((evt) => document.addEventListener(evt, () => clearTimeout(avatarZoomTimer)));
