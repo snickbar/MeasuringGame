@@ -826,15 +826,20 @@ if (location.protocol === "file:") {
   .coll-chip { position: relative; flex: 0 0 auto; margin: 0; width: auto; padding: 0 13px; border: 2px solid #c9b088; border-radius: 12px; background: #ead9b8; color: #7a6342; font: inherit; font-weight: 700; font-size: 14px; cursor: pointer; }
   .coll-chip:active { filter: brightness(.93); }
   /* Bot looks: one row above the avatar filters, a two-button switch plus a one-line hint. */
-  .bot-looks { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0 0 8px; }
-  .bot-looks-label { font-weight: 800; font-size: 14px; color: #5a4526; }
-  .bot-looks-seg { display: flex; border: 2px solid #c9b088; border-radius: 12px; background: #ead9b8; }
-  .bot-looks-opt:first-child { border-radius: 10px 0 0 10px; }
-  .bot-looks-opt:last-child { border-radius: 0 10px 10px 0; }
-  .bot-looks-opt { margin: 0; width: auto; min-height: 32px; padding: 0 14px; border: 0; background: transparent; color: #7a6342; font: inherit; font-weight: 700; font-size: 14px; cursor: pointer; }
+  /* Bot looks: its own card. Title + robot and the Saved/Random buttons on the left, the explanation on the right behind a dashed divider. */
+  .bot-looks { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "head help" "seg help"; gap: 7px 12px; align-items: center; margin: 0 0 10px; padding: 10px 12px 11px;
+    border: 2.5px solid #e2c27a; border-radius: 18px; box-shadow: 0 3px 0 rgba(180,130,40,.35);
+    background: radial-gradient(circle at 100% 0, rgba(255,214,102,.5), transparent 58%), radial-gradient(rgba(214,168,72,.22) 1.2px, transparent 1.6px) 0 0 / 11px 11px, linear-gradient(180deg, #fffdf6, #fff0cc); }
+  .bl-head { grid-area: head; display: flex; align-items: center; gap: 8px; }
+  .bl-bot { flex: none; box-sizing: border-box; width: 32px; height: 32px; padding: 2px; border-radius: 50%; border: 2px solid #3f9dc2; background: radial-gradient(circle at 35% 28%, #f2fcff, #9bdcf2); box-shadow: 0 2px 0 rgba(40,110,140,.4); object-fit: contain; }
+  .bot-looks-label { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 18px; line-height: 1; color: #5a3a1a; }
+  .bot-looks-seg { grid-area: seg; justify-self: start; display: flex; gap: 4px; padding: 3px; border-radius: 15px; background: #ecdcb8; box-shadow: inset 0 2px 3px rgba(120,80,20,.28); }
+  .bot-looks-opt { margin: 0; width: auto; min-height: 36px; padding: 0 11px 0 9px; display: inline-flex; align-items: center; gap: 5px; border: 2px solid transparent; border-radius: 12px; background: transparent; color: #7a6342; font: inherit; font-weight: 800; font-size: 14px; cursor: pointer; }
+  .bot-looks-opt svg { flex: none; width: 16px; height: 16px; }
   .bot-looks-opt:active { filter: brightness(.93); }
-  .bot-looks-opt.on { background: linear-gradient(180deg, #ffe66d, #ffc928); color: #5a3a00; }
-  .bot-looks-help { flex: 1 0 100%; font-size: 12px; color: #7a6342; line-height: 1.25; }
+  .bot-looks-opt.on { background: linear-gradient(180deg, #fff08a, #ffc928); border-color: #e0a91c; color: #5a3a00; box-shadow: 0 2px 0 #c8921a, inset 0 1px 0 rgba(255,255,255,.7); }
+  .bot-looks-help { grid-area: help; align-self: center; padding-left: 12px; border-left: 2px dashed #dcc48a; font-size: 12.5px; font-weight: 600; color: #7a6342; line-height: 1.3; }
+  @media (max-width: 340px) { .bot-looks { grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "seg" "help"; } .bot-looks-help { padding: 6px 0 0; border-left: 0; border-top: 2px dashed #dcc48a; } }
   .coll-chip.on { background: linear-gradient(180deg, #ffe66d, #ffc928); border-color: #e0a100; color: #5a3a00; box-shadow: 0 2px 0 rgba(200,140,20,.4); }
   .coll-chip.on::after { content: "\00d7"; position: absolute; top: -7px; right: -6px; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 2px solid #e0a100; color: #8a5a00; font-size: 14px; font-weight: 700; line-height: 13px; text-align: center; box-sizing: border-box; }
   .items-stats { display: flex; gap: 10px; margin: 0 0 14px; }
@@ -17794,7 +17799,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     AVATARS.forEach((a) => byTier[AVATAR_TIERS[a]].push(a));
     const totalUnlocked = AVATARS.filter(isAvatarUnlocked).length;
     const chip = (id, label) => `<button type="button" class="coll-chip${collectionOwnership === id ? " on" : ""}" data-avatar-filter="${id}" aria-pressed="${collectionOwnership === id}">${label}</button>`;
-    const botLooks = `<div class="bot-looks"><span class="bot-looks-label">Bot looks</span><div class="bot-looks-seg" role="radiogroup" aria-label="Bot looks">${[["saved", "Saved"], ["random", "Random"]].map(([v, t]) => `<button type="button" role="radio" class="bot-looks-opt${botLooksMode() === v ? " on" : ""}" data-bot-looks="${v}" aria-checked="${botLooksMode() === v}">${t}</button>`).join("")}</div><small class="bot-looks-help">${botLooksMode() === "random" ? "Bots get a random look from what you\u2019ve unlocked." : "Bots wear what you saved on each avatar."}</small></div>`;
+    const BOT_LOOK_ICONS = { saved: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 1.8h9v12.4L8 11.2l-4.5 3z" fill="currentColor" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>',
+      random: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.6" y="1.6" width="12.8" height="12.8" rx="3.2" fill="currentColor"/><g fill="#fff8e1"><circle cx="5" cy="5" r="1.3"/><circle cx="11" cy="5" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="5" cy="11" r="1.3"/><circle cx="11" cy="11" r="1.3"/></g></svg>' };
+    const botLooks = `<div class="bot-looks"><div class="bl-head"><img class="bl-bot" src="avatars/av17.webp" alt="" draggable="false"><span class="bot-looks-label">Bot looks</span></div><div class="bot-looks-seg" role="radiogroup" aria-label="Bot looks">${[["saved", "Saved"], ["random", "Random"]].map(([v, t]) => `<button type="button" role="radio" class="bot-looks-opt${botLooksMode() === v ? " on" : ""}" data-bot-looks="${v}" aria-checked="${botLooksMode() === v}">${BOT_LOOK_ICONS[v]}${t}</button>`).join("")}</div><small class="bot-looks-help">${botLooksMode() === "random" ? "Bots get a random look from what you\u2019ve unlocked." : "Bots wear what you saved on each avatar."}</small></div>`;
     const head = botLooks + `<div class="collection-head">${chip("owned", "Owned")}${chip("locked", "Locked")}
       <div class="items-stat-box"><div class="items-stat-value">${totalUnlocked} / ${AVATARS.length}</div><div class="items-stat-label">Discovered</div></div>
       <button type="button" id="collection-hide-switch" class="items-stat-box ach-hide-box${collectionHideLocked ? " on" : ""}" role="switch" aria-checked="${collectionHideLocked}" aria-label="Hide undiscovered"><span class="items-stat-label">Hide undiscovered</span><span class="ach-switch-mini"></span></button>
