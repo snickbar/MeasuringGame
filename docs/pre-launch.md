@@ -13,9 +13,9 @@ The game is not live yet (only the owner and a friend or two are testing), so no
 - [ ] Check the service worker caches the game's files, so returning visitors cost no hosting transfer.
 
 **Web version (people will find the game through links and streams)**
-- [ ] Wide screens: show the game in a phone-shaped column with a backdrop, so the home scene and every screen look right on a laptop (the home screen is mostly empty sky on a laptop today). In progress.
-- [ ] Physical keyboard: type digits, Backspace and Enter on the answer keypads, and type the name on the name screen. In progress.
-- [ ] After those two, look at every mode in a desktop browser (only the home screen has been looked at on a laptop so far).
+- [x] Wide screens: the game shows in a phone-shaped column on laptops and desktops (done, `npm run test:desktop-frame`).
+- [x] Physical keyboard: digits, Backspace and Enter on the answer keypads, letters and Enter on the name keyboards (done, `npm run test:physical-keyboard`).
+- [ ] Look at every mode in a desktop browser (only the home screen has been looked at on a laptop so far). Next up.
 - [ ] The Install banner may not appear when the game is framed on desktop (the browser only offers install to the top page). Decide whether that matters.
 
 **Name**
