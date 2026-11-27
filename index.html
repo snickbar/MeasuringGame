@@ -5627,6 +5627,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { botDecisionScope, commitBotDecision } from "./anim/bot-decisions.mjs";
   import { personalityFor, shapeRatio, shapeDelay, shapeConfidence, shapeMiss, PERSONALITY_UNLOCK_ROUNDS } from "./anim/bot-personalities.mjs";
   import { factFor } from "./anim/avatar-facts.mjs";
+  import { colorChoices, colorHue, recoloredAvatar, makeRecoloredAvatar, colorKey } from "./anim/avatar-colors.mjs";
   import { HL_SHIELD_CHAIN, hlThemeDue, hlSurvivalOutcome } from "./anim/high-low-survival.mjs";
   import { mountHighLowReveal, HL_REVEAL_STEP_MS } from "./anim/high-low-reveal.mjs";
   import { HL_MESSAGE_BOTTLE, HL_EMPTY_BOTTLE, highLowBottlePieces } from "./anim/high-low-bottles.mjs";
@@ -6345,7 +6346,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { lv: 1, name: "Fun fact", built: true },
     { lv: 2, name: "Play style", built: true },      // the personality
     { lv: 3, name: "Borders", built: true },         // every border unlocks for this avatar; its default is picked here
-    { lv: 4, name: "Colors", built: false },         // every color option, with arrows to flip between them
+    { lv: 4, name: "Colors", built: true },          // every color option, with arrows to flip between them (painted on the phone, see anim/avatar-colors.mjs)
     { lv: 5, name: "Stickers", built: false },
     { lv: 6, name: "Aura", built: false },
   ];
@@ -6630,6 +6631,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       botRounds: {},
       avatarPoints: {},
       avatarFrames: {},
+      avatarColors: {},
       freePulls: 0,
       booster: 0,
       tipCount: 0,
@@ -6929,6 +6931,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         botRounds: { ...(data.botRounds || {}) },
         avatarPoints: { ...(data.avatarPoints || {}) },
         avatarFrames: { ...(data.avatarFrames || {}) },
+        avatarColors: { ...(data.avatarColors || {}) },
         accountUpgrade: data.accountUpgrade || null,
         // Were missing from this normalization entirely until now - every real
         // profile update from the server was silently dropping them back to
@@ -8204,15 +8207,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   watchMyProfile();
 
   // `position` is only given for pictures in a long grid (the avatar collection): the ones past the first screenful wait to load until they scroll near.
-  function avatarHtml(id, extraClass, position) {
+  // `colorOverride` is for pictures that show one avatar on purpose (the card, Edit); everything else wears the colour that player
+  // picked for this room (avatars are unique in a room), or, outside a room, the colour chosen for the avatar you are playing as.
+  function avatarHtml(id, extraClass, position, colorOverride) {
     // Avatar ids come from other players through the room, and anyone can write anything there. Only a plain id (letters,
     // digits, - and _) may reach the HTML below; anything else ("x\" onerror=...") would run code on every player's phone.
     if (id != null && id !== "" && !(typeof id === "string" && /^[A-Za-z0-9_-]{1,40}$/.test(id))) id = AVATARS.find((a) => AVATAR_TIERS[a] === "default") || AVATARS[0];
     // An avatar that has been retired (a player on an older version may still have it picked) shows a default avatar instead of a broken picture.
     if (id && /^av\d+$/.test(id) && !Object.hasOwn(AVATAR_TIERS, id)) id = AVATARS.find((a) => AVATAR_TIERS[a] === "default") || AVATARS[0];
     const dir = typeof AVATAR_FACE !== "undefined" && Object.hasOwn(AVATAR_FACE, id) ? AVATAR_FACE[id] : "", face = dir ? ` data-face="${dir}"` : "";
-    const src = position === undefined ? `src="avatars/${id}.webp"` : pictureSrcAttr(`avatars/${id}.webp`, position);
-    return id ? `<img class="avatar-icon${extraClass ? " " + extraClass : ""}" ${src}${face} alt="" draggable="false">` : "";
+    let src = position === undefined ? `src="avatars/${id}.webp"` : pictureSrcAttr(`avatars/${id}.webp`, position), paint = "";
+    const colorName = position === undefined && id ? (colorOverride !== undefined ? colorOverride : avatarColorFor(id)) : "";
+    if (colorName && colorHue(id, colorName) !== undefined) {
+      const done = recoloredAvatar(id, colorName);
+      if (done) src = `src="${done}"`; else void ensureAvatarColor(id, colorName); // the plain picture shows until the painted one is ready, then it swaps
+      paint = ` data-recolor="${colorKey(id, colorName)}"`;
+    }
+    return id ? `<img class="avatar-icon${extraClass ? " " + extraClass : ""}" ${src}${paint}${face} alt="" draggable="false">` : "";
   }
   // Escapes any free-text value (player names, above all) before it's dropped into
   // an innerHTML template — without this, a name like "<img src=x onerror=...>"
@@ -11850,6 +11861,55 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const av = currentAvatar;
     return gameFrame && gameFrame.avatar === av && frameAllowed(av, gameFrame.id) ? gameFrame.id : defaultFrameFor(av);
   }
+  // Colors (Avatar Level 4) work like borders: every colour unlocks at COLOR_LEVEL, the one picked on the avatar's card is its default
+  // (profile.avatarColors; "" = the original look) and Edit on Choose your avatar changes it for this game only (gameColor).
+  // The picture is painted on the phone from masks (anim/avatar-colors.mjs); players send only the colour's name.
+  const COLOR_LEVEL = 4;
+  let gameColor = null;
+  const colorAllowed = (avId, name) => name === "" || (avatarLevel(avId) >= COLOR_LEVEL && colorHue(avId, name) !== undefined);
+  const colorsFor = (avId) => avatarLevel(avId) >= COLOR_LEVEL ? ["", ...colorChoices(avId).map((c) => c.name)] : [""];
+  const colorLabel = (name) => name || "Original";
+  function defaultColorFor(avId, profile = myProfile) {
+    const saved = (profile.avatarColors || {})[avId];
+    return typeof saved === "string" && saved && colorAllowed(avId, saved) ? saved : "";
+  }
+  function equippedAvatarColor() {
+    const av = currentAvatar;
+    return gameColor && gameColor.avatar === av && colorAllowed(av, gameColor.name) ? gameColor.name : defaultColorFor(av);
+  }
+  const roomAvatarColors = new Map();   // avatar id -> colour name, for the players in the room (avatars are unique in a room)
+  function ensureAvatarColor(id, name) {
+    return makeRecoloredAvatar(id, name).then((url) => {
+      if (!url) return;
+      const key = colorKey(id, name);
+      for (const img of document.querySelectorAll("img[data-recolor]")) if (img.dataset.recolor === key) img.src = url;
+    });
+  }
+  function refreshRoomAvatarColors() {
+    roomAvatarColors.clear();
+    for (const p of Object.values(currentPlayers || {})) {
+      const name = p?.avatarColor;
+      if (typeof p?.avatar === "string" && typeof name === "string" && name && colorHue(p.avatar, name) !== undefined) { roomAvatarColors.set(p.avatar, name); void ensureAvatarColor(p.avatar, name); }
+    }
+  }
+  function avatarColorFor(id) {
+    try { return currentRoomCode ? roomAvatarColors.get(id) || "" : id === currentAvatar ? equippedAvatarColor() : ""; } catch { return ""; }   // (the try covers a call before these are set up)
+  }
+  // Shows `name` on the avatar picture inside `pic` (the card, Edit) once it is painted.
+  function paintZoomPic(pic, id, name) {
+    const img = pic.querySelector("img.avatar-icon");
+    if (!img) return;
+    img.dataset.recolor = name ? colorKey(id, name) : "";
+    if (!name) { img.src = "avatars/" + id + ".webp"; return; }
+    const done = recoloredAvatar(id, name);
+    if (done) img.src = done; else void ensureAvatarColor(id, name);
+  }
+  const colorArrowsHtml = (name) => `<span class="avatar-zoom-arr"><button type="button" data-zcolor="-1" aria-label="Previous color">‹</button><span class="avatar-zoom-bname" data-zcolor-name>${escapeHtml(colorLabel(name))}</span><button type="button" data-zcolor="1" aria-label="Next color">›</button></span>`;
+  // The next colour in the arrows' order, wrapping around: "Original" first, then the avatar's colours.
+  function stepColor(avId, current, dir) {
+    const all = colorsFor(avId);
+    return all[(Math.max(0, all.indexOf(current)) + dir + all.length) % all.length];
+  }
   // Each player's border is recoloured to the colour they were given for this game (the same slot colour as their card).
   const FRAME_TINTS = ["#d4825f", "#f0b98a", "#a8a0a0", "#4fb0e0", "#3a9d90", "#4cc035", "#f26fa0", "#8fd98a", "#e84a55", "#f4b94a"];
   const tintedFrames = new Map(), tintingFrames = new Set();
@@ -11931,10 +11991,27 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderSettingsAvatarGrid();
     renderPlayerFramePicker();
   }
+  function setGameColor(name) {
+    const av = currentAvatar;
+    if (!colorAllowed(av, name)) return;
+    gameColor = { avatar: av, name };
+    renderPlayerFramePicker();   // shown at once; the room update goes out in the background
+    if (currentRoomCode && currentPlayerId && roomState?.players?.[currentPlayerId]) {
+      runTransaction(ref(db, "rooms/" + currentRoomCode + "/players/" + currentPlayerId), (player) => player ? { ...player, avatarColor: name || null } : undefined)
+        .catch(() => showAchToast("Couldn’t update your avatar color. Try again."));
+    }
+  }
+  function setDefaultColor(avId, name) {
+    if (!colorAllowed(avId, name)) return;
+    myProfile = { ...myProfile, avatarColors: { ...(myProfile.avatarColors || {}), [avId]: name } };
+    update(ref(db, `profiles/${deviceId}`), { [`avatarColors/${avId}`]: name || null }).catch(() => showAchToast("Couldn’t save that color. Try again."));
+    renderSettingsAvatarGrid();
+  }
   // Choose your avatar shows the avatar with its border (default, or this game's pick). Edit opens the popup below.
   function renderPlayerFramePicker() {
     const avatar = document.getElementById("name-avatar-big");
     if (!avatar) return;
+    paintZoomPic(avatar, currentAvatar, equippedAvatarColor());
     showPlayerFrame(avatar, equippedPlayerFrame(), myGameFrameIndex());
   }
   // Edit: the avatar opens in a box with every option that can change for this one game. The saved defaults are never touched from here.
@@ -11944,6 +12021,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const open = lv >= perk.lv;
       if (!open) return `<li class="avatar-zoom-perk locked"><b>L${perk.lv}</b><span>???</span></li>`;
       if (perk.name === "Borders") return `<li class="avatar-zoom-perk has-arr"><b>L${perk.lv}</b><span><em>Borders:</em><span class="avatar-zoom-arr"><button type="button" data-zframe="-1" aria-label="Previous border">‹</button><span class="avatar-zoom-bname">${escapeHtml(playerFrameCatalog[equippedPlayerFrame()].name)}</span><button type="button" data-zframe="1" aria-label="Next border">›</button></span></span></li>`;
+      if (perk.name === "Colors") return `<li class="avatar-zoom-perk has-arr"><b>L${perk.lv}</b><span><em>Colors:</em>${colorArrowsHtml(equippedAvatarColor())}</span></li>`;
       return `<li class="avatar-zoom-perk"><b>L${perk.lv}</b><span><em>${perk.name}:</em> ${perk.built ? "" : "Coming soon"}</span></li>`;
     }).join("");
   }
@@ -11951,11 +12029,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     closeAvatarZoom();
     const av = currentAvatar, ov = document.createElement("div");
     ov.id = "avatar-zoom-overlay";
-    ov.innerHTML = `<div class="avatar-zoom-card avatar-edit-card"><div class="avatar-zoom-pic">${avatarHtml(av)}</div><div class="avatar-zoom-info"><b class="avatar-zoom-name">${escapeHtml(BOT_NAME_BY_AVATAR[av] || "")}</b><span class="avatar-zoom-rarity">This game only</span><ul class="avatar-zoom-perks">${gameEditRowsHtml()}</ul><button type="button" class="avatar-zoom-done" data-zdone>Done</button></div><button type="button" class="avatar-zoom-close" aria-label="Close" data-zdone>&times;</button></div>`;
+    ov.innerHTML = `<div class="avatar-zoom-card avatar-edit-card"><div class="avatar-zoom-pic">${avatarHtml(av, "", undefined, equippedAvatarColor())}</div><div class="avatar-zoom-info"><b class="avatar-zoom-name">${escapeHtml(BOT_NAME_BY_AVATAR[av] || "")}</b><span class="avatar-zoom-rarity">This game only</span><ul class="avatar-zoom-perks">${gameEditRowsHtml()}</ul><button type="button" class="avatar-zoom-done" data-zdone>Done</button></div><button type="button" class="avatar-zoom-close" aria-label="Close" data-zdone>&times;</button></div>`;
     const pic = ov.querySelector(".avatar-zoom-pic");
     showPlayerFrame(pic, equippedPlayerFrame(), 0);
     preloadFrameArt(framesFor(av));
     ov.addEventListener("click", (e) => {
+      const colorBtn = e.target.closest("[data-zcolor]");
+      if (colorBtn) {
+        const next = stepColor(av, equippedAvatarColor(), Number(colorBtn.dataset.zcolor));
+        setGameColor(next);
+        paintZoomPic(pic, av, next);
+        const label = ov.querySelector("[data-zcolor-name]"); if (label) label.textContent = colorLabel(next);
+        return;
+      }
       const stepBtn = e.target.closest("[data-zframe]");
       if (stepBtn) {
         const frames = framesFor(av), cur = equippedPlayerFrame();
@@ -11979,7 +12065,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (free) currentAvatar = free; // for this game only; the saved default stays
     }
     avatarGridEl.innerHTML = "";
-    document.getElementById("name-avatar-big").innerHTML = avatarHtml(currentAvatar);
+    document.getElementById("name-avatar-big").innerHTML = avatarHtml(currentAvatar, "", undefined, equippedAvatarColor());
     renderPlayerFramePicker();
     // Only avatars the player has unlocked - the full catalog, locked ones
     // included, is only ever shown via the Shop's "View All Avatars".
@@ -12337,7 +12423,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (roomUnsub) { roomUnsub(); roomUnsub = null; }
     if (reactionsUnsub) { reactionsUnsub(); reactionsUnsub = null; }
     currentRoomCode = null; currentPlayerId = null; isHost = false;
-    roomState = {}; currentPlayers = {}; renderedPlayerListIds = new Set();
+    roomState = {}; currentPlayers = {}; renderedPlayerListIds = new Set(); roomAvatarColors.clear();
     questionBotsKey = null; quickAutoPausedAt = 0;
   }
   async function quickSaveAndLeave() {
@@ -14190,7 +14276,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const rw = hs.seatsAll.includes(me) ? HS.hsRewardFor(hs, me) : null;
     const players = data.players || {};
     const name = id => escapeHtml(players[id]?.name || 'Gone');
-    const sig = JSON.stringify([data.gameId, me, isHost, winners, rw, order.map(id => [id, hs.chips[id], players[id]?.name, players[id]?.avatar, players[id]?.playerFrame, players[id]?.frameIndex])]);
+    const sig = JSON.stringify([data.gameId, me, isHost, winners, rw, order.map(id => [id, hs.chips[id], players[id]?.name, players[id]?.avatar, players[id]?.playerFrame, players[id]?.frameIndex, players[id]?.avatarColor])]);
     if (hsFinalSig === sig && hsContentEl.querySelector('.hs-end-hero')) return;
     hsFinalSig = sig;
     document.getElementById('hs-turn-toast')?.remove();
@@ -18084,11 +18170,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (!canEdit) return "All unlocked";
         return `<span class="avatar-zoom-arr"><button type="button" data-zframe="-1" aria-label="Previous border">‹</button><span class="avatar-zoom-bname">${escapeHtml(playerFrameCatalog[defaultFrameFor(id)].name)}</span><button type="button" data-zframe="1" aria-label="Next border">›</button></span>`;
       }
+      if (perk.name === "Colors") return canEdit ? colorArrowsHtml(defaultColorFor(id)) : "All unlocked";
       return perk.built ? "" : "Coming soon";
     };
     const rows = AVATAR_PERKS.map((perk) => {
       const open = perk.lv <= lv || (perk.name === "Play style" && personalityKnown(id));
-      return `<li class="avatar-zoom-perk ${open ? "open" : "locked"}${perk.lv === lv + 1 ? " next" : ""}${open && canEdit && perk.name === "Borders" ? " has-arr" : ""}"><b>L${perk.lv}</b><span>${open ? `<em>${perk.name}:</em> ${value(perk)}` : "???"}</span></li>`;
+      return `<li class="avatar-zoom-perk ${open ? "open" : "locked"}${perk.lv === lv + 1 ? " next" : ""}${open && canEdit && (perk.name === "Borders" || perk.name === "Colors") ? " has-arr" : ""}"><b>L${perk.lv}</b><span>${open ? `<em>${perk.name}:</em> ${value(perk)}` : "???"}</span></li>`;
     }).join("");
     return `<span class="avatar-zoom-ap"><b>Level ${lv}</b><span class="avatar-zoom-apbar" aria-hidden="true"><i style="width:${lv >= maxLv ? 100 : Math.round(into / AP_PER_LEVEL * 100)}%"></i></span><small>${lv >= maxLv ? "Top of the ladder for now" : `${into} / ${AP_PER_LEVEL} AP to Level ${lv + 1}`}</small></span><ul class="avatar-zoom-perks">${rows}</ul>`;
   }
@@ -18099,11 +18186,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const canFav = !dim && isAvatarUnlocked(id);
     const tier = AVATAR_TIERS[id], tierLabel = { default: "Starter", common: "Common", rare: "Rare", ultra: "Ultra-rare" }[tier] || "";
     const info = `<div class="avatar-zoom-info"><b class="avatar-zoom-name">${escapeHtml(BOT_NAME_BY_AVATAR[id] || "")}</b><span class="avatar-zoom-rarity tier-${tier}">${tierLabel}</span>${avatarLevelHtml(id, canFav)}${DEBUG_TOOLS && canFav ? `<button type="button" class="avatar-zoom-debug" data-zdebug>+20 AP (test)</button>` : ""}</div>`;
-    ov.innerHTML = `<div class="avatar-zoom-card"><div class="avatar-zoom-pic">${avatarHtml(id, dim ? "zoom-dim" : "")}</div>${info}${canFav ? `<button type="button" class="avatar-zoom-fav${isFavAvatar(id) ? " on" : ""}" aria-label="Favorite" aria-pressed="${isFavAvatar(id)}">${FAV_HEART}</button>` : ""}<button type="button" class="avatar-zoom-close" aria-label="Close">&times;</button></div>`;
+    ov.innerHTML = `<div class="avatar-zoom-card"><div class="avatar-zoom-pic">${avatarHtml(id, dim ? "zoom-dim" : "", undefined, canFav ? defaultColorFor(id) : "")}</div>${info}${canFav ? `<button type="button" class="avatar-zoom-fav${isFavAvatar(id) ? " on" : ""}" aria-label="Favorite" aria-pressed="${isFavAvatar(id)}">${FAV_HEART}</button>` : ""}<button type="button" class="avatar-zoom-close" aria-label="Close">&times;</button></div>`;
     const pic = ov.querySelector(".avatar-zoom-pic");
     showPlayerFrame(pic, defaultFrameFor(id), 0);
     if (canFav) preloadFrameArt(framesFor(id));
     ov.addEventListener("click", (e) => {
+      const colorBtn = e.target.closest("[data-zcolor]");
+      if (colorBtn) {   // flips this avatar's default color; the card stays open
+        const next = stepColor(id, defaultColorFor(id), Number(colorBtn.dataset.zcolor));
+        setDefaultColor(id, next);
+        paintZoomPic(pic, id, next);
+        const label = ov.querySelector("[data-zcolor-name]"); if (label) label.textContent = colorLabel(next);
+        return;
+      }
       const stepBtn = e.target.closest("[data-zframe]");
       if (stepBtn) {   // flips this avatar's default border; the card stays open
         const frames = framesFor(id), cur = defaultFrameFor(id);
@@ -19492,6 +19587,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ? { name, isHost: finalIsHost, flair: lastSyncedFlair, rank: myRankIdx(), lvl: myLevelNum(), connected: true, disconnectedAt: null }
       : { name, avatar: currentAvatar, flair: lastSyncedFlair, rank: myRankIdx(), lvl: myLevelNum(), isHost: finalIsHost, score: 0, frameIndex, joinedAt: serverTimestamp(), connected: true };
     player.playerFrame = equippedPlayerFrame();
+    player.avatarColor = equippedAvatarColor() || null;
     if (isHsSettings(roomData?.settings)) player.hsSidePots = true;
     const joined = await runTransaction(ref(db, `rooms/${roomCode}`), cur => admitPlayer(cur, id, player, ownSeat ? "own" : !!staleOwnId));
     if (!joined.committed || !joined.snapshot.val()?.players?.[id]) {
@@ -19638,7 +19734,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   homeJoinBtn.addEventListener("click", () => activateButton(homeJoinBtn, showJoinScreen));
   // Back on the home screen = the game is over: the next game starts from your default avatar again, even where there is no avatar screen.
-  new MutationObserver(() => { if (homeScreen.classList.contains("active")) { gameFrame = null; } if (homeScreen.classList.contains("active") && currentAvatar !== defaultAvatarId()) { currentAvatar = defaultAvatarId(); renderSettingsAvatarGrid(); } }).observe(homeScreen, { attributes: true, attributeFilter: ["class"] });
+  new MutationObserver(() => { if (homeScreen.classList.contains("active")) { gameFrame = null; gameColor = null; } if (homeScreen.classList.contains("active") && currentAvatar !== defaultAvatarId()) { currentAvatar = defaultAvatarId(); renderSettingsAvatarGrid(); } }).observe(homeScreen, { attributes: true, attributeFilter: ["class"] });
   joinBackBtn.addEventListener("click", () => {
     pendingQrInvite.clear();
     joinScreen.classList.remove("active");
@@ -19652,7 +19748,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     setFlowBanner(document.getElementById("na-banner"), pendingSettings || flowBannerSettings || roomState?.settings);
     // Quick Game also goes through a lobby, so the button always says Join Lobby.
     joinLobbyBtn.textContent = "Join Lobby";
-    if (cameFrom !== "lobby") { currentAvatar = defaultAvatarId(); gameFrame = null; } // every new game starts from your default avatar and its default border
+    if (cameFrom !== "lobby") { currentAvatar = defaultAvatarId(); gameFrame = null; gameColor = null; } // every new game starts from your default avatar with its default border and color
     watchTakenAvatarsForCode(pendingRoomCode);
     ALL_SCREEN_ELS.forEach(el=>el.classList.remove('active'));
     nameAvatarScreenEl.classList.add("active");
@@ -19719,7 +19815,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (!wasHost) await maybeDeleteEmptyRoom(code);
     } catch (e) { console.warn("Couldn't step out of the room cleanly", e); }
     currentRoomCode = null; currentPlayerId = null; isHost = false;
-    roomState = {}; currentPlayers = {}; renderedPlayerListIds = new Set();
+    roomState = {}; currentPlayers = {}; renderedPlayerListIds = new Set(); roomAvatarColors.clear();
     leavingGame = false;
     pendingRoomCode = code; pendingIsHost = wasHost; pendingSettings = settings;
   }
@@ -19893,7 +19989,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // create a new player or reclaim a DISCONNECTED one) would leave this
       // still-connected player behind as an orphan AND create a duplicate.
       lastSyncedFlair = myEquippedFlair();
-      await update(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`), { name, avatar: currentAvatar, flair: lastSyncedFlair, playerFrame: equippedPlayerFrame() });
+      await update(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`), { name, avatar: currentAvatar, flair: lastSyncedFlair, playerFrame: equippedPlayerFrame(), avatarColor: equippedAvatarColor() || null });
       currentName = name;
       localStorage.setItem("mg_name", name);
       editingFromLobby = false;
@@ -23443,7 +23539,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const signature = gameMotionKey + ":" + round + (liveLayout ? ":live:" : ":results:") + teams.map((team) => {
       const members = teamOf[team];
       const score = overrideScores ? (overrideScores[members[0]] || 0) : (currentPlayers[members[0]].score || 0);
-      return `${team}:${score}:${members.map((id) => currentPlayers[id].avatar + currentPlayers[id].name + ":" + currentPlayers[id].playerFrame + ":" + currentPlayers[id].frameIndex + ":" + scoreColumnAverage(id, !!overrideScores) + ":" + (lockedIn(id) ? 1 : 0)).join(",")}`;
+      return `${team}:${score}:${members.map((id) => currentPlayers[id].avatar + currentPlayers[id].name + ":" + currentPlayers[id].playerFrame + ":" + currentPlayers[id].avatarColor + ":" + currentPlayers[id].frameIndex + ":" + scoreColumnAverage(id, !!overrideScores) + ":" + (lockedIn(id) ? 1 : 0)).join(",")}`;
     }).sort().join("|");
     if (signature === lastScoreColumnSignature) return;
     lastScoreColumnSignature = signature;
@@ -25689,6 +25785,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
       recordBluffProgress(data);
       currentPlayers = data.players || {};
+      refreshRoomAvatarColors();
       currentSettings = data.settings || currentSettings;
       // Another player's Finish can close the party room while this player is
       // still reading the results. Their own saved reward remains available.
