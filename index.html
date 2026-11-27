@@ -12043,7 +12043,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // The aura to draw behind avatar `id` (same `override` rules as resolveLook): { kind, slot } or null.
   function resolveAura(id, override) {
     const look = override === undefined ? avatarLookFor(id) : typeof override === "string" ? {} : override || {};
-    return isAura(look.aura) ? { kind: look.aura, slot: Number(look.slot) || (id === currentAvatar ? myGameFrameIndex() : 0) } : null;
+    return isAura(look.aura) ? { kind: look.aura, slot: Number(look.slot) || (override === undefined && id === currentAvatar ? myGameFrameIndex() : 0) } : null;   // slot 0 = the effect's own colour
   }
   function ensureAvatarColor(id, color, stk) {
     return makeRecoloredAvatar(id, color, stk).then((url) => {
@@ -12333,7 +12333,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function renderPlayerFramePicker() {
     const avatar = document.getElementById("name-avatar-big");
     if (!avatar) return;
-    paintZoomPic(avatar, currentAvatar, equippedAvatarLook());
+    paintZoomPic(avatar, currentAvatar, { ...equippedAvatarLook(), slot: myGameFrameIndex() });   // the aura matches the border: the card color in a room, its own color before that
     showPlayerFrame(avatar, equippedPlayerFrame(), myGameFrameIndex());
   }
   // Edit: the avatar opens in a box with every option that can change for this one game. The saved defaults are never touched from here.
@@ -12405,7 +12405,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (free) currentAvatar = free; // for this game only; the saved default stays
     }
     avatarGridEl.innerHTML = "";
-    document.getElementById("name-avatar-big").innerHTML = avatarHtml(currentAvatar, "", undefined, equippedAvatarLook());
+    document.getElementById("name-avatar-big").innerHTML = avatarHtml(currentAvatar, "", undefined, { ...equippedAvatarLook(), slot: myGameFrameIndex() });
     renderPlayerFramePicker();
     // Only avatars the player has unlocked - the full catalog, locked ones
     // included, is only ever shown via the Shop's "View All Avatars".

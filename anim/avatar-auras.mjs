@@ -7,6 +7,12 @@ export const AURAS = [
   { id: "heart", name: "Hearts" }, { id: "confetti", name: "Confetti" }, { id: "spot", name: "Spotlight" }, { id: "halo", name: "Halo" },
 ];
 export const AURA_IDS = AURAS.map((a) => a.id);
+// Each effect's own colour, shown wherever there is no game card colour yet (the avatar card, Edit, the pickers). In a game the effect
+// takes the player's card colour instead, so it always matches the border.
+export const AURA_DEFAULT_COLOUR = {
+  glow: "#f4b94a", sparkle: "#ffd84a", flame: "#ff4b2b", bolt: "#ffe14a", bubble: "#4fb0e0", orbit: "#9b6bff",
+  ring: "#f26fa0", ripple: "#3ab5a6", heart: "#ff5a7a", confetti: "#ff9f1c", spot: "#ffe9a8", halo: "#ffd34a",
+};
 export const isAura = (id) => typeof id === "string" && AURA_IDS.includes(id);
 export const auraName = (id) => AURAS.find((a) => a.id === id)?.name || "None";
 
@@ -36,14 +42,14 @@ export function auraPieces(kind, calm) {
 const hexToRgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 const mixHex = (hex, toWhite, k) => "#" + hexToRgb(hex).map((x) => Math.round(x + ((toWhite ? 255 : 0) - x) * k).toString(16).padStart(2, "0")).join("");
 
-// Starts watching the page. `tints` are the slot colours as "#rrggbb" (slot 1 is tints[0]); a picture without a slot gets `fallback`.
+// Starts watching the page. `tints` are the slot colours as "#rrggbb" (slot 1 is tints[0]); a picture without a slot (0) gets its effect's own colour.
 // Returns { refresh(root) } for a screen that wants its pictures checked right away.
 export function installAuras(tints, fallback = "#f4b94a") {
   const live = new Set();
   const sizeObserver = typeof ResizeObserver === "function" ? new ResizeObserver((entries) => { for (const e of entries) place(e.target); }) : null;
   function colourOf(img) {
     const slot = Number(img.dataset.auraSlot) || 0;
-    const hex = /^#[0-9a-f]{6}$/i.test(tints[slot - 1] || "") ? tints[slot - 1] : fallback;
+    const hex = /^#[0-9a-f]{6}$/i.test(tints[slot - 1] || "") ? tints[slot - 1] : AURA_DEFAULT_COLOUR[img.dataset.aura] || fallback;
     return hex;
   }
   function build(img, fx, w) {

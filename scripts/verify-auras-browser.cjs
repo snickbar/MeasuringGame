@@ -78,6 +78,14 @@ srv.listen(0, async () => {
   by.orbit && by.orbit.same && by.halo && by.halo.same ? ok('works in relative boxes and with an absolutely placed picture') : fail('orbit/halo layers wrong: ' + JSON.stringify([by.orbit, by.halo]));
   by.halo && by.halo.pos === 'absolute' ? ok('a picture that is already positioned keeps its own position') : fail('halo picture position changed to ' + (by.halo && by.halo.pos));
   by.glow.c.toLowerCase() === '#4fb0e0' && by.sparkle.c.toLowerCase() === '#d4825f' ? ok('the color is the player\'s card color for the slot') : fail('colors wrong: ' + by.glow.c + ' ' + by.sparkle.c);
+  // no slot (the card, Edit, pickers): each effect shows its own color; a slot always wins
+  const own = await p.evaluate(() => {
+    const mk = (kind, slot) => { const i = document.createElement('img'); i.className = 'avatar-icon'; i.src = 'avatars/av01.webp'; i.dataset.aura = kind; i.dataset.auraSlot = slot; i.style.cssText = 'width:80px;height:80px'; document.querySelector('#fx').append(i); return i; };
+    const imgs = [mk('bubble', 0), mk('flame', 0), mk('flame', 4)];
+    return new Promise((res) => setTimeout(() => res(imgs.map((i) => i.previousElementSibling.style.getPropertyValue('--c').toLowerCase())), 300));
+  });
+  own[0] === '#4fb0e0' && own[1] === '#ff4b2b' ? ok('without a game color: blue bubbles, red flames') : fail('own colors wrong: ' + own.join(' '));
+  own[2] === '#4fb0e0' ? ok('with a game color the effect uses it') : fail('slot color ignored: ' + own[2]);
   const calm = await p.evaluate(() => { const s = (k) => document.querySelector(`#fx img[data-aura="${k}"]`).previousElementSibling.children.length; return { big: s('glow'), calmSparkle: s('sparkle') }; });
   calm.calmSparkle === 4 ? ok('a 44px picture gets the calmer set (4 sparkles)') : fail('expected 4 sparkles on the 44px picture, got ' + calm.calmSparkle);
   const badge = await p.evaluate(() => { const bd = document.querySelector('#fx .badge'), fxEl = bd.parentElement.querySelector('.aura-fx'); const r = bd.getBoundingClientRect(), top = document.elementFromPoint(r.left + 4, r.top + 4); return top === bd; });
