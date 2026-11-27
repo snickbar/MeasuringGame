@@ -9,6 +9,45 @@
 <meta http-equiv="Expires" content="0" />
 <title>Size Em Up!</title>
 <script>
+// Wide windows (a laptop or desktop browser): the game is built for a phone, so show the real game, untouched, inside a phone-shaped frame with a
+// backdrop. Inside the frame every screen measures the frame and not the window, so it behaves exactly as on a phone (and the phone layout tests still apply).
+// This runs before anything else loads, so the game itself starts once, inside the frame. Not used on phones, portrait tablets, the Android app, short windows,
+// or automated test browsers (add ?desktopframe=1 to force it, ?noframe to turn it off).
+(function () {
+  try {
+    if (window.top !== window || window.Capacitor || location.protocol === "file:") return;
+    var force = /[?&]desktopframe=1\b/.test(location.search);
+    if (/[?&]noframe\b/.test(location.search) || (navigator.webdriver && !force)) return;
+    var w = window.innerWidth, h = window.innerHeight;
+    if (!force && (w < 700 || h < 640 || w / h <= 0.9)) return;
+    var css =
+      "html,body{margin:0;height:100%;overflow:hidden;background:#8fd3ff}" +
+      "body{display:grid;place-items:center;background:radial-gradient(ellipse 60% 22% at 18% 78%,#fff9 0,#fff0 70%),radial-gradient(ellipse 50% 18% at 84% 24%,#fff9 0,#fff0 70%),linear-gradient(#6bc6ff,#cfeeff)}" +
+      "#phone-frame{display:block;border:0;background:#c8ecff;border-radius:26px;box-shadow:0 0 0 6px #fff8,0 24px 70px #0a3a6a66;" +
+      "height:min(100vh,max(640px,min(calc(100vh - 24px),932px)));width:min(100vw,clamp(360px,calc(min(100vh,932px) * .5),430px))}";
+    // Swap the page's root element for the frame page. The browser goes on reading the rest of the original page into the old root, which is no longer part
+    // of the page, and scripts that are not part of the page never run, so the game does not start here (only inside the frame).
+    var doc = document, root = doc.createElement("html"), head = doc.createElement("head"), body = doc.createElement("body");
+    root.lang = "en";
+    var add = function (tag, attrs, text) { var el = doc.createElement(tag); for (var k in attrs) el.setAttribute(k, attrs[k]); if (text) el.textContent = text; head.appendChild(el); };
+    add("meta", { charset: "UTF-8" }); add("meta", { name: "viewport", content: "width=device-width, initial-scale=1.0" });
+    add("title", {}, "Size Em Up!"); add("link", { rel: "manifest", href: "manifest.json" }); add("style", {}, css);
+    var frame = doc.createElement("iframe");
+    frame.id = "phone-frame"; frame.title = "Size Em Up!";
+    frame.setAttribute("allow", "autoplay; clipboard-write; web-share; fullscreen");
+    body.appendChild(frame);
+    root.appendChild(head); root.appendChild(body);
+    doc.replaceChild(root, doc.documentElement);
+    frame.src = location.href;
+    // The keyboard goes to whichever page has focus: keep it on the game, also after a click on the backdrop.
+    var focusGame = function () { try { frame.contentWindow.focus(); } catch (e) {} };
+    frame.addEventListener("load", focusGame);
+    window.addEventListener("focus", focusGame);
+    body.addEventListener("pointerdown", function () { setTimeout(focusGame, 0); });
+  } catch (e) { /* any problem: just show the game normally */ }
+})();
+</script>
+<script>
 // A directly opened HTML file cannot load the game's browser modules. When
 // the local launcher is running, send that file to the working browser game.
 if (location.protocol === "file:") {

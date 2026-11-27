@@ -45,7 +45,7 @@ function cspMeta(html) {
     "font-src 'self' data:",
     // The database (WebSocket and HTTPS), Google sign-in/token services, and the live-update version files.
     `connect-src 'self' ${fb} wss://*.firebaseio.com wss://*.firebasedatabase.app https://*.googleapis.com https://www.gstatic.com https://raw.githubusercontent.com https://size-em-up.web.app`,
-    `frame-src ${fb} https://measuring-game.firebaseapp.com`,
+    `frame-src 'self' ${fb} https://measuring-game.firebaseapp.com`, // 'self': on wide screens the game shows itself inside a phone-shaped frame (see the first script in index.html)
     "worker-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'self'",
