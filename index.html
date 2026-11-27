@@ -1759,6 +1759,9 @@ if (location.protocol === "file:") {
   #avatar-zoom-overlay .avatar-zoom-pic.player-frame-host { box-sizing: border-box; padding: 11px; --player-frame-edge: 14px; }
   #avatar-zoom-overlay .avatar-zoom-debug { margin: 6px 0 0; padding: 4px 12px; border: 2px dashed #b07a1d; border-image: none; border-radius: 9px; background: #fff3d0; color: #6b4a22; font: 700 12px/1.2 system-ui; box-shadow: none; text-shadow: none; }
   #avatar-zoom-overlay .avatar-zoom-debug:active { filter: brightness(.93); }
+  #avatar-zoom-overlay .avatar-edit-card .avatar-zoom-pic { width: min(80%, 30vh); }
+  #avatar-zoom-overlay .avatar-zoom-done { width: 100%; margin: 8px 0 0; padding: 8px 12px; border: 3px solid #b07a1d; border-image: none; border-radius: 12px; background: #f0b43a; color: #4a2c12; font: 800 16px/1.1 Fredoka, system-ui, sans-serif; box-shadow: none; text-shadow: none; }
+  #avatar-zoom-overlay .avatar-zoom-done:active { filter: brightness(.93); }
   #avatar-zoom-overlay .avatar-zoom-apbar { display: block; width: 100%; height: 8px; border-radius: 4px; background: #efe2c8; overflow: hidden; }
   #avatar-zoom-overlay .avatar-zoom-apbar i { display: block; height: 100%; background: #e0a526; }
   #avatar-zoom-overlay .avatar-zoom-ap small { font-size: 11px; opacity: .75; }
@@ -5413,7 +5416,7 @@ if (location.protocol === "file:") {
   </div>
 
   <div class="settings-profile-row name-avatar-row">
-    <div class="frame-picker-avatar-slot"><div id="name-avatar-big" class="settings-avatar-big" aria-hidden="true"></div><button type="button" id="room-frame-edit" class="frame-edit-btn" aria-expanded="false" aria-controls="room-frame-picker-controls">Edit</button><div class="frame-picker-controls" id="room-frame-picker-controls" hidden><button type="button" class="frame-picker-btn frame-picker-arrow" aria-label="Previous border" data-frame-step="-1">‹</button><span class="frame-picker-mid"><b data-frame-count>Borders (0/20)</b><span class="frame-picker-name" id="room-frame-picker" aria-live="polite"></span></span><button type="button" class="frame-picker-btn frame-picker-arrow" aria-label="Next border" data-frame-step="1">›</button></div></div>
+    <div class="frame-picker-avatar-slot"><div id="name-avatar-big" class="settings-avatar-big" aria-hidden="true"></div><button type="button" id="room-frame-edit" class="frame-edit-btn" aria-haspopup="dialog">Edit</button></div>
     <button id="name-avatar-random" type="button" class="avatar-random-btn" aria-label="Random avatar" title="Random avatar"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="5" width="38" height="38" rx="9" fill="#fff8e6" stroke="#4a2c12" stroke-width="3.5"/><g fill="#4a2c12"><circle cx="16" cy="16" r="3.6"/><circle cx="32" cy="16" r="3.6"/><circle cx="24" cy="24" r="3.6"/><circle cx="16" cy="32" r="3.6"/><circle cx="32" cy="32" r="3.6"/></g></svg></button>
     <div class="settings-profile-name">
       <label for="name-input">Your name</label>
@@ -11836,7 +11839,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Borders are per avatar. Reaching FRAME_LEVEL with an avatar unlocks every border for it (no more border unlocks from achievements).
   // The border picked on that avatar's card is its default (profile.avatarFrames); "Edit" on Choose your avatar changes it for this game only (gameFrame).
   const FRAME_LEVEL = 3;
-  let gameFrame = null, roomFrameEditing = false;
+  let gameFrame = null;
   const frameAllowed = (avId, id) => id === 0 || (Number.isInteger(id) && id > 0 && id < playerFrameCatalog.length && avatarLevel(avId) >= FRAME_LEVEL);
   const framesFor = (avId) => avatarLevel(avId) >= FRAME_LEVEL ? playerFrameCatalog : playerFrameCatalog.slice(0, 1);
   function defaultFrameFor(avId, profile = myProfile) {
@@ -11928,27 +11931,45 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderSettingsAvatarGrid();
     renderPlayerFramePicker();
   }
+  // Choose your avatar shows the avatar with its border (default, or this game's pick). Edit opens the popup below.
   function renderPlayerFramePicker() {
-    const name = document.getElementById("room-frame-picker"), controls = document.getElementById("room-frame-picker-controls");
-    const edit = document.getElementById("room-frame-edit"), avatar = document.getElementById("name-avatar-big");
-    if (!name || !controls || !edit || !avatar) return;
-    const frames = framesFor(currentAvatar), current = equippedPlayerFrame();
-    preloadFrameArt(frames);
-    showPlayerFrame(avatar, current, myGameFrameIndex());
-    controls.hidden = !roomFrameEditing;
-    edit.textContent = roomFrameEditing ? "Done" : "Edit";
-    edit.setAttribute("aria-expanded", String(roomFrameEditing));
-    name.textContent = playerFrameCatalog[current].name;
-    controls.querySelector("[data-frame-count]").textContent = frames.length > 1 ? "Borders (" + (frames.length - 1) + "/" + (playerFrameCatalog.length - 1) + ")" : "Borders: Level " + FRAME_LEVEL;
-    for (const button of controls.querySelectorAll("[data-frame-step]")) {
-      button.disabled = frames.length < 2;
-      button.onclick = () => {
-        const next = (frames.findIndex((frame) => frame.id === current) + Number(button.dataset.frameStep) + frames.length) % frames.length;
-        setGameFrame(frames[next].id);
-      };
-    }
+    const avatar = document.getElementById("name-avatar-big");
+    if (!avatar) return;
+    showPlayerFrame(avatar, equippedPlayerFrame(), myGameFrameIndex());
   }
-  document.getElementById("room-frame-edit")?.addEventListener("click", () => { roomFrameEditing = !roomFrameEditing; renderPlayerFramePicker(); });
+  // Edit: the avatar opens in a box with every option that can change for this one game. The saved defaults are never touched from here.
+  function gameEditRowsHtml() {
+    const av = currentAvatar, lv = avatarLevel(av);
+    return AVATAR_PERKS.filter((perk) => perk.lv >= 3).map((perk) => {
+      const open = lv >= perk.lv;
+      if (!open) return `<li class="avatar-zoom-perk locked"><b>L${perk.lv}</b><span>???</span></li>`;
+      if (perk.name === "Borders") return `<li class="avatar-zoom-perk has-arr"><b>L${perk.lv}</b><span><em>Borders:</em><span class="avatar-zoom-arr"><button type="button" data-zframe="-1" aria-label="Previous border">‹</button><span class="avatar-zoom-bname">${escapeHtml(playerFrameCatalog[equippedPlayerFrame()].name)}</span><button type="button" data-zframe="1" aria-label="Next border">›</button></span></span></li>`;
+      return `<li class="avatar-zoom-perk"><b>L${perk.lv}</b><span><em>${perk.name}:</em> ${perk.built ? "" : "Coming soon"}</span></li>`;
+    }).join("");
+  }
+  function openGameEdit() {
+    closeAvatarZoom();
+    const av = currentAvatar, ov = document.createElement("div");
+    ov.id = "avatar-zoom-overlay";
+    ov.innerHTML = `<div class="avatar-zoom-card avatar-edit-card"><div class="avatar-zoom-pic">${avatarHtml(av)}</div><div class="avatar-zoom-info"><b class="avatar-zoom-name">${escapeHtml(BOT_NAME_BY_AVATAR[av] || "")}</b><span class="avatar-zoom-rarity">This game only</span><ul class="avatar-zoom-perks">${gameEditRowsHtml()}</ul><button type="button" class="avatar-zoom-done" data-zdone>Done</button></div><button type="button" class="avatar-zoom-close" aria-label="Close" data-zdone>&times;</button></div>`;
+    const pic = ov.querySelector(".avatar-zoom-pic");
+    showPlayerFrame(pic, equippedPlayerFrame(), 0);
+    preloadFrameArt(framesFor(av));
+    ov.addEventListener("click", (e) => {
+      const stepBtn = e.target.closest("[data-zframe]");
+      if (stepBtn) {
+        const frames = framesFor(av), cur = equippedPlayerFrame();
+        const next = frames[(frames.findIndex((f) => f.id === cur) + Number(stepBtn.dataset.zframe) + frames.length) % frames.length].id;
+        setGameFrame(next);
+        showPlayerFrame(pic, next, 0);
+        const label = ov.querySelector(".avatar-zoom-bname"); if (label) label.textContent = playerFrameCatalog[next].name;
+        return;
+      }
+      if (e.target === ov || e.target.closest("[data-zdone]")) closeAvatarZoom();
+    });
+    document.body.appendChild(ov);
+  }
+  document.getElementById("room-frame-edit")?.addEventListener("click", openGameEdit);
 
   function renderAvatarGrid() {
     // If the room we're looking at has already claimed our saved avatar,
@@ -19617,7 +19638,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   homeJoinBtn.addEventListener("click", () => activateButton(homeJoinBtn, showJoinScreen));
   // Back on the home screen = the game is over: the next game starts from your default avatar again, even where there is no avatar screen.
-  new MutationObserver(() => { if (homeScreen.classList.contains("active")) { gameFrame = null; roomFrameEditing = false; } if (homeScreen.classList.contains("active") && currentAvatar !== defaultAvatarId()) { currentAvatar = defaultAvatarId(); renderSettingsAvatarGrid(); } }).observe(homeScreen, { attributes: true, attributeFilter: ["class"] });
+  new MutationObserver(() => { if (homeScreen.classList.contains("active")) { gameFrame = null; } if (homeScreen.classList.contains("active") && currentAvatar !== defaultAvatarId()) { currentAvatar = defaultAvatarId(); renderSettingsAvatarGrid(); } }).observe(homeScreen, { attributes: true, attributeFilter: ["class"] });
   joinBackBtn.addEventListener("click", () => {
     pendingQrInvite.clear();
     joinScreen.classList.remove("active");
@@ -19631,7 +19652,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     setFlowBanner(document.getElementById("na-banner"), pendingSettings || flowBannerSettings || roomState?.settings);
     // Quick Game also goes through a lobby, so the button always says Join Lobby.
     joinLobbyBtn.textContent = "Join Lobby";
-    if (cameFrom !== "lobby") { currentAvatar = defaultAvatarId(); gameFrame = null; roomFrameEditing = false; } // every new game starts from your default avatar and its default border
+    if (cameFrom !== "lobby") { currentAvatar = defaultAvatarId(); gameFrame = null; } // every new game starts from your default avatar and its default border
     watchTakenAvatarsForCode(pendingRoomCode);
     ALL_SCREEN_ELS.forEach(el=>el.classList.remove('active'));
     nameAvatarScreenEl.classList.add("active");
