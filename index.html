@@ -1766,6 +1766,60 @@ if (location.protocol === "file:") {
   #avatar-zoom-overlay .avatar-zoom-apbar i { display: block; height: 100%; background: #e0a526; }
   #avatar-zoom-overlay .avatar-zoom-ap small { font-size: 11px; opacity: .75; }
   #avatar-zoom-overlay .avatar-zoom-card img.zoom-dim { opacity: .4; filter: grayscale(1); }
+  /* Sticker rows on the avatar card and in Edit */
+  #avatar-zoom-overlay .avatar-zoom-card img.stk-row-thumb { flex: none; width: 26px; height: 26px; object-fit: contain; }
+  #avatar-zoom-overlay .stk-edit-btn { flex: none; width: auto; height: 30px; margin: 0; padding: 0 12px; border: 2px solid #b07a1d; border-image: none; border-radius: 9px; background: #f0b43a; color: #4a2c12; font: 800 13px/1 system-ui; box-shadow: none; }
+  #avatar-zoom-overlay .stk-edit-btn:active { filter: brightness(.93); }
+  /* The sticker editor: a full sheet, avatar on top, tray below; the app's own keyboard opens under the search box */
+  #sticker-editor-overlay { position: fixed; inset: 0; z-index: 1600; background: rgba(0,0,0,.45); }
+  #sticker-editor-overlay button { margin: 0; border-image: none; box-shadow: none; }
+  #sticker-editor-overlay .stk-sheet { --stk-h: min(30vh, 230px); position: absolute; inset: 0; margin: 0 auto; max-width: 520px; box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; padding: calc(8px + env(safe-area-inset-top, 0px)) 10px calc(8px + env(safe-area-inset-bottom, 0px)); background: #fffaf0; color: #4a2c12; }
+  #sticker-editor-overlay .stk-sheet.kbd { --stk-h: min(14vh, 90px); }
+  @media (max-height: 600px) { #sticker-editor-overlay .stk-sheet { --stk-h: 24vh; } #sticker-editor-overlay .stk-sheet.kbd { --stk-h: 12vh; } }
+  #sticker-editor-overlay .stk-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  #sticker-editor-overlay .stk-title { display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0; line-height: 1.15; }
+  #sticker-editor-overlay .stk-title b { font-size: 16px; }
+  #sticker-editor-overlay .stk-title small { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #6b4a22; }
+  #sticker-editor-overlay .stk-btn { flex: none; width: auto; min-height: 36px; padding: 0 14px; border: 2px solid #d9c3a3; border-radius: 10px; background: #fffaf0; color: #4a2c12; font: 800 14px/1 system-ui; }
+  #sticker-editor-overlay .stk-btn.stk-done { border-color: #b07a1d; background: #f0b43a; }
+  #sticker-editor-overlay .stk-btn:active, #sticker-editor-overlay .stk-tabs button:active, #sticker-editor-overlay .stk-chips button:active, #sticker-editor-overlay .stk-tray button:active { filter: brightness(.93); }
+  #sticker-editor-overlay .stk-stage-wrap { flex: none; display: flex; justify-content: center; padding: 38px 0 16px; }
+  #sticker-editor-overlay .stk-sheet.kbd .stk-stage-wrap { padding: 32px 0 10px; }
+  #sticker-editor-overlay .stk-box { position: relative; height: var(--stk-h); aspect-ratio: 1; touch-action: none; user-select: none; -webkit-user-select: none; border-radius: 14px; background: linear-gradient(#f6ead2, #fffaf0); border: 2px dashed #d9c3a3; box-sizing: border-box; }
+  #sticker-editor-overlay .stk-box > img.avatar-icon { width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; }
+  #sticker-editor-overlay .stk-sticker { position: absolute; touch-action: none; cursor: grab; outline: 2px dashed #c4571a; outline-offset: 3px; border-radius: 6px; }
+  #sticker-editor-overlay .stk-sticker[hidden] { display: none; }
+  #sticker-editor-overlay .stk-sticker img { width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; }
+  #sticker-editor-overlay .stk-stem { position: absolute; left: 50%; top: -8px; width: 2px; height: 8px; margin-left: -1px; background: #c4571a; }
+  #sticker-editor-overlay .stk-knob, #sticker-editor-overlay .stk-size { position: absolute; display: grid; place-items: center; width: 28px; height: 28px; background: #c4571a; color: #fff; touch-action: none; }
+  #sticker-editor-overlay .stk-knob { left: 50%; top: -36px; margin-left: -14px; border-radius: 50%; font-size: 17px; font-weight: 900; cursor: grab; }
+  #sticker-editor-overlay .stk-size { right: -16px; bottom: -16px; border-radius: 8px; cursor: nwse-resize; }
+  #sticker-editor-overlay .stk-legend { flex: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+  #sticker-editor-overlay .stk-legend > span { display: inline-flex; align-items: center; }
+  #sticker-editor-overlay .stk-legend i { font-style: normal; display: inline-grid; place-items: center; width: 22px; height: 22px; margin-right: 4px; border-radius: 7px; background: #c4571a; color: #fff; vertical-align: middle; }
+  #sticker-editor-overlay .stk-legend i.c { border-radius: 50%; }
+  #sticker-editor-overlay .stk-legend .stk-btn { min-height: 30px; padding: 0 9px; font-size: 12px; }
+  #sticker-editor-overlay .stk-sheet.kbd .stk-legend, #sticker-editor-overlay .stk-sheet.kbd .stk-tabs, #sticker-editor-overlay .stk-sheet.kbd .stk-chips { display: none; }
+  #sticker-editor-overlay .stk-tabs { flex: none; display: flex; gap: 6px; }
+  #sticker-editor-overlay .stk-tabs button, #sticker-editor-overlay .stk-chips button { width: auto; border: 2px solid #d9c3a3; border-radius: 999px; background: #f3e3bd; color: #4a2c12; font: 800 13px/1 system-ui; padding: 7px 13px; }
+  #sticker-editor-overlay .stk-tabs button.on, #sticker-editor-overlay .stk-chips button.on { background: #c4571a; border-color: #c4571a; color: #fff; }
+  #sticker-editor-overlay .stk-nav { flex: none; }
+  #sticker-editor-overlay .stk-nav[hidden], #sticker-editor-overlay .stk-kbd[hidden] { display: none; }
+  #sticker-editor-overlay .stk-nav .search-line { display: flex; gap: 6px; }
+  #sticker-editor-overlay .stk-nav .search-line input { min-height: 40px; }
+  #sticker-editor-overlay .stk-nav .search-line input { flex: 1 1 0; width: auto; }
+  #sticker-editor-overlay .stk-nav .search-line button { flex: none; width: auto; min-height: 40px; padding: 0 12px; border: 2px solid #b99a6b; border-radius: 10px; background: #fffaf0; color: #4a2c12; font: 800 14px/1 system-ui; }
+  #sticker-editor-overlay .stk-chips { display: flex; gap: 6px; overflow-x: auto; padding: 8px 0 2px; scrollbar-width: none; }
+  #sticker-editor-overlay .stk-chips button { flex: none; padding: 6px 11px; }
+  #sticker-editor-overlay .stk-scroll { flex: 1 1 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+  #sticker-editor-overlay .stk-lbl { font-weight: 800; font-size: 13px; color: #6b4a22; margin: 2px 0 6px; }
+  #sticker-editor-overlay .stk-tray { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  #sticker-editor-overlay .stk-tray button { aspect-ratio: 1; width: auto; padding: 4px; border: 2px solid #d9c3a3; border-radius: 12px; background: #fffdf7; }
+  #sticker-editor-overlay .stk-tray button.on { border-color: #c4571a; background: #f3e3bd; }
+  #sticker-editor-overlay .stk-tray img { width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; }
+  #sticker-editor-overlay .stk-empty { grid-column: 1 / -1; margin: 6px 0; color: #6b4a22; font-size: 13px; }
+  #sticker-editor-overlay .stk-kbd { flex: none; margin: 0; padding: 6px 4px; gap: 4px; }
+  #sticker-editor-overlay .stk-kbd button.kbd-key { height: 34px; min-height: 34px; font-size: 15px; }
   /* Favorites: heart badge on tiles, labels in the pickers, and the heart on the zoomed avatar. */
   .avatar-choice, .collection-tile { position: relative; }
   .fav-dot { position: absolute; top: -4px; right: -4px; width: 15px; height: 15px; pointer-events: none; display: block; }
@@ -6347,7 +6401,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { lv: 2, name: "Play style", built: true },      // the personality
     { lv: 3, name: "Borders", built: true },         // every border unlocks for this avatar; its default is picked here
     { lv: 4, name: "Colors", built: true },          // every color option, with arrows to flip between them (painted on the phone, see anim/avatar-colors.mjs)
-    { lv: 5, name: "Stickers", built: false },
+    { lv: 5, name: "Stickers", built: true },
     { lv: 6, name: "Aura", built: false },
   ];
   // Level 2 shows the play style (personality). Anyone who already earned it the old way (25 rounds against that avatar) keeps it.
@@ -12064,6 +12118,119 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     update(ref(db, `profiles/${deviceId}`), { [`avatarStickers/${avId}`]: value || null }).catch(() => showAchToast("Couldn’t save that sticker. Try again."));
     renderSettingsAvatarGrid();
   }
+  // ---- The sticker editor: a sheet with the avatar on top and the tray below. `onSave(value)` gets the new sticker string ("" = none) on Done. ----
+  function stickerChoices() {
+    const found = (id) => (myProfile.seenObjects || {})[id] && OBJECT_BY_ID.has(id);
+    const reactions = Object.entries(REACTIONS).filter(([e, r]) => ownsEmoji(e) && REACTION_BY_ID[r.id]).map(([e, r]) => ({ kind: "r", name: r.id, src: reactionPic(e), label: r.label || r.id }));
+    const objects = [...OBJECT_BY_ID.values()].filter((o) => found(o.id)).map((o) => ({ kind: "o", name: o.id, src: o.image, label: o.name })).sort((a, b) => a.label.localeCompare(b.label));
+    return { reactions, objects };
+  }
+  // The Stickers row on the card and in Edit: the current sticker (or "None") and the button that opens the editor.
+  const stickerRowHtml = (value) => { const s = stickerInfo(value); return `<span class="avatar-zoom-arr stk-row">${s ? `<img class="stk-row-thumb" src="${escapeHtml(s.src)}" alt="">` : ""}<span class="avatar-zoom-bname" data-zstk-name>${s ? "Placed" : "None"}</span><button type="button" class="stk-edit-btn" data-zsticker>${s ? "Change" : "Add"}</button></span>`; };
+  function openStickerEditor({ avId, title, sub, value, color, onSave }) {
+    document.getElementById("sticker-editor-overlay")?.remove();
+    const { reactions, objects } = stickerChoices();
+    const byName = new Map(objects.map((o) => [o.name, o]));
+    const recent = recentDiscoveries(myProfile, { limit: 12, allowed: new Set(byName.keys()) });
+    const groups = [["Recent", recent.map((r) => byName.get(r.id)).filter(Boolean)], ["All", objects]];
+    for (const w of WORLDS) { const items = (w.ids || []).map((id) => byName.get(id)).filter(Boolean); if (items.length) groups.push([w.name, items]); }
+    let cur = stickerInfo(value) ? { ...stickerInfo(value) } : null;
+    const state = { tab: objects.length ? "o" : "r", group: groups[0][1].length ? "Recent" : "All", q: "" };
+    const ov = document.createElement("div");
+    ov.id = "sticker-editor-overlay";
+    ov.innerHTML = `<div class="stk-sheet" role="dialog" aria-label="Sticker">
+      <div class="stk-head"><button type="button" class="stk-btn" data-sx>Cancel</button><div class="stk-title"><b>${escapeHtml(title)}</b><small>${escapeHtml(sub)}</small></div><button type="button" class="stk-btn stk-done" data-sdone>Done</button></div>
+      <div class="stk-stage-wrap"><div class="stk-box">${avatarHtml(avId, "", undefined, { color })}</div></div>
+      <div class="stk-legend"><span><i class="c">&#8635;</i>turn</span><span><i>&#10530;</i>resize</span><span>drag to move</span><button type="button" class="stk-btn" data-sremove>Remove</button></div>
+      <div class="stk-tabs"><button type="button" data-stab="r">Reactions</button><button type="button" data-stab="o">Objects</button></div>
+      <div class="stk-nav"><div class="search-line"><input id="sticker-search" readonly inputmode="none" aria-label="Search your objects" placeholder="Search your objects"><button type="button" id="sticker-search-edit">Search</button><button type="button" id="sticker-search-clear">Clear</button></div><div class="stk-chips"></div></div>
+      <div class="stk-scroll"><div class="stk-lbl"></div><div class="stk-tray"></div></div>
+      <div class="custom-kbd stk-kbd" hidden></div></div>`;
+    const $ = (s) => ov.querySelector(s), sheet = $(".stk-sheet"), box = $(".stk-box"), tray = $(".stk-tray"), input = $("#sticker-search"), keys = $(".stk-kbd");
+    const stickerEl = document.createElement("div");
+    stickerEl.className = "stk-sticker";
+    stickerEl.innerHTML = `<img alt="" draggable="false"><span class="stk-stem"></span><span class="stk-knob" data-h="rot" aria-label="Turn">&#8635;</span><span class="stk-size" data-h="size" aria-label="Resize"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13L13 3M8 3h5v5M3 8v5h5"/></svg></span>`;
+    box.append(stickerEl);
+    const place = () => {
+      stickerEl.hidden = !cur;
+      if (!cur) return;
+      stickerEl.querySelector("img").src = cur.src;
+      stickerEl.style.cssText = `left:${cur.x}%;top:${cur.y}%;width:${cur.size}%;height:${cur.size}%;transform:translate(-50%,-50%) rotate(${cur.rot}deg)`;
+    };
+    const value$ = () => cur ? stickerString(cur.kind, cur.name, cur.x, cur.y, cur.size, cur.rot) : "";
+    const drawTray = () => {
+      const q = state.q.trim().toLowerCase();
+      let list, label;
+      if (state.tab === "r") { list = reactions; label = "Reactions"; }
+      else if (q) { list = objects.filter((o) => o.label.toLowerCase().includes(q)); label = `Results for “${state.q.trim()}”`; }
+      else { const g = groups.find((x) => x[0] === state.group) || groups[1]; list = g[1]; label = g[0] === "Recent" ? "Recently found" : g[0]; }
+      $(".stk-lbl").textContent = label;
+      tray.innerHTML = list.length ? list.map((o) => `<button type="button" class="${cur && cur.kind === o.kind && cur.name === o.name ? "on" : ""}" data-skind="${o.kind}" data-sname="${escapeHtml(o.name)}" title="${escapeHtml(o.label)}"><img src="${escapeHtml(o.src)}" alt="" draggable="false"></button>`).join("") : `<p class="stk-empty">${state.tab === "o" && !objects.length ? "Objects you find in games show up here." : "Nothing found."}</p>`;
+      for (const b of ov.querySelectorAll("[data-stab]")) b.classList.toggle("on", b.dataset.stab === state.tab);
+      $(".stk-nav").hidden = state.tab !== "o";
+      $(".stk-chips").innerHTML = groups.map(([n, items]) => `<button type="button" data-sgroup="${escapeHtml(n)}" class="${!q && state.group === n ? "on" : ""}">${escapeHtml(n)}${n === "Recent" || n === "All" ? "" : " " + items.length}</button>`).join("");
+    };
+    // keyboard: the app's own, never the phone's
+    for (const type of ["keydown", "paste", "drop", "beforeinput"]) input.addEventListener(type, (e) => { if (type === "keydown" && e.key === "Tab") return; e.preventDefault(); });
+    input.onfocus = () => input.blur();
+    renderCustomKeyboard(keys, input, { maxLength: 24, onDone: () => { keys.hidden = true; sheet.classList.remove("kbd"); } });
+    const space = document.createElement("button"); space.type = "button"; space.textContent = "Space"; space.className = "kbd-key";
+    space.onclick = () => { if (input.value.length < 24) { input.value += " "; input.dispatchEvent(new Event("input", { bubbles: true })); } };
+    keys.append(space);
+    input.addEventListener("input", () => { state.q = input.value; drawTray(); });
+    const setKbd = (open) => { keys.hidden = !open; sheet.classList.toggle("kbd", open); };
+    // move / turn / resize with one finger on the sticker or its handles, or pinch and twist with two
+    const ptrs = new Map(); let gesture = null;
+    const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+    const centre = () => { const r = box.getBoundingClientRect(); return { r, cx: r.left + cur.x / 100 * r.width, cy: r.top + cur.y / 100 * r.height }; };
+    box.addEventListener("pointerdown", (e) => {
+      if (!cur) return;
+      box.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; gesture = { mode: "pinch", d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, a0: Math.atan2(b.y - a.y, b.x - a.x), size0: cur.size, rot0: cur.rot }; return; }
+      const handle = e.target.closest("[data-h]");
+      if (handle || e.target.closest(".stk-sticker")) { e.preventDefault(); gesture = { mode: handle ? handle.dataset.h : "move", sx: e.clientX, sy: e.clientY, x0: cur.x, y0: cur.y }; }
+    });
+    box.addEventListener("pointermove", (e) => {
+      if (!ptrs.has(e.pointerId)) return;
+      ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (!gesture || !cur) return;
+      if (gesture.mode === "pinch") {
+        if (ptrs.size < 2) return;
+        const [a, b] = [...ptrs.values()];
+        cur.size = clamp(gesture.size0 * Math.hypot(a.x - b.x, a.y - b.y) / gesture.d0, 12, 60);
+        cur.rot = clamp(Math.round(gesture.rot0 + (Math.atan2(b.y - a.y, b.x - a.x) - gesture.a0) * 180 / Math.PI + 540) % 360 - 180, -180, 180);
+      } else if (gesture.mode === "move") {
+        const r = box.getBoundingClientRect();
+        cur.x = clamp(gesture.x0 + (e.clientX - gesture.sx) / r.width * 100, 0, 100); cur.y = clamp(gesture.y0 + (e.clientY - gesture.sy) / r.height * 100, 0, 100);
+      } else {
+        const { r, cx, cy } = centre(), dx = e.clientX - cx, dy = e.clientY - cy;
+        if (gesture.mode === "rot") { let deg = Math.round(Math.atan2(dy, dx) * 180 / Math.PI + 90); deg = ((deg + 540) % 360) - 180; cur.rot = Math.abs(deg) < 4 ? 0 : deg; }
+        else cur.size = clamp(Math.hypot(dx, dy) * Math.SQRT2 / r.width * 100, 12, 60);
+      }
+      place();
+    });
+    const lift = (e) => { ptrs.delete(e.pointerId); if (ptrs.size < 2 && gesture?.mode === "pinch") gesture = null; if (!ptrs.size) gesture = null; };
+    box.addEventListener("pointerup", lift); box.addEventListener("pointercancel", lift);
+    ov.addEventListener("click", (e) => {
+      const pick = e.target.closest("[data-sname]");
+      if (pick) {
+        const o = [...reactions, ...objects].find((x) => x.kind === pick.dataset.skind && x.name === pick.dataset.sname);
+        if (o) { cur = { kind: o.kind, name: o.name, src: o.src, x: cur ? cur.x : 70, y: cur ? cur.y : 26, size: cur ? cur.size : 30, rot: cur ? cur.rot : 10 }; place(); drawTray(); }
+        return;
+      }
+      const tab = e.target.closest("[data-stab]");
+      if (tab) { state.tab = tab.dataset.stab; if (state.tab !== "o") setKbd(false); drawTray(); return; }
+      const grp = e.target.closest("[data-sgroup]");
+      if (grp) { state.group = grp.dataset.sgroup; state.q = ""; input.value = ""; drawTray(); return; }
+      if (e.target.closest("#sticker-search-edit")) { setKbd(keys.hidden); return; }
+      if (e.target.closest("#sticker-search-clear")) { state.q = ""; input.value = ""; drawTray(); return; }
+      if (e.target.closest("[data-sremove]")) { cur = null; place(); drawTray(); return; }
+      if (e.target.closest("[data-sdone]")) { const v = value$(); ov.remove(); onSave(v); return; }
+      if (e.target.closest("[data-sx]")) ov.remove();
+    });
+    document.body.appendChild(ov);
+    place(); drawTray();
+  }
   // Choose your avatar shows the avatar with its border (default, or this game's pick). Edit opens the popup below.
   function renderPlayerFramePicker() {
     const avatar = document.getElementById("name-avatar-big");
@@ -12079,6 +12246,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (!open) return `<li class="avatar-zoom-perk locked"><b>L${perk.lv}</b><span>???</span></li>`;
       if (perk.name === "Borders") return `<li class="avatar-zoom-perk has-arr"><b>L${perk.lv}</b><span><em>Borders:</em><span class="avatar-zoom-arr"><button type="button" data-zframe="-1" aria-label="Previous border">‹</button><span class="avatar-zoom-bname">${escapeHtml(playerFrameCatalog[equippedPlayerFrame()].name)}</span><button type="button" data-zframe="1" aria-label="Next border">›</button></span></span></li>`;
       if (perk.name === "Colors") return `<li class="avatar-zoom-perk has-arr"><b>L${perk.lv}</b><span><em>Colors:</em>${colorArrowsHtml(equippedAvatarColor())}</span></li>`;
+      if (perk.name === "Stickers") return `<li class="avatar-zoom-perk has-arr"><b>L${perk.lv}</b><span><em>Sticker:</em>${stickerRowHtml(equippedAvatarSticker())}</span></li>`;
       return `<li class="avatar-zoom-perk"><b>L${perk.lv}</b><span><em>${perk.name}:</em> ${perk.built ? "" : "Coming soon"}</span></li>`;
     }).join("");
   }
@@ -12091,6 +12259,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     showPlayerFrame(pic, equippedPlayerFrame(), 0);
     preloadFrameArt(framesFor(av));
     ov.addEventListener("click", (e) => {
+      if (e.target.closest("[data-zsticker]")) {   // opens the sticker editor for this game only
+        openStickerEditor({ avId: av, title: BOT_NAME_BY_AVATAR[av] || "Sticker", sub: "This game only", value: equippedAvatarSticker(), color: equippedAvatarColor(), onSave: (value) => {
+          setGameSticker(value);
+          paintZoomPic(pic, av, equippedAvatarLook());
+          const row = ov.querySelector(".stk-row"); if (row) row.outerHTML = stickerRowHtml(equippedAvatarSticker());
+        } });
+        return;
+      }
       const colorBtn = e.target.closest("[data-zcolor]");
       if (colorBtn) {
         const next = stepColor(av, equippedAvatarColor(), Number(colorBtn.dataset.zcolor));
@@ -18230,11 +18406,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         return `<span class="avatar-zoom-arr"><button type="button" data-zframe="-1" aria-label="Previous border">‹</button><span class="avatar-zoom-bname">${escapeHtml(playerFrameCatalog[defaultFrameFor(id)].name)}</span><button type="button" data-zframe="1" aria-label="Next border">›</button></span>`;
       }
       if (perk.name === "Colors") return canEdit ? colorArrowsHtml(defaultColorFor(id)) : "All unlocked";
+      if (perk.name === "Stickers") return canEdit ? stickerRowHtml(defaultStickerFor(id)) : "Unlocked";
       return perk.built ? "" : "Coming soon";
     };
     const rows = AVATAR_PERKS.map((perk) => {
       const open = perk.lv <= lv || (perk.name === "Play style" && personalityKnown(id));
-      return `<li class="avatar-zoom-perk ${open ? "open" : "locked"}${perk.lv === lv + 1 ? " next" : ""}${open && canEdit && (perk.name === "Borders" || perk.name === "Colors") ? " has-arr" : ""}"><b>L${perk.lv}</b><span>${open ? `<em>${perk.name}:</em> ${value(perk)}` : "???"}</span></li>`;
+      return `<li class="avatar-zoom-perk ${open ? "open" : "locked"}${perk.lv === lv + 1 ? " next" : ""}${open && canEdit && (perk.name === "Borders" || perk.name === "Colors" || perk.name === "Stickers") ? " has-arr" : ""}"><b>L${perk.lv}</b><span>${open ? `<em>${perk.name}:</em> ${value(perk)}` : "???"}</span></li>`;
     }).join("");
     return `<span class="avatar-zoom-ap"><b>Level ${lv}</b><span class="avatar-zoom-apbar" aria-hidden="true"><i style="width:${lv >= maxLv ? 100 : Math.round(into / AP_PER_LEVEL * 100)}%"></i></span><small>${lv >= maxLv ? "Top of the ladder for now" : `${into} / ${AP_PER_LEVEL} AP to Level ${lv + 1}`}</small></span><ul class="avatar-zoom-perks">${rows}</ul>`;
   }
@@ -18250,6 +18427,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     showPlayerFrame(pic, defaultFrameFor(id), 0);
     if (canFav) preloadFrameArt(framesFor(id));
     ov.addEventListener("click", (e) => {
+      if (e.target.closest("[data-zsticker]")) {   // opens the sticker editor for this avatar's default sticker
+        openStickerEditor({ avId: id, title: BOT_NAME_BY_AVATAR[id] || "Sticker", sub: "Default sticker", value: defaultStickerFor(id), color: defaultColorFor(id), onSave: (value) => {
+          setDefaultSticker(id, value);
+          paintZoomPic(pic, id, defaultAvatarLook(id));
+          const row = ov.querySelector(".stk-row"); if (row) row.outerHTML = stickerRowHtml(defaultStickerFor(id));
+        } });
+        return;
+      }
       const colorBtn = e.target.closest("[data-zcolor]");
       if (colorBtn) {   // flips this avatar's default color; the card stays open
         const next = stepColor(id, defaultColorFor(id), Number(colorBtn.dataset.zcolor));
