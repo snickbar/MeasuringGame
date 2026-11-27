@@ -67,20 +67,24 @@ function loadSheet() {
     return canvas;
   })().catch((e) => { sheetPromise = null; throw e; }));
 }
-export const colorKey = (id, name) => id + "|" + name;
-// The picture of avatar `id` painted `name`, as a data address, once it is ready (null until then or when it cannot be made).
-export const recoloredAvatar = (id, name) => done.get(colorKey(id, name)) || null;
+// The look of an avatar picture: a colour name ("" = its own) and a sticker ({ key, src, x, y, size, rot }: x and y are the sticker's
+// middle and size its width, all in percent of the picture, rot in degrees; or null). The key names the look, id | colour | sticker.
+export const colorKey = (id, name, sticker) => id + "|" + (name || "") + (sticker ? "|" + sticker.key : "");
+// The picture of avatar `id` with that look, as a data address, once it is ready (null until then or when it cannot be made).
+export const recoloredAvatar = (id, name, sticker) => done.get(colorKey(id, name, sticker)) || null;
 // Makes it. Resolves to the data address, or null when this avatar has no such colour or something failed (the original shows then).
-export function makeRecoloredAvatar(id, name) {
-  const key = colorKey(id, name), hue = colorHue(id, name);
+export function makeRecoloredAvatar(id, name, sticker) {
+  const key = colorKey(id, name, sticker), hue = name ? colorHue(id, name) : undefined;
   if (done.has(key)) return Promise.resolve(done.get(key));
-  if (hue === undefined) return Promise.resolve(null);
+  if ((name && hue === undefined) || (!name && !sticker)) return Promise.resolve(null);
   if (working.has(key)) return working.get(key);
   const job = (async () => {
-    const [image, sheet] = await Promise.all([(async () => { const im = new Image(); im.src = fullUrl("avatars/" + id + ".webp"); await im.decode(); return im; })(), loadSheet()]);
-    const w = image.naturalWidth, h = image.naturalHeight, layers = parseLayers(id), slot = MASK_ORDER.indexOf(id);
+    const load = async (src) => { const im = new Image(); im.src = src; await im.decode(); return im; };
+    const [image, sheet, stickerImage] = await Promise.all([load(fullUrl("avatars/" + id + ".webp")), name ? loadSheet() : null, sticker ? load(fullUrl(sticker.src)) : null]);
+    const w = image.naturalWidth, h = image.naturalHeight, layers = name ? parseLayers(id) : [], slot = MASK_ORDER.indexOf(id);
     const canvas = document.createElement("canvas"); canvas.width = w; canvas.height = h;
     const ctx = canvas.getContext("2d", { willReadFrequently: true }); ctx.drawImage(image, 0, 0);
+    if (name) {
     const pixels = ctx.getImageData(0, 0, w, h);
     // The mask cell is drawn up to the picture's size (smoothly, so the edge is soft) and read back as one weight per pixel.
     const m = document.createElement("canvas"); m.width = w; m.height = h;
@@ -93,6 +97,13 @@ export function makeRecoloredAvatar(id, name) {
     });
     recolorPixels(pixels.data, weights, layers, hue);
     ctx.putImageData(pixels, 0, 0);
+    }
+    if (sticker) {   // the sticker is part of the picture, so every card in every mode shows it without any layout of its own
+      const box = sticker.size / 100 * w, fit = Math.min(box / stickerImage.naturalWidth, box / stickerImage.naturalHeight);
+      ctx.save(); ctx.translate(sticker.x / 100 * w, sticker.y / 100 * h); ctx.rotate(sticker.rot * Math.PI / 180);
+      ctx.drawImage(stickerImage, -stickerImage.naturalWidth * fit / 2, -stickerImage.naturalHeight * fit / 2, stickerImage.naturalWidth * fit, stickerImage.naturalHeight * fit);
+      ctx.restore();
+    }
     const url = canvas.toDataURL();
     done.set(key, url);
     return url;
