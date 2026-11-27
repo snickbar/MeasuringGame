@@ -5738,6 +5738,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { colorChoices, colorHue, recoloredAvatar, makeRecoloredAvatar, colorKey, randomStickerSpot } from "./anim/avatar-colors.mjs";
   import { AURAS, isAura, auraName, installAuras } from "./anim/avatar-auras.mjs";
   import { avatarAwardStats } from "./anim/avatar-awards.mjs";
+  import { avatarLevelFor, avatarLevelProgress } from "./anim/avatar-levels.mjs";
   import { HL_SHIELD_CHAIN, hlThemeDue, hlSurvivalOutcome } from "./anim/high-low-survival.mjs";
   import { mountHighLowReveal, HL_REVEAL_STEP_MS } from "./anim/high-low-reveal.mjs";
   import { HL_MESSAGE_BOTTLE, HL_EMPTY_BOTTLE, highLowBottlePieces } from "./anim/high-low-bottles.mjs";
@@ -6447,10 +6448,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // that avatar's personality shows on its card; until then it reads ???.
   const botRoundsAgainst = (id) => Number((myProfile.botRounds || {})[id]) || 0;
   // Avatar Points (AP): every avatar earns AP on this profile. A finished game gives +AP_PLAY to the avatar you played as and +AP_AGAINST to
-  // each other avatar that was in the game (human or bot), once per avatar per game. AP_PER_LEVEL AP is one level.
-  const AP_PLAY = 2, AP_AGAINST = 5, AP_PER_LEVEL = 20;
+  // each other avatar that was in the game (human or bot), once per avatar per game. The AP each level needs is in anim/avatar-levels.mjs (early levels are quick, later ones take more).
+  const AP_PLAY = 2, AP_AGAINST = 5;
   const avatarPoints = (id) => Number((myProfile.avatarPoints || {})[id]) || 0;
-  const avatarLevel = (id) => Math.floor(avatarPoints(id) / AP_PER_LEVEL);
+  const avatarLevel = (id) => avatarLevelFor(avatarPoints(id));
   // What each level unlocks, in order. `built` is false for rewards whose feature does not exist yet (the row says so once the level is reached).
   const AVATAR_PERKS = [
     { lv: 1, name: "Fun fact", built: true },
@@ -17805,7 +17806,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const chip = (id, label) => `<button type="button" class="coll-chip${collectionOwnership === id ? " on" : ""}" data-avatar-filter="${id}" aria-pressed="${collectionOwnership === id}">${label}</button>`;
     const BOT_LOOK_ICONS = { saved: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 1.8h9v12.4L8 11.2l-4.5 3z" fill="currentColor" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>',
       random: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.6" y="1.6" width="12.8" height="12.8" rx="3.2" fill="currentColor"/><g fill="#fff8e1"><circle cx="5" cy="5" r="1.3"/><circle cx="11" cy="5" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="5" cy="11" r="1.3"/><circle cx="11" cy="11" r="1.3"/></g></svg>' };
-    const botLooks = `<div class="bot-looks"><div class="bl-head"><img class="bl-bot" src="avatars/av17.webp" alt="" draggable="false"><span class="bot-looks-label">Bot looks</span></div><div class="bot-looks-seg" role="radiogroup" aria-label="Bot looks">${[["saved", "Saved"], ["random", "Random"]].map(([v, t]) => `<button type="button" role="radio" class="bot-looks-opt${botLooksMode() === v ? " on" : ""}" data-bot-looks="${v}" aria-checked="${botLooksMode() === v}">${BOT_LOOK_ICONS[v]}${t}</button>`).join("")}</div><small class="bot-looks-help">${botLooksMode() === "random" ? "Bots get a random look from what you\u2019ve unlocked." : "Bots wear what you saved on each avatar."}</small></div>`;
+    const botLooks = `<div class="bot-looks"><div class="bl-head"><img class="bl-bot" src="avatars/av17.webp" alt="" draggable="false"><span class="bot-looks-label">Bot looks</span></div><div class="bot-looks-seg" role="radiogroup" aria-label="Bot looks">${[["saved", "Saved"], ["random", "Random"]].map(([v, t]) => `<button type="button" role="radio" class="bot-looks-opt${botLooksMode() === v ? " on" : ""}" data-bot-looks="${v}" aria-checked="${botLooksMode() === v}">${BOT_LOOK_ICONS[v]}${t}</button>`).join("")}</div><small class="bot-looks-help">${botLooksMode() === "random" ? "Random looks, but only what you\u2019ve unlocked on each bot\u2019s avatar." : "Bots wear what you saved on each avatar."}</small></div>`;
     const head = botLooks + `<div class="collection-head">${chip("owned", "Owned")}${chip("locked", "Locked")}
       <div class="items-stat-box"><div class="items-stat-value">${totalUnlocked} / ${AVATARS.length}</div><div class="items-stat-label">Discovered</div></div>
       <button type="button" id="collection-hide-switch" class="items-stat-box ach-hide-box${collectionHideLocked ? " on" : ""}" role="switch" aria-checked="${collectionHideLocked}" aria-label="Hide undiscovered"><span class="items-stat-label">Hide undiscovered</span><span class="ach-switch-mini"></span></button>
@@ -18037,7 +18038,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   achTier("Social", "Party time", (n) => `Finish ${n} Party Mode games with friends`, ACH_STAT("groupGames"), [[5, 30], [25, 120]], { total: 10 });
   achTier("Fun", "Gacha fan", (n) => `Pull from the avatar machine ${n} times`, ACH_STAT("pulls"), [[10, 30], [50, 120]], { total: 10 });
   // Avatars: what you do with the per-avatar ladder (levels, looks, auras). The counts come from anim/avatar-awards.mjs.
-  const avatarStats = () => avatarAwardStats({ ids: AVATARS, points: (id) => avatarPoints(id), perLevel: AP_PER_LEVEL, tier: (id) => AVATAR_TIERS[id],
+  const avatarStats = () => avatarAwardStats({ ids: AVATARS, points: (id) => avatarPoints(id), levelOf: (id) => avatarLevel(id), tier: (id) => AVATAR_TIERS[id],
     looks: (id) => ({ frame: defaultFrameFor(id), color: defaultColorFor(id), sticker: defaultStickerFor(id), aura: defaultAuraFor(id) }) });
   achTier("Avatars", "Rising star", (n) => `Reach level 3 with ${n} avatar${n > 1 ? "s" : ""}`, () => avatarStats().rising, [[1, 20], [3, 40], [10, 80], [25, 120], [50, 200]]);
   achTier("Avatars", "Maxed out", (n) => `Reach level 6 with ${n} avatar${n > 1 ? "s" : ""}`, () => avatarStats().maxed, [[1, 40], [3, 80], [10, 120], [25, 160], [50, 200]]);
@@ -18549,7 +18550,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Level, progress to the next level, and what every level unlocks (revealed ones say what they are, the rest read ???).
   // Shown on the avatar card only, never on player cards.
   function avatarLevelHtml(id, canEdit) {
-    const ap = avatarPoints(id), lv = avatarLevel(id), into = ap - lv * AP_PER_LEVEL, maxLv = AVATAR_PERKS.length;
+    const ap = avatarPoints(id), { level: lv, into, span, done: topLevel } = avatarLevelProgress(ap);
     const value = (perk) => {
       if (perk.name === "Fun fact") return escapeHtml(factFor(id));
       if (perk.name === "Play style") { const pe = personalityFor(id); return `${escapeHtml(pe.label)}<small>${escapeHtml(pe.blurb)}</small>`; }
@@ -18566,7 +18567,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const open = perk.lv <= lv || (perk.name === "Play style" && personalityKnown(id));
       return `<li class="avatar-zoom-perk ${open ? "open" : "locked"}${perk.lv === lv + 1 ? " next" : ""}${open && canEdit && (perk.name === "Borders" || perk.name === "Colors" || perk.name === "Stickers" || perk.name === "Aura") ? " has-arr" : ""}"><b>L${perk.lv}</b><span>${open ? `<em>${perk.name}:</em> ${value(perk)}` : "???"}</span></li>`;
     }).join("");
-    return `<span class="avatar-zoom-ap"><b>Level ${lv}</b><span class="avatar-zoom-apbar" aria-hidden="true"><i style="width:${lv >= maxLv ? 100 : Math.round(into / AP_PER_LEVEL * 100)}%"></i></span><small>${lv >= maxLv ? "Top of the ladder for now" : `${into} / ${AP_PER_LEVEL} AP to Level ${lv + 1}`}</small></span><ul class="avatar-zoom-perks">${rows}</ul>`;
+    return `<span class="avatar-zoom-ap"><b>Level ${lv}</b><span class="avatar-zoom-apbar" aria-hidden="true"><i style="width:${topLevel ? 100 : Math.round(into / span * 100)}%"></i></span><small>${topLevel ? "Top of the ladder for now" : `${into} / ${span} AP to Level ${lv + 1}`}</small></span><ul class="avatar-zoom-perks">${rows}</ul>`;
   }
   function openAvatarZoom(tile, id) {
     const dim = tile.classList.contains("locked") || tile.classList.contains("taken");
@@ -20637,24 +20638,32 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
   }
 
-  // "Bot looks: Random": a random border, color, sticker and aura, only from things this player has unlocked (some bots stay plain so the room is not
-  // all dressed up). A feature counts as unlocked once any of your avatars reached its level; the sticker comes from the reactions you own and
-  // the objects you found, placed by pickStickerSpot so it sits on the avatar's edge and never on its face.
+  // A bot only wears what this player has unlocked on the avatar the bot has, by that avatar's level: a border from Level 3, a color from 4, a sticker
+  // from 5, an aura from 6. (A bot on an avatar still at Level 2 stays plain.) Both Bot looks modes follow it.
+  const botMayWear = (avatar) => { const lv = avatarLevel(avatar); return { frame: lv >= FRAME_LEVEL, color: lv >= COLOR_LEVEL, sticker: lv >= STICKER_LEVEL, aura: lv >= AURA_LEVEL }; };
+  // "Bot looks: Saved": what you saved on that avatar's card, limited to what its level allows.
+  function savedBotLook(avatar) {
+    const may = botMayWear(avatar);
+    return { playerFrame: may.frame ? defaultFrameFor(avatar) : 0, avatarColor: may.color ? defaultColorFor(avatar) || null : null, avatarSticker: may.sticker ? defaultStickerFor(avatar) || null : null, avatarAura: may.aura ? defaultAuraFor(avatar) || null : null };
+  }
+  // "Bot looks: Random": a random border, color, sticker and aura, only from what this avatar's level allows (some bots stay plain so the room is not
+  // all dressed up). The sticker comes from the reactions you own and the objects you found, placed by pickStickerSpot so it sits on the avatar's
+  // edge and never on its face.
   async function randomBotLook(avatar) {
     const pick = (list) => list[Math.floor(Math.random() * list.length)];
-    const reached = (level) => AVATARS.some((a) => avatarLevel(a) >= level), dress = () => Math.random() < 0.7;
+    const may = botMayWear(avatar), dress = () => Math.random() < 0.7;
     const look = { playerFrame: 0, avatarColor: null, avatarSticker: null, avatarAura: null };
-    if (reached(FRAME_LEVEL) && dress()) look.playerFrame = 1 + Math.floor(Math.random() * (playerFrameCatalog.length - 1));
+    if (may.frame && dress()) look.playerFrame = 1 + Math.floor(Math.random() * (playerFrameCatalog.length - 1));
     const shades = colorChoices(avatar);
-    if (reached(COLOR_LEVEL) && shades.length && dress()) look.avatarColor = pick(shades).name;
-    if (reached(STICKER_LEVEL) && dress()) {
+    if (may.color && shades.length && dress()) look.avatarColor = pick(shades).name;
+    if (may.sticker && dress()) {
       const { reactions, objects } = stickerChoices(), pool = [...reactions, ...objects];
       if (pool.length) {
         const item = pick(pool), spot = await randomStickerSpot(avatar), value = stickerString(item.kind, item.name, spot.x, spot.y, spot.size, spot.rot);
         if (stickerInfo(value)) look.avatarSticker = value;
       }
     }
-    if (reached(AURA_LEVEL) && dress()) look.avatarAura = pick(AURAS).id;
+    if (may.aura && dress()) look.avatarAura = pick(AURAS).id;
     return look;
   }
   async function addBot(difficulty) {
@@ -20687,7 +20696,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const themedName = BOT_NAME_BY_AVATAR[avatar];
     const name = (themedName && themedName.length <= 12 && !usedNames.has(themedName)) ? themedName : botNameFor(avatar, usedNames);
     const botId = "bot_" + Math.random().toString(36).slice(2, 10);
-    const look = botLooksMode() === "random" ? await randomBotLook(avatar) : { playerFrame: defaultFrameFor(avatar), avatarColor: defaultColorFor(avatar) || null, avatarSticker: defaultStickerFor(avatar) || null, avatarAura: defaultAuraFor(avatar) || null };
+    const look = botLooksMode() === "random" ? await randomBotLook(avatar) : savedBotLook(avatar);
     const newPlayer = {
       name, avatar, isHost: false, score: 0, frameIndex, isBot: true, botDifficulty: difficulty,
       joinedAt: serverTimestamp(),

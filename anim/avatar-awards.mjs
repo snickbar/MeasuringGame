@@ -3,9 +3,9 @@
 export const MAXED_LEVEL = 6;   // the top of the ladder: Aura
 
 // The counts behind the achievements. `ids` = every avatar id; `points(id)` = its avatar points; `looks(id)` = what is saved on it,
-// { frame, color, sticker, aura } (empty or 0 when unset); `tier(id)` = "default" | "common" | "rare" | "ultra"; `perLevel` = AP per level.
-export function avatarAwardStats({ ids, points, looks, tier, perLevel = 20 }) {
-  const level = (id) => Math.floor((Number(points(id)) || 0) / perLevel);
+// { frame, color, sticker, aura } (empty or 0 when unset); `tier(id)` = "default" | "common" | "rare" | "ultra"; `levelOf(id)` = its level (see anim/avatar-levels.mjs).
+export function avatarAwardStats({ ids, points, looks, tier, levelOf }) {
+  const level = (id) => Number(levelOf(id)) || 0;
   const s = { rising: 0, maxed: 0, styled: 0, totalAp: 0, auras: 0, fullLook: false, mirrored: false, luckyStar: false };
   const auras = new Set();
   for (const id of ids) {
