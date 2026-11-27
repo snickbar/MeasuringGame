@@ -1733,8 +1733,8 @@ if (location.protocol === "file:") {
     position: relative; width: 160px; height: 160px; padding: 10px; box-sizing: border-box;
     background: #fffaf0; border: 4px solid #d9c3a3; border-radius: 20px; animation: popupCardIn var(--popup-time) var(--popup-ease) both;
   }
-  #avatar-zoom-overlay .avatar-zoom-card { height: auto; width: 200px; }
-  #avatar-zoom-overlay .avatar-zoom-pic { width: 100%; aspect-ratio: 1; }
+  #avatar-zoom-overlay .avatar-zoom-card { height: auto; width: min(310px, calc(100vw - 32px)); max-height: calc(100vh - 24px); }
+  #avatar-zoom-overlay .avatar-zoom-pic { width: min(78%, 26vh); aspect-ratio: 1; margin: 0 auto; }
   #avatar-zoom-overlay .avatar-zoom-card img { width: 100%; height: 100%; object-fit: contain; }
   #avatar-zoom-overlay .avatar-zoom-info { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: 8px; text-align: center; color: #4a2c12; }
   #avatar-zoom-overlay .avatar-zoom-name { font-size: 17px; line-height: 1.1; }
@@ -1742,12 +1742,18 @@ if (location.protocol === "file:") {
   #avatar-zoom-overlay .avatar-zoom-rarity.tier-common { background: #dfe8d2; color: #3f6226; }
   #avatar-zoom-overlay .avatar-zoom-rarity.tier-rare { background: #d3e3f4; color: #1f5a99; }
   #avatar-zoom-overlay .avatar-zoom-rarity.tier-ultra { background: #f6e2a8; color: #8a5a00; }
-  #avatar-zoom-overlay .avatar-zoom-ap { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 70%; font-size: 13px; }
+  #avatar-zoom-overlay .avatar-zoom-ap { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 100%; font-size: 15px; }
+  #avatar-zoom-overlay .avatar-zoom-perks { list-style: none; margin: 6px 0 0; padding: 0; width: 100%; display: flex; flex-direction: column; gap: 5px; text-align: left; }
+  #avatar-zoom-overlay .avatar-zoom-perk { display: grid; grid-template-columns: 34px 1fr; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 10px; background: #f4ead4; font-size: 14px; line-height: 1.25; }
+  #avatar-zoom-overlay .avatar-zoom-perk b { font-size: 12px; background: #e0a526; color: #4a2c12; border-radius: 8px; padding: 2px 0; text-align: center; }
+  #avatar-zoom-overlay .avatar-zoom-perk em { font-style: normal; font-weight: 800; }
+  #avatar-zoom-overlay .avatar-zoom-perk small { display: block; font-size: 12px; opacity: .8; }
+  #avatar-zoom-overlay .avatar-zoom-perk.locked { color: #9a8566; }
+  #avatar-zoom-overlay .avatar-zoom-perk.locked b { background: #d9ccb2; color: #8c7858; }
+  #avatar-zoom-overlay .avatar-zoom-perk.next { outline: 2px solid #e0a526; }
   #avatar-zoom-overlay .avatar-zoom-apbar { display: block; width: 100%; height: 8px; border-radius: 4px; background: #efe2c8; overflow: hidden; }
   #avatar-zoom-overlay .avatar-zoom-apbar i { display: block; height: 100%; background: #e0a526; }
   #avatar-zoom-overlay .avatar-zoom-ap small { font-size: 11px; opacity: .75; }
-  #avatar-zoom-overlay .avatar-zoom-pers { font-size: 13px; }
-  #avatar-zoom-overlay .avatar-zoom-blurb { font-size: 12px; opacity: .8; }
   #avatar-zoom-overlay .avatar-zoom-card img.zoom-dim { opacity: .4; filter: grayscale(1); }
   /* Favorites: heart badge on tiles, labels in the pickers, and the heart on the zoomed avatar. */
   .avatar-choice, .collection-tile { position: relative; }
@@ -5609,6 +5615,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { questionClockPending, questionReadyToken, beginQuestionClock, boardReadingMs } from "./anim/question-clock.mjs";
   import { botDecisionScope, commitBotDecision } from "./anim/bot-decisions.mjs";
   import { personalityFor, shapeRatio, shapeDelay, shapeConfidence, shapeMiss, PERSONALITY_UNLOCK_ROUNDS } from "./anim/bot-personalities.mjs";
+  import { factFor } from "./anim/avatar-facts.mjs";
   import { HL_SHIELD_CHAIN, hlThemeDue, hlSurvivalOutcome } from "./anim/high-low-survival.mjs";
   import { mountHighLowReveal, HL_REVEAL_STEP_MS } from "./anim/high-low-reveal.mjs";
   import { HL_MESSAGE_BOTTLE, HL_EMPTY_BOTTLE, highLowBottlePieces } from "./anim/high-low-bottles.mjs";
@@ -6322,8 +6329,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const AP_PLAY = 2, AP_AGAINST = 5, AP_PER_LEVEL = 20;
   const avatarPoints = (id) => Number((myProfile.avatarPoints || {})[id]) || 0;
   const avatarLevel = (id) => Math.floor(avatarPoints(id) / AP_PER_LEVEL);
-  // Level 1 shows the personality. Anyone who already earned it the old way (25 rounds against that avatar) keeps it.
-  const personalityKnown = (id) => avatarLevel(id) >= 1 || botRoundsAgainst(id) >= PERSONALITY_UNLOCK_ROUNDS;
+  // What each level unlocks, in order. `built` is false for rewards whose feature does not exist yet (the row says so once the level is reached).
+  const AVATAR_PERKS = [
+    { lv: 1, name: "Fun fact", built: true },
+    { lv: 2, name: "Play style", built: true },      // the personality
+    { lv: 3, name: "Borders", built: false },        // every border option unlocks for this avatar (no more border unlocks from achievements)
+    { lv: 4, name: "Colors", built: false },         // every color option, with arrows to flip between them
+    { lv: 5, name: "Stickers", built: false },
+    { lv: 6, name: "Aura", built: false },
+  ];
+  // Level 2 shows the play style (personality). Anyone who already earned it the old way (25 rounds against that avatar) keeps it.
+  const personalityKnown = (id) => avatarLevel(id) >= 2 || botRoundsAgainst(id) >= PERSONALITY_UNLOCK_ROUNDS;
   // Who earns what for one finished game: { avatarId: ap }. Pure, so it can be tested without the game running.
   function avatarPointAwards(room, meId) {
     const out = {}, players = (room && room.players) || {};
@@ -18029,10 +18045,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const m = img && pictureSrc(img).match(/avatars\/([^/]+)\.webp/); // a picture that has not woken up yet only has data-src
     return m ? m[1] : null;
   }
-  // Level and progress toward the next level, shown on the avatar card (never on player cards).
+  // Level, progress to the next level, and what every level unlocks (revealed ones say what they are, the rest read ???).
+  // Shown on the avatar card only, never on player cards.
   function avatarLevelHtml(id) {
-    const ap = avatarPoints(id), lv = avatarLevel(id), into = ap - lv * AP_PER_LEVEL;
-    return `<span class="avatar-zoom-ap"><b>Level ${lv}</b><span class="avatar-zoom-apbar" aria-hidden="true"><i style="width:${Math.round(into / AP_PER_LEVEL * 100)}%"></i></span><small>${into} / ${AP_PER_LEVEL} AP to Level ${lv + 1}</small></span>`;
+    const ap = avatarPoints(id), lv = avatarLevel(id), into = ap - lv * AP_PER_LEVEL, maxLv = AVATAR_PERKS.length;
+    const value = (perk) => {
+      if (perk.name === "Fun fact") return escapeHtml(factFor(id));
+      if (perk.name === "Play style") { const pe = personalityFor(id); return `${escapeHtml(pe.label)}<small>${escapeHtml(pe.blurb)}</small>`; }
+      return perk.built ? "" : "Coming soon";
+    };
+    const rows = AVATAR_PERKS.map((perk) => {
+      const open = perk.lv <= lv || (perk.name === "Play style" && personalityKnown(id));
+      return `<li class="avatar-zoom-perk ${open ? "open" : "locked"}${perk.lv === lv + 1 ? " next" : ""}"><b>L${perk.lv}</b><span>${open ? `<em>${perk.name}:</em> ${value(perk)}` : "???"}</span></li>`;
+    }).join("");
+    return `<span class="avatar-zoom-ap"><b>Level ${lv}</b><span class="avatar-zoom-apbar" aria-hidden="true"><i style="width:${lv >= maxLv ? 100 : Math.round(into / AP_PER_LEVEL * 100)}%"></i></span><small>${lv >= maxLv ? "Top of the ladder for now" : `${into} / ${AP_PER_LEVEL} AP to Level ${lv + 1}`}</small></span><ul class="avatar-zoom-perks">${rows}</ul>`;
   }
   function openAvatarZoom(tile, id) {
     const dim = tile.classList.contains("locked") || tile.classList.contains("taken");
@@ -18040,7 +18066,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     ov.id = "avatar-zoom-overlay";
     const canFav = !dim && isAvatarUnlocked(id);
     const tier = AVATAR_TIERS[id], tierLabel = { default: "Starter", common: "Common", rare: "Rare", ultra: "Ultra-rare" }[tier] || "";
-    const info = `<div class="avatar-zoom-info"><b class="avatar-zoom-name">${escapeHtml(BOT_NAME_BY_AVATAR[id] || "")}</b><span class="avatar-zoom-rarity tier-${tier}">${tierLabel}</span>${avatarLevelHtml(id)}<span class="avatar-zoom-pers">Personality: <b>${personalityKnown(id) ? escapeHtml(personalityFor(id).label) : "???"}</b></span>${personalityKnown(id) ? `<span class="avatar-zoom-blurb">${escapeHtml(personalityFor(id).blurb)}</span>` : ""}</div>`;
+    const info = `<div class="avatar-zoom-info"><b class="avatar-zoom-name">${escapeHtml(BOT_NAME_BY_AVATAR[id] || "")}</b><span class="avatar-zoom-rarity tier-${tier}">${tierLabel}</span>${avatarLevelHtml(id)}</div>`;
     ov.innerHTML = `<div class="avatar-zoom-card"><div class="avatar-zoom-pic">${avatarHtml(id, dim ? "zoom-dim" : "")}</div>${info}${canFav ? `<button type="button" class="avatar-zoom-fav${isFavAvatar(id) ? " on" : ""}" aria-label="Favorite" aria-pressed="${isFavAvatar(id)}">${FAV_HEART}</button>` : ""}<button type="button" class="avatar-zoom-close" aria-label="Close">&times;</button></div>`;
     ov.addEventListener("click", (e) => {
       const heart = e.target.closest(".avatar-zoom-fav");
