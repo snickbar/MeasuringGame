@@ -4875,14 +4875,6 @@ if (location.protocol === "file:") {
   <div id="shop-tab-coins" class="shop-tab-panel">
     <div id="coin-acquire-panel">
       <div id="coin-pack-row">
-        <div id="ad-reward-card" class="coin-pack-card ad-reward-card">
-          <span class="shop-hero-badge">Free</span>
-          <img class="coin-pack-icon" src="icons/shop-coin-reward.webp" alt="">
-          <div class="coin-pack-amount">+25</div>
-          <div class="coin-pack-label">Coins</div>
-          <div id="watch-ad-status" class="coin-pack-status"></div>
-          <button id="watch-ad-btn" type="button" class="coin-pack-buy-btn ad-reward-btn">Watch Ad</button>
-        </div>
         <div class="coin-pack-card">
           <img class="coin-pack-icon" src="icons/shop-coin-stack-500.webp" alt="">
           <div class="coin-pack-amount">500</div>
@@ -5020,6 +5012,14 @@ if (location.protocol === "file:") {
         <button type="button" class="gacha-cat" data-cat="scene"><span class="gacha-cat-name">Scenes</span><span class="gacha-slot"></span><span class="gacha-cat-left"></span></button>
       </div>
       <div id="gacha-cost"><img src="icons/coin-v2.webp" alt=""><span id="gacha-cost-text"></span></div>
+    </div>
+    <div id="ad-meter-card" class="ad-meter-card">
+      <div class="am-text">
+        <div class="am-title" id="am-title">Watch 3 ads, get 1 random pull</div>
+        <div class="am-pips" id="am-pips" aria-hidden="true"><i></i><i></i><i></i></div>
+        <div id="watch-ad-status" class="am-status"></div>
+      </div>
+      <button id="watch-ad-btn" type="button" class="ad-reward-btn">Watch Ad</button>
     </div>
     <p id="gacha-status"></p>
   </div>
@@ -5340,7 +5340,7 @@ if (location.protocol === "file:") {
   <details class="howto-section"><summary>Progress and playing again</summary><div class="howto-body"><p>Use <b>Stats</b> for Games won, finished games, win rate, accuracy and records. Choose a mode to see Worlds stars, Survival best runs, or Daily streaks. Accuracy includes power-up adjustments. Accuracy averages include submitted guesses; missed submissions are counted separately.</p><p>Worlds award stars above <b>60%, 75%, and 90%</b>. Earn <b>13 stars</b> in a World to claim its home screen in Awards or on the World page, and all 15 stars for mastery. Survival keeps you safe at 60% or above. Worlds and Survival offer Resume for unfinished attempts.</p><p>In a party lobby, mark yourself <b>Ready</b> and check the room rules. After the final results, each player collects their own coins. The host can then start a rematch with the same group or leave.</p><p>Settings offers effects volume, reduced motion and larger menu text. Object search uses the game's keyboard; tap Done to minimize it.</p></div></details>
   <details class="howto-section"><summary>The Shop</summary><div class="howto-body">
     <p>Your score becomes coins when a game ends, win or lose. Open <b>Shop</b> for coins, offers, and monthly packs. Open <b>Style</b> for avatars, reactions, flairs, boards, backgrounds, and home screens:</p>
-    <p><b>Shop</b> - buy coin packs (or watch an ad for a few free coins), unlock unlimited Party Mode games for good, and pick up monthly object packs to keep seasonal objects in the mix year-round.</p>
+    <p><b>Shop</b> - buy coin packs, watch 3 ads a day for a free random capsule pull, unlock unlimited Party Mode games for good, and pick up monthly object packs to keep seasonal objects in the mix year-round.</p>
     <p><b>Capsules</b> - each pull costs 50 coins and unlocks a random item you don't already have. Drop a coin in a category's slot to pull from just that category (avatars, reactions, flairs, boards or scenes), or tap the top bar to pull from anything. Free pulls from leveling up always pull from anything. Rarer items (Rare, Ultra-rare) show up less often. See your avatars in <b>Style &gt; Avatars</b>.</p>
     <p><b>Style</b> - unlock and equip reactions, flairs, question boards and scenes with coins; whatever you've equipped is what shows up in games.</p>
   </div></details>
@@ -7159,12 +7159,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   // TEMP: no real ad SDK wired up yet - "watching" an ad is simulated and
-  // grants the coins immediately. The 3-per-day cap and the transaction
-  // itself (so a race between taps can't double-grant) are real; only the
-  // "watch an ad" step is fake. Swap the instant grant for a real rewarded-ad
-  // callback later; the cap-tracking logic underneath doesn't need to change.
-  const DAILY_AD_COIN_CAP = 3;
-  const AD_REWARD_COINS = 25; // coins per ad (keep the "+25" on the shop card in step)
+  // counts immediately. The ad meter (3 ads a day = 1 random free pull) and the
+  // transaction itself (so a race between taps can't double-grant) are real; only
+  // the "watch an ad" step is fake. Swap the fake ad for a real rewarded-ad
+  // callback later; the counting underneath doesn't need to change.
+  const AD_METER_STEPS = 3;
   // Local calendar date, not UTC - toISOString() rolls over at UTC midnight,
   // which for most timezones is afternoon/evening local time, so the daily ad
   // cap looked like it "didn't reset" until well past when the player's own
@@ -7346,21 +7345,24 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (bar.dataset.primary) { adBarRefresh(mode); return; } // Monthly: stay on the results (its pinned button is Replay, and Back leaves)
     bar.querySelector(`#${bar.dataset.finish}`)?.click();
   });
-  async function watchAdForCoins() {
+  // One step of the ad meter. The third ad of the day adds one general (random-only) free pull in the same write; after that the meter is full until tomorrow.
+  async function watchAdForMeter() {
     const today = todayDateStr();
+    let earnedPull = false;
     const txResult = await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
       const profile = current || defaultProfile();
       const countToday = profile.adsWatchedDate === today ? (profile.adsWatchedCount || 0) : 0;
-      if (countToday >= DAILY_AD_COIN_CAP) return profile; // abort: cap already reached today
+      if (countToday >= AD_METER_STEPS) return; // abort: meter already full today
+      earnedPull = countToday + 1 === AD_METER_STEPS;
       return {
         ...profile,
-        coins: (profile.coins || 0) + AD_REWARD_COINS,
+        ...(earnedPull ? { freePulls: (profile.freePulls | 0) + 1 } : {}),
         adsWatchedDate: today,
         adsWatchedCount: countToday + 1,
       };
     });
     if (txResult.committed) bumpStats({ adsWatched: 1 });
-    return txResult.committed;
+    return txResult.committed ? (earnedPull ? "pull" : "step") : "";
   }
 
   // TEMP: cosmetics are purely cosmetic bookkeeping for now - buying/equipping
@@ -17367,28 +17369,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
   });
   gachaBackBtn.addEventListener("click", closeOverlay);
+  // The ad meter on the Capsules tab: three pips, one per ad today; the third earns a random pull, then it rests until tomorrow.
   function renderWatchAdStatus() {
     const today = todayDateStr();
-    const countToday = myProfile.adsWatchedDate === today ? myProfile.adsWatchedCount : 0;
-    const remaining = Math.max(0, DAILY_AD_COIN_CAP - countToday);
-    if (remaining > 0) {
-      watchAdBtn.disabled = false;
-      watchAdStatusEl.textContent = `${remaining} left today`;
-    } else {
-      watchAdBtn.disabled = true;
-      watchAdStatusEl.textContent = "Come back tomorrow";
-    }
+    const done = Math.min(AD_METER_STEPS, myProfile.adsWatchedDate === today ? (myProfile.adsWatchedCount | 0) : 0);
+    const full = done >= AD_METER_STEPS;
+    document.querySelectorAll("#am-pips i").forEach((pip, i) => pip.classList.toggle("on", i < done));
+    document.getElementById("am-title").textContent = full ? "Today's free pull is earned" : "Watch 3 ads, get 1 random pull";
+    watchAdBtn.disabled = full;
+    watchAdStatusEl.textContent = full ? "Back tomorrow for another" : `${done} of ${AD_METER_STEPS} today`;
   }
-  // Status text is owned entirely by renderWatchAdStatus(), which reacts to
-  // the profile listener - it always reflects the authoritative post-write
-  // state. Setting it here too (from the immediate local result) would race
-  // that listener and could leave a stale message if the listener's own
-  // update lands after this one.
   watchAdBtn.addEventListener("click", async () => {
     watchAdBtn.disabled = true;
     await showFakeAd();
-    await watchAdForCoins();
+    const res = await watchAdForMeter();
     renderWatchAdStatus();
+    if (res === "pull") { showAchToast("Free pull earned! Pull it from the machine."); renderGachaScreen(); }
   });
   document.querySelectorAll("button[data-boost]").forEach((btn) => { btn.addEventListener("click", async () => {
     const n = parseInt(btn.dataset.boost, 10);
@@ -17525,8 +17521,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (tab === "hosting") {
       renderThemedPackShop();
       renderStarterBundle();
-    } else if (tab === "coins") renderWatchAdStatus();
-    else if (tab === "capsules") renderGachaScreen();
+    } else if (tab === "coins") { /* static packs: nothing to refresh */ }
+    else if (tab === "capsules") { renderGachaScreen(); renderWatchAdStatus(); }
     else if (tab === "avatars") renderCollectionScreen();
     else renderCosmeticsShop();
   }
@@ -18090,7 +18086,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "avatars-full_look", cat: "Avatars", name: "Full look", desc: "Have one avatar with a border, color, sticker and aura all set", target: 1, reward: 100, icon: "icons/reactions/crown.webp", progress: () => (avatarStats().fullLook ? 1 : 0) },
     { id: "avatars-mirror_mirror", cat: "Avatars", name: "Mirror mirror", desc: "Save a mirrored sticker on an avatar", target: 1, reward: 25, icon: "icons/reactions/crown.webp", progress: () => (avatarStats().mirrored ? 1 : 0) },
     { id: "avatars-lucky_star", cat: "Avatars", name: "Lucky star", desc: "Take an ultra-rare avatar to level 6", target: 1, reward: 100, icon: "icons/reactions/crown.webp", progress: () => (avatarStats().luckyStar ? 1 : 0) });
-  achTier("Fun", "Ad watcher", (n) => `Watch ${n} ads for coins`, ACH_STAT("adsWatched"), [[10, 20]], { total: 6, ratio: 2 });
+  achTier("Fun", "Ad watcher", (n) => `Watch ${n} ads`, ACH_STAT("adsWatched"), [[10, 20]], { total: 6, ratio: 2 });
 
   ACHIEVEMENTS.push(...createModeAwards(() => myProfile));
 
