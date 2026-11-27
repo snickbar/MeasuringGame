@@ -100,7 +100,7 @@ export function makeRecoloredAvatar(id, name, sticker) {
     }
     if (sticker) {   // the sticker is part of the picture, so every card in every mode shows it without any layout of its own
       const box = sticker.size / 100 * w, fit = Math.min(box / stickerImage.naturalWidth, box / stickerImage.naturalHeight);
-      ctx.save(); ctx.translate(sticker.x / 100 * w, sticker.y / 100 * h); ctx.rotate(sticker.rot * Math.PI / 180);
+      ctx.save(); ctx.translate(sticker.x / 100 * w, sticker.y / 100 * h); ctx.rotate(sticker.rot * Math.PI / 180); if (sticker.mirror) ctx.scale(-1, 1);
       ctx.drawImage(stickerImage, -stickerImage.naturalWidth * fit / 2, -stickerImage.naturalHeight * fit / 2, stickerImage.naturalWidth * fit, stickerImage.naturalHeight * fit);
       ctx.restore();
     }

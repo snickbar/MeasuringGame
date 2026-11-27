@@ -50,6 +50,14 @@ srv.listen(0, async () => {
     for (const s of ['.stk-head', '.stk-box', '.stk-tabs', '.stk-chips', '.stk-scroll', '[data-sdone]']) (await inView(s)) ? 0 : fail(`${tag}: ${s} is off screen`);
     const trayRows = await p.evaluate(() => document.querySelector('.stk-scroll').getBoundingClientRect().height);
     trayRows >= 80 ? ok(`${tag}: tray keeps ${Math.round(trayRows)}px`) : fail(`${tag}: tray only ${Math.round(trayRows)}px tall`);
+    // layout: the key above the picture; Remove and Mirror on the Reactions/Objects row, right of a divider
+    const lay = await p.evaluate(() => { const r = (q) => document.querySelector(q).getBoundingClientRect(); return { legendBottom: r('.stk-legend').bottom, boxTop: r('.stk-box').top, objRight: r('[data-stab=o]').right, sepLeft: r('.stk-sep').left, sepRight: r('.stk-sep').right, remLeft: r('[data-sremove]').left, remTop: r('[data-sremove]').top, tabTop: r('[data-stab=o]').top, mirLeft: r('[data-smirror]').left, mirRight: r('[data-smirror]').right, rowRight: r('.stk-tabs').right }; });
+    lay.legendBottom <= lay.boxTop ? ok(`${tag}: key sits above the picture`) : fail(`${tag}: key is not above the picture`);
+    lay.sepLeft >= lay.objRight && lay.remLeft >= lay.sepRight && lay.mirLeft >= lay.remLeft && lay.mirRight <= lay.rowRight + 1 && Math.abs(lay.remTop - lay.tabTop) < 12 ? ok(`${tag}: divider, Remove, Mirror follow Objects`) : fail(`${tag}: bad Remove/Mirror row ${JSON.stringify(lay)}`);
+    await p.click('[data-smirror]');
+    (await p.evaluate(() => document.querySelector('.stk-sticker img').style.transform)) === 'scaleX(-1)' ? ok(`${tag}: Mirror flips the sticker`) : fail(`${tag}: Mirror did not flip`);
+    await p.click('[data-smirror]');
+    (await p.evaluate(() => document.querySelector('.stk-sticker img').style.transform)) === '' ? ok(`${tag}: Mirror flips it back`) : fail(`${tag}: second Mirror did not flip back`);
     // move
     const before = await p.evaluate(() => document.querySelector('.stk-sticker').style.left + '/' + document.querySelector('.stk-sticker').style.top);
     const bb = await p.locator('.stk-sticker').boundingBox(); await p.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2); await p.mouse.down(); await p.mouse.move(bb.x + bb.width / 2 - 30, bb.y + bb.height / 2 + 40, { steps: 4 }); await p.mouse.up();
@@ -80,7 +88,10 @@ srv.listen(0, async () => {
     await p.click('[data-sx]'); saved.length === 0 ? ok(`${tag}: Cancel saves nothing`) : fail(`${tag}: Cancel saved ${saved[0]}`);
     await p.evaluate(() => window.T.openStickerEditor({ avId: 'av01', title: 'Ursa', sub: 'This game only', value: '', color: '', onSave: (v) => window.onSaved(v) }));
     await p.click('.stk-tabs button[data-stab=r]'); await p.click('.stk-tray button:nth-child(1)'); await p.click('[data-sdone]');
-    /^r:[A-Za-z0-9_-]+:\d{1,3}:\d{1,3}:\d{1,2}:-?\d{1,3}$/.test(saved[0] || '') ? ok(`${tag}: Done saves ${saved[0]}`) : fail(`${tag}: Done saved ${JSON.stringify(saved[0])}`);
+    /^r:[A-Za-z0-9_-]+:\d{1,3}:\d{1,3}:\d{1,2}:-?\d{1,3}(:m)?$/.test(saved[0] || '') ? ok(`${tag}: Done saves ${saved[0]}`) : fail(`${tag}: Done saved ${JSON.stringify(saved[0])}`);
+    await p.evaluate(() => window.T.openStickerEditor({ avId: 'av01', title: 'Ursa', sub: 'Default sticker', value: 'r:crown:60:14:32:12', color: '', onSave: (v) => window.onSaved(v) }));
+    await p.click('[data-smirror]'); await p.click('[data-sdone]');
+    saved[1] === 'r:crown:60:14:32:12:m' ? ok(`${tag}: a mirrored sticker saves with :m`) : fail(`${tag}: mirrored save was ${JSON.stringify(saved[1])}`);
     errors.length ? fail(`${tag}: page errors ${errors.join('; ')}`) : 0;
     await p.close();
   }
