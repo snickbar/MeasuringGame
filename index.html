@@ -1775,6 +1775,7 @@ if (location.protocol === "file:") {
   #avatar-zoom-overlay .avatar-zoom-debug { margin: 6px 0 0; padding: 4px 12px; border: 2px dashed #b07a1d; border-image: none; border-radius: 9px; background: #fff3d0; color: #6b4a22; font: 700 12px/1.2 system-ui; box-shadow: none; text-shadow: none; }
   #avatar-zoom-overlay .avatar-zoom-debug:active { filter: brightness(.93); }
   #avatar-zoom-overlay .avatar-edit-card .avatar-zoom-pic { width: min(80%, 30vh); }
+  @media (max-height: 640px) { #avatar-zoom-overlay .avatar-zoom-card:not(.avatar-edit-card) .avatar-zoom-pic { width: min(70%, 15vh); } }   /* short phones: the avatar card has more rows (level bar, six perks, Done) than a short screen holds */
   #avatar-zoom-overlay .avatar-zoom-done { width: 100%; margin: 8px 0 0; padding: 8px 12px; border: 3px solid #b07a1d; border-image: none; border-radius: 12px; background: #f0b43a; color: #4a2c12; font: 800 16px/1.1 Fredoka, system-ui, sans-serif; box-shadow: none; text-shadow: none; }
   #avatar-zoom-overlay .avatar-zoom-done:active { filter: brightness(.93); }
   #avatar-zoom-overlay .avatar-zoom-apbar { display: block; width: 100%; height: 8px; border-radius: 4px; background: #efe2c8; overflow: hidden; }
@@ -12401,7 +12402,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const label = ov.querySelector(".avatar-zoom-bname"); if (label) label.textContent = playerFrameCatalog[next].name;
         return;
       }
-      if (e.target === ov || e.target.closest("[data-zdone]")) closeAvatarZoom();
+      if (e.target.closest("[data-zdone]")) closeAvatarZoom();   // only X or Done; tapping the dim background does nothing
     });
     popupHost().appendChild(ov);
   }
@@ -18575,8 +18576,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     ov.id = "avatar-zoom-overlay";
     const canFav = !dim && isAvatarUnlocked(id);
     const tier = AVATAR_TIERS[id], tierLabel = { default: "Starter", common: "Common", rare: "Rare", ultra: "Ultra-rare" }[tier] || "";
-    const info = `<div class="avatar-zoom-info"><b class="avatar-zoom-name">${escapeHtml(BOT_NAME_BY_AVATAR[id] || "")}</b><span class="avatar-zoom-rarity tier-${tier}">${tierLabel}</span>${avatarLevelHtml(id, canFav)}${DEBUG_TOOLS && canFav ? `<button type="button" class="avatar-zoom-debug" data-zdebug>+20 AP (test)</button>` : ""}</div>`;
-    ov.innerHTML = `<div class="avatar-zoom-card"><div class="avatar-zoom-pic">${avatarHtml(id, dim ? "zoom-dim" : "", undefined, canFav ? defaultAvatarLook(id) : "")}</div>${info}${canFav ? `<button type="button" class="avatar-zoom-fav${isFavAvatar(id) ? " on" : ""}" aria-label="Favorite" aria-pressed="${isFavAvatar(id)}">${FAV_HEART}</button>` : ""}<button type="button" class="avatar-zoom-close" aria-label="Close">&times;</button></div>`;
+    const info = `<div class="avatar-zoom-info"><b class="avatar-zoom-name">${escapeHtml(BOT_NAME_BY_AVATAR[id] || "")}</b><span class="avatar-zoom-rarity tier-${tier}">${tierLabel}</span>${avatarLevelHtml(id, canFav)}${DEBUG_TOOLS && canFav ? `<button type="button" class="avatar-zoom-debug" data-zdebug>+20 AP (test)</button>` : ""}${canFav ? `<button type="button" class="avatar-zoom-done" data-zdone>Done</button>` : ""}</div>`;
+    ov.innerHTML = `<div class="avatar-zoom-card"><div class="avatar-zoom-pic">${avatarHtml(id, dim ? "zoom-dim" : "", undefined, canFav ? defaultAvatarLook(id) : "")}</div>${info}${canFav ? `<button type="button" class="avatar-zoom-fav${isFavAvatar(id) ? " on" : ""}" aria-label="Favorite" aria-pressed="${isFavAvatar(id)}">${FAV_HEART}</button>` : ""}<button type="button" class="avatar-zoom-close" aria-label="Close" data-zdone>&times;</button></div>`;
     const pic = ov.querySelector(".avatar-zoom-pic");
     showPlayerFrame(pic, defaultFrameFor(id), 0);
     if (canFav) preloadFrameArt(framesFor(id));
@@ -18617,7 +18618,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (e.target.closest("[data-zdebug]")) { addAvatarPoints(id, 20); closeAvatarZoom(); openAvatarZoom(tile, id); return; }
       const heart = e.target.closest(".avatar-zoom-fav");
       if (heart) { toggleFavAvatar(id); const on = isFavAvatar(id); heart.classList.toggle("on", on); heart.setAttribute("aria-pressed", String(on)); return; } // stays open so you can see it filled
-      closeAvatarZoom();
+      // An editable card closes only from its X or Done (a stray tap used to close it mid-edit); a card with nothing to edit still closes on any tap.
+      if (!canFav || e.target.closest("[data-zdone]")) closeAvatarZoom();
     });
     popupHost().appendChild(ov);
   }
