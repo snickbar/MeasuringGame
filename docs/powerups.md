@@ -15,7 +15,7 @@ Prices are centralized in `anim/powerups.mjs` and remain adjustable:
 | Item reveal | 10 | One four-second relative-size preview, without measurements |
 | 50/50 | 2 | Remove choices while retaining a correct and an incorrect alternative |
 
-Only one reroll is allowed per question. A reroll preserves other purchased effects and restarts an existing Quick Game timer. Reveal requires four seconds remaining in a timed question; the timer keeps running. Reduced-motion preferences use a static comparison for the same four seconds.
+A player who cannot afford a power-up sees a green Free tag on it instead of the price: one short ad pays for it (the receipt costs 0 coins and is marked `ad`). Each power-up still works once per question, there is no daily limit, and for two seconds after any ad ends no new ad starts. Only one reroll is allowed per question. A reroll preserves other purchased effects and restarts an existing Quick Game timer. Reveal requires four seconds remaining in a timed question; the timer keeps running. Reduced-motion preferences use a static comparison for the same four seconds.
 
 The buffer preserves the entered guess. Results, winners, accuracy, achievements, Worlds stars, Survival safety, and rewards use the improved value. For example, 95 versus an answer of 100 becomes 100 and beats an unbuffered 97. Second Chance always shows original guesses and no buffer adjustment or indicator.
 

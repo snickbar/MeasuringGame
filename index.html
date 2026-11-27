@@ -7175,7 +7175,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // TEMP stand-in for a real rewarded ad: a full-screen pop-up with a 2 second
   // countdown, then a close button. Resolves once the player closes it, which is
   // the moment a real ad SDK's "reward earned" callback would fire.
+  // A tap that lands right as an ad closes must never start another one: for two seconds after an ad ends, no new ad starts (this resolves false).
+  let lastAdEndedAt = -1e9;
+  const AD_TAP_GUARD_MS = 2000;
   function showFakeAd() {
+    if (performance.now() - lastAdEndedAt < AD_TAP_GUARD_MS) return Promise.resolve(false);
     return new Promise((resolve) => {
       const ov = document.createElement("div");
       ov.id = "fake-ad-overlay";
@@ -7192,7 +7196,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         timerEl.textContent = "Ad finished";
         closeBtn.disabled = false;
       }, 1000);
-      closeBtn.addEventListener("click", () => { ov.remove(); resolve(true); });
+      closeBtn.addEventListener("click", () => { ov.remove(); lastAdEndedAt = performance.now(); resolve(true); });
     });
   }
   // TEMP: simulated purchase confirmation shown in front of every real-money
@@ -17381,7 +17385,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   watchAdBtn.addEventListener("click", async () => {
     watchAdBtn.disabled = true;
-    await showFakeAd();
+    if (!(await showFakeAd())) { renderWatchAdStatus(); return; }
     const res = await watchAdForMeter();
     renderWatchAdStatus();
     if (res === "pull") { showAchToast("Free pull earned! Pull it from the machine."); renderGachaScreen(); }
@@ -17395,7 +17399,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }); });
   document.querySelectorAll("button[data-boost-ad]").forEach((btn) => { btn.addEventListener("click", async () => {
     btn.disabled = true;
-    await showFakeAd();
+    if (!(await showFakeAd())) { btn.disabled = false; return; }
     await addBoosterCharges(parseInt(btn.dataset.boostAd, 10));
     btn.disabled = false;
   }); });
@@ -26405,6 +26409,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   powerups = createPowerupController({
     onUsed: id => { playSound("powerup"); setTimeout(() => playSound(id === "buffer" ? "perfect" : id === "reveal" ? "star" : "shuffle"), 150); },
     context: powerupContext, now: nowMs, coins: () => myProfile.coins || 0, owner: () => deviceId,
+    showAd: async () => { const watched = await showFakeAd(); if (watched) bumpStats({ adsWatched: 1 }); return watched; },
     question: (u, t) => ({ ...dailyQuestionFor({ unitId: u.id, targetId: t.id }), unitArt: Math.random() < .5 ? 0 : 1, targetArt: Math.random() < .5 ? 0 : 1 }),
     object: (id, art) => withAltArt(OBJECT_BY_ID.get(id), art),
     profileTransaction: (owner, fn) => runTransaction(ref(db, 'profiles/' + owner), fn, { applyLocally: false }),

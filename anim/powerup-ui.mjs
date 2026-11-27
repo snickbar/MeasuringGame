@@ -1,6 +1,7 @@
 import { POWERUPS, REROLLS, availablePowerups, quickEligible, replacementPairsResponsive, eliminationChoices, debitPowerup, settlePowerup } from './powerups.mjs';
 
 // The controller owns immediate purchases and the reveal; the game owns scoring.
+// A player who cannot afford a power-up can use it free by watching an ad (ports.showAd): the same purchase path runs with a 0-coin receipt.
 export function createPowerupController(ports) {
   let busy = false, busyAt = 0, pendingId = null, messageTimer, messagePhase = null, messageQuestion = null;
   const active = new Set(), recovering = new Set();
@@ -55,9 +56,10 @@ export function createPowerupController(ports) {
   function button(id, compact, c) {
     const p = POWERUPS[id];
     const used = !!c.q.powerups?.used?.[id], rerollLocked = REROLLS.includes(id) && c.q.powerups?.used?.reroll;
-    const status = busy && pendingId === id ? 'Using…' : used ? 'Used' : rerollLocked ? 'Reroll used' : `${p.cost} <img class="pu-coin" src="icons/coin-v2.webp" alt="coins">`;
-    const disabled = busy || !ids(c).includes(id) || ports.coins() < p.cost;
-    return `<button type="button" class="pu-button${compact ? ' pu-inline' : ''}${used ? ' pu-used' : ''}${busy && pendingId === id ? ' pu-pending' : ''}" data-powerup="${id}" aria-busy="${busy && pendingId === id}" aria-label="${p.name}, ${used ? 'already used' : rerollLocked ? 'reroll already used' : p.cost + ' coins'}" title="${p.description}" ${disabled ? 'disabled' : ''}><img src="icons/powerups/${p.icon}.webp" alt=""><span>${compact ? (id === 'buffer' ? 'Add 10% buffer' : p.label) : p.label}</span><small>${status}</small></button>`;
+    const poor = ports.coins() < p.cost, free = poor && !!ports.showAd && !used && !rerollLocked;
+    const status = busy && pendingId === id ? 'Using…' : used ? 'Used' : rerollLocked ? 'Reroll used' : free ? '<span class="pu-free">▶ Free</span>' : `${p.cost} <img class="pu-coin" src="icons/coin-v2.webp" alt="coins">`;
+    const disabled = busy || !ids(c).includes(id) || (poor && !ports.showAd);
+    return `<button type="button" class="pu-button${compact ? ' pu-inline' : ''}${used ? ' pu-used' : ''}${busy && pendingId === id ? ' pu-pending' : ''}" data-powerup="${id}" data-free="${free}" aria-busy="${busy && pendingId === id}" aria-label="${p.name}, ${used ? 'already used' : rerollLocked ? 'reroll already used' : free ? 'free with a short ad' : p.cost + ' coins'}" title="${p.description}" ${disabled ? 'disabled' : ''}><img src="icons/powerups/${p.icon}.webp" alt=""><span>${compact ? (id === 'buffer' ? 'Add 10% buffer' : p.label) : p.label}</span><small>${status}</small></button>`;
   }
   function html(c) {
     const visible = visibleIds(c);
@@ -158,7 +160,8 @@ export function createPowerupController(ports) {
     return ports.profileTransaction(owner, p => settlePowerup(p, id, applied));
   }
   async function purchase(id, c, origin) {
-    if (busy || !c || !same(c) || !ids(context()).includes(id) || ports.coins() < POWERUPS[id].cost) return;
+    const viaAd = ports.coins() < POWERUPS[id].cost;   // too few coins: a short ad pays for it instead
+    if (busy || !c || !same(c) || !ids(context()).includes(id) || (viaAd && !ports.showAd)) return;
     const owner = ports.owner(), operation = crypto.randomUUID();
     let charged = false, applied = false, sounded = false;
     const successSound = () => { if (!sounded) { sounded = true; ports.onUsed?.(id); } };
@@ -173,6 +176,10 @@ export function createPowerupController(ports) {
       // Give the immediate pressed/pending feedback a frame before pair search or decoding.
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       if (!same(c) || !ids(context()).includes(id)) throw Error('That power-up is no longer available. No coins spent.');
+      if (viaAd) {
+        if (!(await ports.showAd())) throw Error('No ad was shown, so nothing was used. Try again in a moment.');
+        if (!same(c) || !ids(context()).includes(id)) throw Error('That power-up is no longer available.');
+      }
       const transform = await effect(c, id);
       // Decode before spending: missing artwork must not sell an empty preview.
       const previewImages = id === 'reveal' ? await Promise.all([c.q.unitId, c.q.targetId].map(async (key, i) => {
@@ -190,7 +197,7 @@ export function createPowerupController(ports) {
         return { object, img, crop: [left, top, right - left + 1, bottom - top + 1] };
       })) : null;
       if (!same(c) || !ids(context()).includes(id)) throw Error('That power-up is no longer available. No coins spent.');
-      const receipt = { cost: POWERUPS[id].cost, at: Date.now(), mode: c.mode, ...(c.roomCode ? { room: c.roomCode } : {}) };
+      const receipt = { cost: viaAd ? 0 : POWERUPS[id].cost, ...(viaAd ? { ad: true } : {}), at: Date.now(), mode: c.mode, ...(c.roomCode ? { room: c.roomCode } : {}) };
       const paid = await ports.profileTransaction(owner, p => debitPowerup(p, operation, receipt));
       if (!paid.committed) throw Error('Not enough coins, or this purchase could not be completed.');
       charged = true;

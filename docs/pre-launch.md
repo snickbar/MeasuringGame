@@ -21,6 +21,10 @@ The game is not live yet (only the owner and a friend or two are testing), so no
 **Name**
 - [ ] Search the name "Size Em Up" before a public or store launch. A small downloadable Windows game called Size Em' Up already exists on itch.io (a different, single-player game). Get a lawyer's view if a trademark is wanted.
 
+## Ads and the Supporter Pass (added November 27, 2026)
+- [ ] Real rewarded ads replace the fake ad (it is one function, `showFakeAd`). Decide what happens to a timed Quick Game question while a real ad plays (the fake ad is only 2 seconds, a real one is 15-30), for example pause the timer.
+- [ ] Log ads offered and ads watched per player, so the frequency of every ad spot can be tuned from real numbers.
+
 ## Already decided to do at launch (from earlier notes)
 - [ ] Real billing behind the purchase flow (purchases are fake until launch).
 - [ ] Kid-safe ads and a parental gate (the audience is all ages; revive-a-life ads are for solo modes only).
