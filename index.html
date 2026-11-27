@@ -5729,6 +5729,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { factFor } from "./anim/avatar-facts.mjs";
   import { colorChoices, colorHue, recoloredAvatar, makeRecoloredAvatar, colorKey, randomStickerSpot } from "./anim/avatar-colors.mjs";
   import { AURAS, isAura, auraName, installAuras } from "./anim/avatar-auras.mjs";
+  import { avatarAwardStats } from "./anim/avatar-awards.mjs";
   import { HL_SHIELD_CHAIN, hlThemeDue, hlSurvivalOutcome } from "./anim/high-low-survival.mjs";
   import { mountHighLowReveal, HL_REVEAL_STEP_MS } from "./anim/high-low-reveal.mjs";
   import { HL_MESSAGE_BOTTLE, HL_EMPTY_BOTTLE, highLowBottlePieces } from "./anim/high-low-bottles.mjs";
@@ -17049,15 +17050,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // ---- Badges: every achievement is a collectible medal; ranks have their own medals. ----
   const BADGE_CAT_ICONS = { "Getting started": "icons/flair/star.webp", Collector: "icons/flair/gem-ruby.webp", Accuracy: "icons/reactions/point.webp", Winning: "icons/reactions/trophy.webp",
-    "Second chance": "icons/flair/heart.webp", Social: "icons/reactions/clap.webp", Fun: "icons/reactions/popper.webp", Worlds: "icons/flair/balloon-red.webp", Monthly: "icons/flair/leaf-maple.webp", Fantasy: "icons/flair/butterfly-gold.webp" };
+    "Second chance": "icons/flair/heart.webp", Social: "icons/reactions/clap.webp", Fun: "icons/reactions/popper.webp", Worlds: "icons/flair/balloon-red.webp", Monthly: "icons/flair/leaf-maple.webp", Fantasy: "icons/flair/butterfly-gold.webp", Avatars: "icons/reactions/crown.webp" };
   const BADGE_RANK_ICONS = [0, 1, 2, 3, 4].map((i) => `icons/badges/pin-rank-${i}.webp`);
   const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
   const BADGE_WORLD_ART = { tiny: "tiny", games: "games", home: "home", food: "food", town: "town", critters: "critters", wheels: "wheels", landmarks: "landmarks", "under-the-sea": "sea", "toy-box": "toybox", "make-believe": "makebelieve", "holiday-mix": "holiday", gadgets: "gadgets", bedroom: "bedroom", wild: "wild", "birds-bugs": "birdsbugs", retro: "retro" };
   const BADGE_SINGLE_ART = { "welcome-size-em-up": "pin-welcome", "account-connected": "pin-account", "supporter-tipper": "pin-supporter", "pet-parade": "pin-pet-parade", "canopy-crew": "pin-canopy-crew",
-    "collector-object_spotter-351": "spotter-3", "home-space": "pin-star-collector", "home-penguin": "pin-penguin", "home-cactus": "pin-cactus", "home-dragon": "pin-dragon", "home-giraffe": "pin-giraffe" };
+    "collector-object_spotter-351": "spotter-3", "home-space": "pin-star-collector", "home-penguin": "pin-penguin", "home-cactus": "pin-cactus", "home-dragon": "pin-dragon", "home-giraffe": "pin-giraffe",
+    "avatars-full_look": "pin-full-look", "avatars-mirror_mirror": "pin-mirror-mirror", "avatars-lucky_star": "pin-lucky-star" };
   // Hand-drawn pin badges for every ladder step, matched by badge name ("Round winner", "Round winner II" ... ).
   const BADGE_LADDER_ART = { "Round winner": "round-winner", "The 1%": "spot-on", "Gacha fan": "gacha-fan", "Ad watcher": "ad-watcher", "Avatar fan": "avatar-fan", "Ultra lucky": "ultra-lucky",
-    "Object spotter": "object-spotter", "Combo hunter": "combo-hunter", Perfect: "perfect", "On a roll": "on-a-roll", Champion: "champion", Regular: "regular", "Second look": "second-look", "Double down": "double-down", "Party time": "party-time" };
+    "Object spotter": "object-spotter", "Combo hunter": "combo-hunter", Perfect: "perfect", "On a roll": "on-a-roll", Champion: "champion", Regular: "regular", "Second look": "second-look", "Double down": "double-down", "Party time": "party-time",
+    "Rising star": "rising-star", "Maxed out": "maxed-out", "Style icon": "style-icon", "Point collector": "point-collector", "Aura collector": "aura-collector" };
   function badgeTierArt(name) {
     const m = /^(.+?)(?: (I{1,3}|IV|VI{0,3}|IX|X))?$/.exec(name || "");
     const base = m && BADGE_LADDER_ART[m[1]];
@@ -17975,7 +17978,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // can already derive (avatars owned, items/combos seen) are read straight from
   // the profile. Rewards are claimed manually (atomic transaction), and claimed
   // ids live in profiles/<id>/achClaimed.
-  const ACH_CATS = ["Getting started", "Collector", "Accuracy", "Winning", "Second chance", "Social", "Fun", "Worlds", "Monthly", "Fantasy", "Supporter", "Player borders", ...MODE_AWARD_CATEGORIES];
+  const ACH_CATS = ["Getting started", "Collector", "Avatars", "Accuracy", "Winning", "Second chance", "Social", "Fun", "Worlds", "Monthly", "Fantasy", "Supporter", "Player borders", ...MODE_AWARD_CATEGORIES];
   function ownedNonDefaultAvatars() {
     const u = (myProfile && myProfile.unlockedAvatars) || {};
     return Object.keys(u).filter((a) => u[a] && AVATAR_TIERS[a] && AVATAR_TIERS[a] !== "default");
@@ -18022,6 +18025,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   achTier("Second chance", "Double down", (n) => `Win double-down points in ${n} rounds`, ACH_STAT("doubleDowns"), [[5, 25], [25, 100]], { total: 10 });
   achTier("Social", "Party time", (n) => `Finish ${n} Party Mode games with friends`, ACH_STAT("groupGames"), [[5, 30], [25, 120]], { total: 10 });
   achTier("Fun", "Gacha fan", (n) => `Pull from the avatar machine ${n} times`, ACH_STAT("pulls"), [[10, 30], [50, 120]], { total: 10 });
+  // Avatars: what you do with the per-avatar ladder (levels, looks, auras). The counts come from anim/avatar-awards.mjs.
+  const avatarStats = () => avatarAwardStats({ ids: AVATARS, points: (id) => avatarPoints(id), perLevel: AP_PER_LEVEL, tier: (id) => AVATAR_TIERS[id],
+    looks: (id) => ({ frame: defaultFrameFor(id), color: defaultColorFor(id), sticker: defaultStickerFor(id), aura: defaultAuraFor(id) }) });
+  achTier("Avatars", "Rising star", (n) => `Reach level 3 with ${n} avatar${n > 1 ? "s" : ""}`, () => avatarStats().rising, [[1, 20], [3, 40], [10, 80], [25, 120], [50, 200]]);
+  achTier("Avatars", "Maxed out", (n) => `Reach level 6 with ${n} avatar${n > 1 ? "s" : ""}`, () => avatarStats().maxed, [[1, 40], [3, 80], [10, 120], [25, 160], [50, 200]]);
+  achTier("Avatars", "Style icon", (n) => `Give ${n} avatar${n > 1 ? "s" : ""} a saved border, color, sticker or aura`, () => avatarStats().styled, [[1, 20], [5, 40], [15, 80], [40, 150]]);
+  achTier("Avatars", "Point collector", (n) => `Earn ${n.toLocaleString("en-US")} avatar points in total`, () => avatarStats().totalAp, [[100, 20], [500, 50], [2000, 100], [6000, 150], [15000, 200]]);
+  achTier("Avatars", "Aura collector", (n) => `Have ${n} different auras set on your avatars`, () => avatarStats().auras, [[3, 30], [6, 60], [12, 120]]);
+  ACHIEVEMENTS.push(
+    { id: "avatars-full_look", cat: "Avatars", name: "Full look", desc: "Have one avatar with a border, color, sticker and aura all set", target: 1, reward: 100, icon: "icons/reactions/crown.webp", progress: () => (avatarStats().fullLook ? 1 : 0) },
+    { id: "avatars-mirror_mirror", cat: "Avatars", name: "Mirror mirror", desc: "Save a mirrored sticker on an avatar", target: 1, reward: 25, icon: "icons/reactions/crown.webp", progress: () => (avatarStats().mirrored ? 1 : 0) },
+    { id: "avatars-lucky_star", cat: "Avatars", name: "Lucky star", desc: "Take an ultra-rare avatar to level 6", target: 1, reward: 100, icon: "icons/reactions/crown.webp", progress: () => (avatarStats().luckyStar ? 1 : 0) });
   achTier("Fun", "Ad watcher", (n) => `Watch ${n} ads for coins`, ACH_STAT("adsWatched"), [[10, 20]], { total: 6, ratio: 2 });
 
   ACHIEVEMENTS.push(...createModeAwards(() => myProfile));
