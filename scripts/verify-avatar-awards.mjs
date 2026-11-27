@@ -19,7 +19,7 @@ assert.equal(s.luckyStar, true, 'd is an ultra-rare avatar at level 6 or more');
 
 const none = avatarAwardStats({ ids: ['x'], points: () => 0, levelOf: () => 0, looks: () => ({}), tier: () => 'default' });
 assert.deepEqual(none, { rising: 0, maxed: 0, styled: 0, totalAp: 0, auras: 0, fullLook: false, mirrored: false, luckyStar: false });
-const almost = avatarAwardStats({ ids: ['x'], points: () => 70, levelOf: levelOf(() => 70), looks: () => ({ frame: 1, color: 'Red', sticker: 'r:crown:1:1:30:0', aura: '' }), tier: () => 'ultra' });
+const almost = avatarAwardStats({ ids: ['x'], points: () => 100, levelOf: levelOf(() => 100), looks: () => ({ frame: 1, color: 'Red', sticker: 'r:crown:1:1:30:0', aura: '' }), tier: () => 'ultra' });
 assert.equal(almost.fullLook, false, 'three of four is not a full look');
 assert.equal(almost.luckyStar, false, 'level 5 is not level 6');
 assert.equal(almost.mirrored, false);
