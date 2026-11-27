@@ -12077,7 +12077,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const taken = takenAvatars.has(a) && a !== currentAvatar;
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.innerHTML = avatarHtml(a) + (isFavAvatar(a) ? `<i class="fav-dot">${FAV_HEART}</i>` : "");
+      btn.innerHTML = avatarHtml(a, "", undefined, "") + (isFavAvatar(a) ? `<i class="fav-dot">${FAV_HEART}</i>` : "");
       btn.className = "avatar-choice" + (a === currentAvatar ? " selected" : "") + (taken ? " taken" : "");
       btn.disabled = taken;
       btn.addEventListener("click", () => {
@@ -12163,7 +12163,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (a === "--all") { label("All avatars"); return; }
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.innerHTML = avatarHtml(a) + (isFavAvatar(a) ? `<i class="fav-dot">${FAV_HEART}</i>` : "");
+      btn.innerHTML = avatarHtml(a, "", undefined, "") + (isFavAvatar(a) ? `<i class="fav-dot">${FAV_HEART}</i>` : "");
       btn.className = "avatar-choice" + (a === defaultAvatarId() ? " selected" : "");
       btn.addEventListener("click", () => {
         currentAvatar = a;
@@ -17463,7 +17463,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         </div>`;
     }).join("");
     const favList = AVATARS.filter((a) => isAvatarUnlocked(a) && isFavAvatar(a));
-    if (favList.length && collectionOwnership !== "locked") body = `<div class="collection-tier-group"><h3 class="collection-tier-title"><span class="fav-title-heart">${FAV_HEART}</span>Favorites<span class="collection-tier-count">(${favList.length})</span></h3><div class="collection-grid">${favList.map((a) => `<div class="collection-tile" role="button" tabindex="0">${avatarHtml(a)}<i class="fav-dot">${FAV_HEART}</i></div>`).join("")}</div></div>` + body;
+    if (favList.length && collectionOwnership !== "locked") body = `<div class="collection-tier-group"><h3 class="collection-tier-title"><span class="fav-title-heart">${FAV_HEART}</span>Favorites<span class="collection-tier-count">(${favList.length})</span></h3><div class="collection-grid">${favList.map((a) => `<div class="collection-tile" role="button" tabindex="0">${avatarHtml(a, "", undefined, "")}<i class="fav-dot">${FAV_HEART}</i></div>`).join("")}</div></div>` + body;
     if (!body) body = `<div class="ach-empty">${emptyHtml("icons/shop-starter-gift.webp", "No avatars yet", "Give the machine a spin!")}</div>`;
     collectionContentEl.innerHTML = head + body;
     stopCollectionLazy(); stopCollectionLazy = installLazyPictures(collectionContentEl);
@@ -18150,7 +18150,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function avatarIdFromTile(tile) {
     const img = tile.querySelector("img.avatar-icon");
     const m = img && pictureSrc(img).match(/avatars\/([^/]+)\.webp/); // a picture that has not woken up yet only has data-src
-    return m ? m[1] : null;
+    if (m) return m[1];
+    const painted = /^(av\d+)\|/.exec(img?.dataset.recolor || ""); // a painted avatar's src is its own picture, the id stays in data-recolor
+    return painted ? painted[1] : null;
   }
   // Test helper (Debug tools only): gives an avatar AP so the higher levels can be tried without playing 30 games.
   function addAvatarPoints(id, n) {
