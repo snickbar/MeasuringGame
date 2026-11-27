@@ -56,7 +56,9 @@ const duo = { phase: 'waiting', settings: { mode: 'teamworlds' }, players: {
 } };
 const friend = { name: 'Friend', connected: true, frameIndex: 1 };
 const joined = admitPlayer(duo, 'friend', friend);
-assert.equal(joined.players.friend.frameIndex, 2, 'allocate a free frame inside the transaction');
+assert.ok(joined.players.friend.frameIndex >= 2 && joined.players.friend.frameIndex <= 10, 'allocate a free frame inside the transaction');
+const seenFrames = new Set(Array.from({ length: 60 }, () => admitPlayer(duo, 'friend', friend).players.friend.frameIndex));
+assert.ok(seenFrames.size > 3 && !seenFrames.has(1), 'the slot colour is random among the free ones, never one that is taken');
 assert.equal(admitPlayer(joined, 'third', friend), undefined, 'concurrent human loses the final-seat race');
 assert.equal(admitPlayer(joined, 'bot', { ...friend, isBot: true }), undefined, 'bot cannot exceed duo cap');
 assert.equal(admitPlayer({ ...joined, settings: { mode: 'teamworlds', variant: 'hl' } }, 'third', friend), undefined);
@@ -183,7 +185,7 @@ assert.ok(human.includes('commitHsState(cur, gameId, state, { hs: next })'));
 assert.ok(human.includes('applyLocally: false'));
 assert.ok(source.includes('cur => admitPlayer(cur, id, player, ownSeat ? "own" : !!staleOwnId)'));
 // A phone takes back its own seat by id even while the room still shows it connected (no duplicate player).
-assert.equal(admitPlayer(joined, 'friend', { ...friend, connected: true }, 'own').players.friend.frameIndex, 2);
+assert.equal(admitPlayer(joined, 'friend', { ...friend, connected: true }, 'own').players.friend.frameIndex, joined.players.friend.frameIndex);
 assert.equal(admitPlayer(joined, 'nobody', friend, 'own'), undefined, 'own reclaim needs the seat to exist');
 // A Quick Game left with a second copy of you (holding the host seat) is repaired.
 const ghosted = { phase: 'question', settings: { solo: true }, players: { ghost: { name: 'Dad', isHost: true, connected: true }, me: { name: 'Dad' }, bot: { name: 'B', isBot: true } }, guesses: { ghost: 1, me: 3 } };

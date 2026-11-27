@@ -82,7 +82,9 @@ export function admitPlayer(room, id, player, reclaim = false) {
     if (!old || old.isBot || old.connected !== false || old.name?.trim().toLowerCase() !== player.name?.trim().toLowerCase()) return undefined;
   } else if (old || Object.keys(players).length >= roomCapacity(room)) return undefined;
   const frames = new Set(Object.values(players).map(p => p.frameIndex));
-  const frameIndex = old?.frameIndex || Array.from({ length: 10 }, (_, i) => i + 1).find(i => !frames.has(i));
+  // The slot colour (it tints the player's card and border) is a random free one, so the first player is not always the same colour.
+  const free = Array.from({ length: 10 }, (_, i) => i + 1).filter(i => !frames.has(i));
+  const frameIndex = old?.frameIndex || free[Math.floor(Math.random() * free.length)];
   if (!frameIndex) return undefined;
   // A returning old host cannot become a second host after a transfer.
   const otherHost = Object.entries(players).some(([pid, p]) => pid !== id && p.isHost && p.connected !== false);
