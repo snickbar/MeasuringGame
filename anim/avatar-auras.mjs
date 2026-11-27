@@ -29,7 +29,16 @@ export function auraPieces(kind, calm) {
   if (kind === "flame") { h = '<span class="base"></span>'; const n = calm ? 4 : 8; for (let i = 0; i < n; i++) h += `<span class="fl" style="left:${i % 2 ? -4 + i * 2 : 96 - i * 2}%;top:${72 + (i % 3) * 8}%;animation-delay:-${d(i * 0.23)}s,-${d(i * 0.17)}s"></span>`; }
   if (kind === "bolt") h = '<svg viewBox="0 0 100 100" aria-hidden="true">' + BOLTS.slice(0, calm ? 3 : 6).map((p, i) => `<polyline points="${p}" style="animation-delay:-${d(i * 0.43 + 1.2)}s"/>`).join("") + "</svg>";
   if (kind === "bubble") { const n = calm ? 4 : 8; for (let i = 0; i < n; i++) { const s = 11 + (i * 5) % 9; h += `<span class="bb" style="left:${i % 2 ? -8 + (i % 4) * 2 : 92 - (i % 4) * 2}%;top:${80 - (i % 3) * 10}%;width:${s}%;height:${s}%;animation-delay:-${d(i * 0.41)}s;animation-duration:${d(2.6 + i % 3 * 0.5)}s"></span>`; } }
-  if (kind === "orbit") h = '<span class="ring"><span class="orb" style="left:50%;top:0;margin:-6.5% 0 0 -6.5%"></span></span><span class="ring r2"><span class="orb" style="left:50%;top:100%;margin:-4.5% 0 0 -4.5%"></span></span>';
+  if (kind === "orbit") {
+    // Two tight rings turning opposite ways, balls spread evenly on each (3 + 3, or 2 + 2 on small pictures). Sizes vary a little so it feels alive.
+    const ring = (cls, n, start, sizes) => {
+      let balls = "";
+      for (let i = 0; i < n; i++) { const a = start + i / n * Math.PI * 2, s = sizes[i % sizes.length]; balls += `<span class="orb" style="left:${d(50 + Math.cos(a) * 50)}%;top:${d(50 + Math.sin(a) * 50)}%;width:${s}%;height:${s}%;margin:-${d(s / 2)}% 0 0 -${d(s / 2)}%"></span>`; }
+      return `<span class="${cls}">${balls}</span>`;
+    };
+    const n = calm ? 2 : 3;
+    h = ring("ring", n, -Math.PI / 2, [12, 9, 11]) + ring("ring r2", n, Math.PI / 2 + Math.PI / n, [8, 10, 7]);
+  }
   if (kind === "ring") h = '<span class="rb"></span>';
   if (kind === "ripple") h = [0, 0.9, 1.8].map((s) => `<span class="rp" style="animation-delay:-${s}s"></span>`).join("");
   if (kind === "heart") { const n = calm ? 4 : 8; for (let i = 0; i < n; i++) { const s = 19 + (i * 4) % 8; h += `<span class="ht" style="left:${i % 2 ? -6 + (i % 3) * 3 : 92 - (i % 3) * 3}%;top:${78 - (i % 3) * 9}%;width:${s}%;height:${s}%;animation-delay:-${d(i * 0.4)}s,-${d(i * 0.3)}s"></span>`; } }
