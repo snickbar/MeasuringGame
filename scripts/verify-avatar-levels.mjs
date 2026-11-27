@@ -8,16 +8,17 @@ import { AP_LEVEL_AT, MAX_AVATAR_LEVEL, PERK_LEVEL, avatarLevelFor, avatarLevelP
 assert.equal(MAX_AVATAR_LEVEL, 6);
 const steps = AP_LEVEL_AT.map((t, i) => t - (AP_LEVEL_AT[i - 1] || 0));
 for (let i = 1; i < steps.length; i++) assert.ok(steps[i] > steps[i - 1], `each level takes more AP than the one before (${steps})`);
-assert.ok(steps[0] <= 8 && steps[1] <= 12, 'Levels 1 and 2 are fairly easy');
+assert.ok(steps[0] <= 8 && steps[1] <= 10, 'Levels 1 and 2 are fairly easy');
+for (let i = 1; i < steps.length; i++) assert.ok(steps[i] <= steps[i - 1] * 1.4, `no step is a big jump over the one before it (${steps})`);
 AP_LEVEL_AT.forEach((t, i) => assert.ok(t <= (i + 1) * 20, `Level ${i + 1} is no harder than the old 20-per-level ladder, so nobody loses a level`));
-assert.equal(AP_LEVEL_AT[5], 120, 'the top is still 120 AP');
+assert.equal(AP_LEVEL_AT[5], 80, 'the top level takes 80 AP');
 assert.equal(avatarLevelFor(0), 0); assert.equal(avatarLevelFor(5), 0); assert.equal(avatarLevelFor(6), 1);
-assert.equal(avatarLevelFor(15), 1); assert.equal(avatarLevelFor(16), 2); assert.equal(avatarLevelFor(119), 5);
-assert.equal(avatarLevelFor(120), 6); assert.equal(avatarLevelFor(9999), 6, 'the top level is the cap');
+assert.equal(avatarLevelFor(13), 1); assert.equal(avatarLevelFor(14), 2); assert.equal(avatarLevelFor(79), 5);
+assert.equal(avatarLevelFor(80), 6); assert.equal(avatarLevelFor(9999), 6, 'the top level is the cap');
 assert.equal(avatarLevelFor(undefined), 0); assert.equal(avatarLevelFor(-4), 0);
 assert.deepEqual(avatarLevelProgress(0), { level: 0, into: 0, span: 6, done: false });
-assert.deepEqual(avatarLevelProgress(10), { level: 1, into: 4, span: 10, done: false });
-assert.deepEqual(avatarLevelProgress(119), { level: 5, into: 33, span: 34, done: false });
+assert.deepEqual(avatarLevelProgress(10), { level: 1, into: 4, span: 8, done: false });
+assert.deepEqual(avatarLevelProgress(79), { level: 5, into: 22, span: 23, done: false });
 assert.equal(avatarLevelProgress(500).done, true);
 
 // --- index.html keeps the same look levels ---

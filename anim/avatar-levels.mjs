@@ -1,8 +1,8 @@
 // Avatar levels. Pure, so the curve can be tested without the game running.
-// AP_LEVEL_AT[n - 1] is the TOTAL avatar points an avatar needs to be Level n. The steps get bigger as you climb (6, 10, 16, 24, 30, 34 more AP):
-// Level 1 and 2 come quickly, the top ones take real play. The top is still 120 AP, the same as the old flat 20-per-level ladder, and every
-// step is at or below the old line, so nobody lost a level when this curve came in.
-export const AP_LEVEL_AT = [6, 16, 32, 56, 86, 120];
+// AP_LEVEL_AT[n - 1] is the TOTAL avatar points an avatar needs to be Level n. The steps grow gently as you climb (6, 8, 11, 14, 18, 23 more AP,
+// each about 1.3 times the one before, never double): Level 1 and 2 come quickly, the top ones take real play. Every level costs less than
+// the old flat 20-per-level ladder did, so nobody lost a level when this curve came in.
+export const AP_LEVEL_AT = [6, 14, 25, 39, 57, 80];
 export const MAX_AVATAR_LEVEL = AP_LEVEL_AT.length;
 // The level each look feature opens at (borders, colors, stickers, auras). index.html keeps the same numbers (FRAME_LEVEL ...) and test:avatar-levels checks they match.
 export const PERK_LEVEL = { frame: 3, color: 4, sticker: 5, aura: 6 };
