@@ -1,0 +1,51 @@
+/* Settings > Your avatar picker. A warm card: a sunny pinned header (your avatar on a little stage, title, Random and Done) and a scrolling
+   grid of the avatars you own, with Favorites first. The equipped frame is drawn by anim/equipped-player-frames.css on #settings-avatar-current
+   (a .player-frame-host); this file only sizes the box and never gives it a border or glow that would replace the frame. */
+#settings-avatar-picker { width: min(430px, calc(100vw - 24px)); max-height: min(84vh, 760px); margin: auto; padding: 0; overflow: auto; border: 3px solid #d9b56a; border-radius: 24px;
+  background: #fffbee; color: #4a2c12; font-family: 'Fredoka', sans-serif; box-shadow: 0 16px 40px rgba(40, 20, 0, .45), inset 0 0 0 2px #fff6d6; }
+#settings-avatar-picker::backdrop { background: rgba(34, 22, 10, .58); }
+
+/* Pinned header: stays put while the avatars scroll under it. */
+#settings-avatar-picker .avatar-picker-heading { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 12px; margin: 0; padding: 14px 16px;
+  background: radial-gradient(circle at 16% 50%, rgba(255, 255, 255, .8), transparent 52%), linear-gradient(180deg, #ffeaa8, #ffd377); border-bottom: 3px solid #e3b25a; box-shadow: 0 3px 0 rgba(180, 120, 20, .2); }
+
+/* The stage: a soft sunburst behind the picture. */
+.ap-stage { position: relative; flex: none; display: grid; place-items: center; box-sizing: border-box; width: 86px; height: 86px; border: 3px solid #fff; border-radius: 25px;
+  background: radial-gradient(circle, #fff 0 26%, rgba(255, 255, 255, 0) 68%), repeating-conic-gradient(from 8deg, rgba(255, 255, 255, .75) 0 9deg, rgba(255, 255, 255, 0) 9deg 18deg), #ffcf5c;
+  box-shadow: 0 3px 0 #d9a23a, 0 7px 14px rgba(120, 70, 0, .25); }
+#settings-avatar-picker .avatar-picker-current { flex: none; box-sizing: border-box; width: 70px; height: 70px; margin: 0; padding: 4px; border: 3px solid #e0a52e; border-radius: 18px; background: #fffaf0; box-shadow: 0 0 0 3px rgba(255, 255, 255, .6); }
+#settings-avatar-picker .avatar-picker-current .avatar, #settings-avatar-picker .avatar-picker-current img { width: 100%; height: 100%; display: block; object-fit: contain; }
+
+.ap-side { flex: 1; min-width: 0; display: grid; gap: 3px; }
+#settings-avatar-picker h3 { margin: 0; font: 700 24px/1.05 'Fredoka', sans-serif; color: #4a2c12; text-shadow: 0 1px 0 rgba(255, 255, 255, .65); }
+.ap-sub { margin: 0; font: 600 12.5px/1.2 'Fredoka', sans-serif; color: #7a5326; }
+.ap-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+#settings-avatar-picker .ap-actions button { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 5px; box-sizing: border-box; min-height: 40px; margin: 0; padding: 0 7px; border-radius: 14px; font: 700 14.5px 'Fredoka', sans-serif; white-space: nowrap; cursor: pointer; }
+#settings-avatar-picker .ap-actions button:active { filter: brightness(.93); }
+#settings-avatar-picker .avatar-random-btn { border: 2px solid #2f5f9a; background: linear-gradient(#9fd0ff, #4a90e2); box-shadow: 0 3px 0 #2b5a93, inset 0 1px 0 rgba(255, 255, 255, .6); color: #fff; text-shadow: 0 1px 0 rgba(0, 40, 90, .5); }
+#settings-avatar-picker .avatar-random-btn svg { width: 19px; height: 19px; flex: none; }
+#settings-avatar-picker .avatar-done-btn { border: 2px solid #2f8a2a; background: linear-gradient(#a6ec7c, #4cb83a); box-shadow: 0 3px 0 #2a7a25, inset 0 1px 0 rgba(255, 255, 255, .6); color: #fff; text-shadow: 0 1px 0 rgba(10, 70, 10, .5); }
+#settings-avatar-picker .avatar-done-btn svg { width: 16px; height: 16px; flex: none; }
+
+/* The avatars. */
+#settings-avatar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 10px; margin: 0; padding: 12px 16px 18px; }
+#settings-avatar-grid .avatar-grid-label { grid-column: 1 / -1; display: flex; align-items: center; gap: 7px; margin: 4px 0 0; font: 700 16px/1.1 'Fredoka', sans-serif; color: #5a3a1a; }
+#settings-avatar-grid .avatar-grid-label::after { content: ""; flex: 1; min-width: 12px; border-top: 2px dashed #e0c78f; }
+#settings-avatar-grid .avatar-grid-label .fav-title-heart { margin: 0; }
+#settings-avatar-grid .avatar-grid-label em { order: 2; font: 700 12px/1 'Fredoka', sans-serif; font-style: normal; padding: 3px 8px; border-radius: 999px; background: #f6e7bd; color: #7a5326; }
+#settings-avatar-grid .avatar-grid-label::after { order: 3; }
+#settings-avatar-grid .avatar-choice { position: relative; width: 100%; min-width: 0; aspect-ratio: 1; margin: 0; padding: 5px; border: 2px solid #e2cda0; border-image: none; border-radius: 16px;
+  background: linear-gradient(#fffefa, #fbf1d9); box-shadow: 0 2px 0 #d9c08a, inset 0 0 0 2px #fff; transform: none; cursor: pointer; }
+#settings-avatar-grid .avatar-choice:active { filter: brightness(.94); }
+#settings-avatar-grid .avatar-choice.selected { border-color: #f0a81c; background: linear-gradient(#fff6c8, #ffe48a); box-shadow: 0 0 0 3px rgba(255, 200, 60, .5), 0 2px 0 #d9971a; transform: none; }
+#settings-avatar-grid .avatar-choice.selected::after { content: "\2713"; position: absolute; right: -6px; bottom: -6px; width: 20px; height: 20px; border-radius: 50%; border: 2px solid #fff; background: #4cb83a; color: #fff;
+  font: 800 12px/16px 'Fredoka', sans-serif; text-align: center; box-shadow: 0 1px 3px rgba(0, 0, 0, .35); }
+#settings-avatar-grid .avatar-choice img { width: 100%; height: 100%; object-fit: contain; }
+
+@media (max-width: 350px) {
+  #settings-avatar-picker .avatar-picker-heading { gap: 10px; padding: 12px; }
+  .ap-stage { width: 80px; height: 80px; border-radius: 22px; }
+  #settings-avatar-picker .avatar-picker-current { width: 62px; height: 62px; }
+  #settings-avatar-picker h3 { font-size: 21px; }
+  #settings-avatar-grid { padding-inline: 12px; gap: 8px; }
+}

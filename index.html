@@ -2196,9 +2196,6 @@ if (location.protocol === "file:") {
   /* Join/host screen: a small blue dice box tucked against the avatar (slightly smaller, centered on it, slightly overlapping it). */
   #name-avatar-random { flex: none; width: 54px; height: 54px; min-height: 0; padding: 0; margin: 0 0 0 -20px; position: relative; z-index: 2; border-radius: 50%; border: 3px solid #fff; background: linear-gradient(#bfe0ff, #7db8f5); box-shadow: 0 2px 0 #4f86c6, 0 3px 6px rgba(0,40,90,.25); }
   #name-avatar-random svg { width: 30px; height: 30px; }
-  .avatar-picker-heading .avatar-random-btn { margin-left: auto; margin-right: 8px; }
-  .avatar-picker-current { flex: none; width: 64px; height: 64px; margin-left: 14px; padding: 3px; box-sizing: border-box; border: 3px solid #d79a2b; border-radius: 16px; background: #fffaf0; box-shadow: 0 0 0 3px rgba(246,199,90,.35); }
-  .avatar-picker-current .avatar, .avatar-picker-current img { width: 100%; height: 100%; display: block; }
   #avatar-grid, #settings-avatar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 6px; margin: 8px 0 12px; }
   .avatar-choice {
     font-size: 24px; padding: 2px; min-width: 0; aspect-ratio: 1;
@@ -2288,8 +2285,6 @@ if (location.protocol === "file:") {
   #name-avatar-screen .settings-profile-name label, #name-avatar-screen .settings-profile-hint { color: #000; font-weight: 700; text-align: center; }
   .settings-preset-btn { margin: 20px 0 6px; }
   .settings-preset-hint { text-align: center; }
-  #settings-avatar-picker { margin-top: 10px; }
-  #settings-avatar-picker h3 { margin: 4px 0; font-size: 15px; }
   /* Plain black text on the Settings screen instead of the app's warm-brown default palette */
   #settings-screen h1, #settings-screen h3, #preset-settings-screen .fancy-hdr h1 { color: #1a1208; }
   #preset-settings-screen .fancy-hdr .hdr-sub { color: #1a1208; }
@@ -4693,6 +4688,7 @@ if (location.protocol === "file:") {
 <link rel="stylesheet" href="anim/settings-page.css">
 <link rel="stylesheet" href="anim/cozy-system.css">
 <link rel="stylesheet" href="anim/game-polish.css">
+<link rel="stylesheet" href="anim/avatar-picker.css">
 <link rel="stylesheet" href="anim/home-fx.css">
 <link rel="stylesheet" href="anim/home-motion.css">
 <link rel="stylesheet" href="anim/home-new-scenes.css">
@@ -5110,7 +5106,14 @@ if (location.protocol === "file:") {
       <div id="settings-name-keyboard" class="custom-kbd"></div>
     </div>
     <dialog id="settings-avatar-picker" class="cozy-dialog" aria-labelledby="settings-avatar-title">
-      <div class="avatar-picker-heading"><h3 id="settings-avatar-title">Your<br>avatar</h3><div class="frame-picker-avatar-slot"><span id="settings-avatar-current" class="avatar-picker-current" aria-hidden="true"></span></div><button id="settings-avatar-random" type="button" class="avatar-random-btn"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="5" width="38" height="38" rx="9" fill="#fff8e6" stroke="#4a2c12" stroke-width="3.5"/><g fill="#4a2c12"><circle cx="16" cy="16" r="3.6"/><circle cx="32" cy="16" r="3.6"/><circle cx="24" cy="24" r="3.6"/><circle cx="16" cy="32" r="3.6"/><circle cx="32" cy="32" r="3.6"/></g></svg>Random</button><button id="settings-avatar-close" type="button" class="settings-cream-btn">Done</button></div>
+      <div class="avatar-picker-heading">
+        <div class="ap-stage"><span id="settings-avatar-current" class="avatar-picker-current" aria-hidden="true"></span></div>
+        <div class="ap-side">
+          <h3 id="settings-avatar-title">Your avatar</h3>
+          <p id="settings-avatar-count" class="ap-sub">Tap one to switch</p>
+          <div class="ap-actions"><button id="settings-avatar-random" type="button" class="avatar-random-btn"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="5" width="38" height="38" rx="9" fill="#fff8e6" stroke="#4a2c12" stroke-width="3.5"/><g fill="#4a2c12"><circle cx="16" cy="16" r="3.6"/><circle cx="32" cy="16" r="3.6"/><circle cx="24" cy="24" r="3.6"/><circle cx="16" cy="32" r="3.6"/><circle cx="32" cy="32" r="3.6"/></g></svg>Random</button><button id="settings-avatar-close" type="button" class="avatar-done-btn"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Done</button></div>
+        </div>
+      </div>
       <div id="settings-avatar-grid"></div>
     </dialog>
   </div>
@@ -12503,10 +12506,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // picker, this one has no "locked" state to show; it's just your
     // available options for a default.
     const owned = avatarsSortedForPicker().filter((a) => isAvatarUnlocked(a)), favs = owned.filter(isFavAvatar);
-    const label = (t) => { const d = document.createElement("div"); d.className = "avatar-grid-label"; d.textContent = t; settingsAvatarGridEl.appendChild(d); };
-    if (favs.length) label("Favorites");
+    const label = (t, n, heart) => { const d = document.createElement("div"); d.className = "avatar-grid-label"; d.innerHTML = (heart ? `<span class="fav-title-heart">${FAV_HEART}</span>` : "") + `<b>${t}</b><em>${n}</em>`; settingsAvatarGridEl.appendChild(d); };
+    document.getElementById("settings-avatar-count").textContent = `${owned.length} unlocked \u00b7 tap to switch`;
+    if (favs.length) label("Favorites", favs.length, true);
     [...favs, ...(favs.length ? ["--all"] : []), ...owned].forEach((a) => {
-      if (a === "--all") { label("All avatars"); return; }
+      if (a === "--all") { label("All avatars", owned.length); return; }
       const btn = document.createElement("button");
       btn.type = "button";
       btn.innerHTML = avatarHtml(a, "", undefined, "") + (isFavAvatar(a) ? `<i class="fav-dot">${FAV_HEART}</i>` : "");
