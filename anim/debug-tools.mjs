@@ -168,6 +168,12 @@ export function installDebugTools(ctx) {
     wrap.appendChild(row(btn("-100", () => add(-100)), btn("-1,000", () => add(-1000)), btn("Coins to 0", () => run({ coins: 0 }, "Coins set to 0."), { warn: true })));
     wrap.appendChild(row(el("span", "dbg-label", "Free avatar pulls"), btn("+1", () => run({ freePulls: (P().freePulls | 0) + 1 }, "+1 free pull.")), btn("+5", () => run({ freePulls: (P().freePulls | 0) + 5 }, "+5 free pulls.")), btn("To 0", () => run({ freePulls: 0 }, "Free pulls set to 0."))));
     wrap.appendChild(row(el("span", "dbg-label", "Extra reaction slots"), ...[0, 1, 2].map((n) => btn(String(n), () => run({ reactionSlotsExtra: n }, `Extra reaction slots: ${n}.`), { on: (P().reactionSlotsExtra | 0) === n }))));
+    const DAY = 86400000;
+    wrap.appendChild(row(el("span", "dbg-label", "Supporter pass"),
+      btn("+30 days", () => run({ supporterUntil: Math.max(Date.now(), +P().supporterUntil || 0) + 30 * DAY, supporterPlan: P().supporterPlan || "month" }, "Supporter pass: 30 more days.")),
+      btn("+1 day", () => run({ supporterUntil: Math.max(Date.now(), +P().supporterUntil || 0) + DAY, supporterPlan: P().supporterPlan || "month" }, "Supporter pass: 1 more day.")),
+      btn("Remove", () => run({ supporterUntil: 0, supporterPlan: null }, "Supporter pass removed."), { warn: true }),
+      btn("New daily pull", () => run({ passPullDate: null }, "The daily supporter pull can be claimed again."))));
     return wrap;
   }
   function worldsBody() {

@@ -30,7 +30,7 @@ export function gameRewardKey(room, state) {
   return `${room}_${id}`.replace(/[.#$\[\]/]/g, '_');
 }
 
-export function createGameRewards({ owner, transaction, ad, finish, storage = localStorage, document: doc = document, onReward = () => {} }) {
+export function createGameRewards({ owner, transaction, ad, free = () => false, finish, storage = localStorage, document: doc = document, onReward = () => {} }) {
   const storageKey = id => 'mg_pending_game_reward_' + id;
   let current = null, receipt = null, busy = false, error = '', active = false;
   let saving = null, presented = '';
@@ -73,7 +73,7 @@ export function createGameRewards({ owner, transaction, ad, finish, storage = lo
     get('[data-booster]').textContent = '+' + (r.boosted ? r.base - r.score - r.minimum : 0) + ' coins';
     get('[data-ad-row]').hidden = !r.doubled;
     get('[data-bonus]').textContent = '+' + adBonus(r) + ' coins';
-    get('[data-ad-bonus]').textContent = 'Watch an ad · +' + adBonus(r) + ' bonus';
+    get('[data-ad-bonus]').textContent = (free() ? 'Free · +' : 'Watch an ad · +') + adBonus(r) + ' bonus';
     get('[data-double]').hidden = !!(r.doubled || r.completed);
     get('[data-double]').disabled = busy || !receipt;
     get('[data-doubled]').hidden = !r.doubled;

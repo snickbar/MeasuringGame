@@ -4951,6 +4951,7 @@ if (location.protocol === "file:") {
 
   <div id="shop-tab-hosting" class="shop-tab-panel">
     <div class="shop-subpanel">
+      <div id="supporter-pass-box" class="supporter-pass-box"></div>
       <div id="host-unlock-shop-box" class="host-unlock-shop-box">
         <span class="host-unlock-ribbon">&#128081; UNLOCK TO HOST</span>
         <div class="host-unlock-top-row">
@@ -5021,7 +5022,8 @@ if (location.protocol === "file:") {
       </div>
       <button id="watch-ad-btn" type="button" class="ad-reward-btn">Watch Ad</button>
     </div>
-    <p id="gacha-status"></p>
+    <div id="pass-pull-card" class="pass-pull-card" hidden><img src="icons/ach/supporter.webp" alt=""><div class="pp-text"><b>Supporter pull</b><span id="pp-status"></span></div><button id="pass-pull-btn" type="button">Claim</button></div>
+      <p id="gacha-status"></p>
   </div>
 
   <!-- Reveal card for a capsule pull; lives at screen level so the Starter Bundle can show it from the Offers tab too. -->
@@ -6794,6 +6796,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       levelPaid: 0,
       unlockedAvatars: defaultUnlockedAvatars(),
       hostUnlocked: false,
+      supporterUntil: 0,
+      supporterPlan: null,
+      passPullDate: null,
       hostFreeDates: {},
       redeemedCodes: {},
       adsWatchedDate: null,
@@ -6983,6 +6988,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (settingsScreen.classList.contains("active") || settingsOverGameOpen()) renderSettingsAvatarGrid();
     if (gachaScreen.classList.contains("active")) renderShopTab(shopGroupWasCosm ? lastCosmTab : lastShopTab);
     renderHostUnlockUi();
+    try { renderSupporterUi(); } catch (e) {}
     try { updateDailyBadge(); } catch (e) { /* daily module not ready yet */ }
     // The random background is picked from what you own: if that changed (e.g. the profile just finished loading), pick again.
     { const k = allBackgrounds().filter(ownsBackground).length; if (k !== rndBgOwnedCount) { rndBgOwnedCount = k; rndPick.backgrounds = undefined; } }
@@ -7032,6 +7038,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         levelPaid: Math.max(0, data.levelPaid | 0),
         unlockedAvatars: { ...defaultUnlockedAvatars(), ...(data.unlockedAvatars || {}) },
         hostUnlocked: !!data.hostUnlocked,
+        supporterUntil: Math.max(0, +data.supporterUntil || 0),
+        supporterPlan: data.supporterPlan === "year" || data.supporterPlan === "month" ? data.supporterPlan : null,
+        passPullDate: data.passPullDate || null,
         hostFreeDates: data.hostFreeDates || {},
         redeemedCodes: data.redeemedCodes || {},
         adsWatchedDate: data.adsWatchedDate || null,
@@ -7233,6 +7242,40 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ov.addEventListener("click", (e) => { if (e.target === ov) close(false); });
     });
   }
+  // ---- Supporter Pass ($2.99 a month or $19.99 a year) ----
+  // Perks: "Double coins" needs no ad (still one tap, still only double, never 4x), one free random capsule pull a day, and exclusive
+  // aura / border / name-colour options with a small medal beside the name. The pass is a time window (supporterUntil, in server ms), so
+  // it simply stops when the time runs out; renewing adds time on top of what is left.
+  const SUPPORTER_DAY_MS = 86400000;
+  const SUPPORTER_PLANS = { month: { days: 30, price: "$2.99", label: "Monthly", per: "month" }, year: { days: 365, price: "$19.99", label: "Yearly", per: "year" } };
+  function isSupporter(profile = myProfile) { return !!profile && (+profile.supporterUntil || 0) > nowMs(); }
+  function supporterDaysLeft(profile = myProfile) { return Math.max(0, Math.ceil(((+profile?.supporterUntil || 0) - nowMs()) / SUPPORTER_DAY_MS)); }
+  // The "watch an ad" step of any double-coins offer: supporters skip the ad (the tap itself stays), everyone else sees the ad.
+  function adOrPass() { return isSupporter() ? Promise.resolve(true) : showFakeAd(); }
+  async function grantSupporterPass(plan) {
+    const P = SUPPORTER_PLANS[plan];
+    if (!P) return false;
+    const base = nowMs();
+    await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
+      const profile = current || defaultProfile();
+      const from = Math.max(base, +profile.supporterUntil || 0);
+      return { ...profile, supporterUntil: from + P.days * SUPPORTER_DAY_MS, supporterPlan: plan };
+    });
+    return true;
+  }
+  // One free random capsule pull a day for supporters (a general, random-only free pull, same as the ad meter's).
+  async function claimPassPull() {
+    if (!isSupporter()) return "";
+    const today = todayDateStr();
+    let result = "";
+    await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
+      const profile = current || defaultProfile();
+      if (!((+profile.supporterUntil || 0) > nowMs()) || profile.passPullDate === today) return; // not a supporter, or already claimed today
+      result = "pull";
+      return { ...profile, passPullDate: today, freePulls: Math.max(0, profile.freePulls | 0) + 1 };
+    });
+    return result;
+  }
   // ---- "Watch an ad to double your coins": offered after EVERY finished game that paid coins ----
   // (Party / Quick / Team vs Team have their own receipt screen with the same button; every other mode - Worlds, Survival,
   // Daily, Monthly, Team Worlds, High/Low Survival, High Stakes - goes through the career ledger, which calls this once the
@@ -7272,7 +7315,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     document.getElementById("ad-double-banner")?.remove();
     const el = document.createElement("div");
     el.id = "ad-double-banner";
-    el.innerHTML = `<button type="button" class="adb-watch"><span class="adb-big">Watch Ad: Double Coins!</span><span class="adb-sub">+${coins} bonus coins</span></button><button type="button" class="adb-x" aria-label="No thanks">&times;</button>`;
+    el.innerHTML = `<button type="button" class="adb-watch"><span class="adb-big">${isSupporter() ? "Double Coins · Free!" : "Watch Ad: Double Coins!"}</span><span class="adb-sub">+${coins} bonus coins</span></button><button type="button" class="adb-x" aria-label="No thanks">&times;</button>`;
     document.body.appendChild(el);
     const done = () => el.remove();
     const timer = setTimeout(done, 45000);
@@ -7290,7 +7333,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // Plays the ad and, if watched, credits the bonus once. Returns "paid", "already" or "cancel".
   async function claimAdDouble(k, coins) {
-    const earned = await showFakeAd();
+    const earned = await adOrPass();
     if (earned !== true) return "cancel";
     let paid = false;
     await runTransaction(ref(db, `profiles/${deviceId}`), (cur) => {
@@ -7318,12 +7361,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const cfg0 = AD_BAR_MODES[mode], o0 = adOffers[mode];
       const live0 = o0 && cfg0 && adSan(cfg0.key()) === adSan(o0.key) && Date.now() - o0.t < 30 * 60 * 1000;
       if (!live0) return `<button type="button" class="dc-btn" id="${finishId}">${primaryLabel}</button>`;
-      return `<div class="wl-done-split"><button type="button" class="dc-btn" id="${finishId}">${primaryLabel}</button><button type="button" class="dc-btn wl-ad-btn" data-ad-finish="${mode}"><span>Watch ad to double</span><small>+${o0.coins} bonus coins</small></button></div>`;
+      return `<div class="wl-done-split"><button type="button" class="dc-btn" id="${finishId}">${primaryLabel}</button><button type="button" class="dc-btn wl-ad-btn" data-ad-finish="${mode}"><span>${isSupporter() ? "Double coins · Free" : "Watch ad to double"}</span><small>+${o0.coins} bonus coins</small></button></div>`;
     }
     const cfg = AD_BAR_MODES[mode], o = adOffers[mode];
     const live = o && cfg && adSan(cfg.key()) === adSan(o.key) && Date.now() - o.t < 30 * 60 * 1000;
     if (!live) return `<button type="button" class="dc-btn" id="${finishId}">Finish</button>`;
-    const adLabel = ["daily", "monthly", "practice"].includes(mode) ? "Watch ad to double" : "Watch ad: double coins &amp; finish";
+    const adLabel = isSupporter() ? (["daily", "monthly", "practice"].includes(mode) ? "Double coins · Free" : "Double coins &amp; finish · Free") : ["daily", "monthly", "practice"].includes(mode) ? "Watch ad to double" : "Watch ad: double coins &amp; finish";
     return `<div class="wl-done-split"><button type="button" class="dc-btn" id="${finishId}">Finish &amp; collect coins</button><button type="button" class="dc-btn wl-ad-btn" data-ad-finish="${mode}"><span>${adLabel}</span><small>+${o.coins} bonus coins</small></button></div>`;
   }
   const adBarSlot = (mode, finishId, primaryLabel) => `<div class="pin-bottom" id="ad-done-bar" data-mode="${mode}" data-finish="${finishId}"${primaryLabel ? ` data-primary="${primaryLabel}"` : ""}>${adBarHtml(mode, finishId, primaryLabel)}</div>`;
@@ -11859,7 +11902,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   gameRewards = createGameRewards({
     owner: () => deviceId,
     transaction: (id, change) => runTransaction(ref(db, `profiles/${id}`), change),
-    ad: showFakeAd,
+    ad: adOrPass,
+    free: isSupporter,
     finish: finishCompletedGame,
     onReward: event => gamePolish?.reward(event),
   });
@@ -15149,7 +15193,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function wlDoneBarHtml() {
     const o = wlAdOffer && wlAdOffer.runId === wl.runId ? wlAdOffer : null;
     if (!o) return `<button type="button" class="dc-btn" id="wl-finish">Finish</button>`;
-    return `<div class="wl-done-split"><button type="button" class="dc-btn" id="wl-finish">Finish &amp; collect coins</button><button type="button" class="dc-btn wl-ad-btn" id="wl-finish-ad"><span>Watch ad: double coins &amp; finish</span><small>+${o.coins} bonus coins</small></button></div>`;
+    return `<div class="wl-done-split"><button type="button" class="dc-btn" id="wl-finish">Finish &amp; collect coins</button><button type="button" class="dc-btn wl-ad-btn" id="wl-finish-ad"><span>${isSupporter() ? "Double coins &amp; finish · Free" : "Watch ad: double coins &amp; finish"}</span><small>+${o.coins} bonus coins</small></button></div>`;
   }
   function wlRenderDoneBar() {
     const bar = document.getElementById("wl-done-bar");
@@ -17403,6 +17447,91 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     await addBoosterCharges(parseInt(btn.dataset.boostAd, 10));
     btn.disabled = false;
   }); });
+  // ---- Supporter Pass UI: the card in Shop > Offers, its details sheet, and the daily free pull (Capsules tab + the card) ----
+  const SP_PERKS = ["Double coins after every game, no ad", "1 free random capsule pull every day", "Exclusive auras, borders and name colors, plus a medal"];
+  const spPerksHtml = () => `<ul class="sp-perks">${SP_PERKS.map((t) => `<li>${t}</li>`).join("")}</ul>`;
+  function renderSupporterUi() {
+    const box = document.getElementById("supporter-pass-box");
+    if (!box) return;
+    const on = isSupporter(), claimed = myProfile.passPullDate === todayDateStr();
+    // Party Mode stays on top of Offers until it is owned; after that the pass goes first.
+    const host = document.getElementById("host-unlock-shop-box");
+    if (host && host.parentNode) host.parentNode.insertBefore(box, myProfile.hostUnlocked ? host : host.nextSibling);
+    if (!on) {
+      box.classList.remove("active");
+      box.innerHTML = `<span class="sp-ribbon">NEW</span>
+        <div class="sp-head"><img class="sp-medal" src="icons/ach/supporter.webp" alt=""><div><h3>Supporter Pass</h3><p>Play more, look great, help the game grow</p></div></div>
+        ${spPerksHtml()}
+        <button type="button" class="sp-btn" data-sp-open="month">Get the pass<small>${SUPPORTER_PLANS.month.price} a month</small></button>
+        <div class="sp-sub">or ${SUPPORTER_PLANS.year.price} a year</div>`;
+    } else {
+      const d = supporterDaysLeft(), plan = SUPPORTER_PLANS[myProfile.supporterPlan] || SUPPORTER_PLANS.month;
+      box.classList.add("active");
+      box.innerHTML = `<div class="sp-head"><img class="sp-medal" src="icons/ach/supporter.webp" alt=""><div><h3>Supporter Pass</h3><p>Thank you for supporting Size Em Up!</p></div></div>
+        <div class="sp-status"><span class="sp-pill">ACTIVE</span><span>${d} day${d === 1 ? "" : "s"} left</span></div>
+        ${spPerksHtml()}
+        <button type="button" class="sp-btn green" id="sp-claim-btn"${claimed ? " disabled" : ""}>${claimed ? "Today's pull claimed" : "Claim today's free pull"}</button>
+        <button type="button" class="sp-btn" data-sp-open="${myProfile.supporterPlan || "month"}">Add more time<small>${plan.price} a ${plan.per}</small></button>`;
+    }
+    const card = document.getElementById("pass-pull-card");
+    if (card) {
+      card.hidden = !on;
+      document.getElementById("pp-status").textContent = claimed ? "Claimed today. Back tomorrow." : "Your free random pull for today";
+      document.getElementById("pass-pull-btn").disabled = claimed;
+    }
+  }
+  async function claimTodayPassPull() {
+    const res = await claimPassPull();
+    renderSupporterUi();
+    if (res === "pull") { showAchToast("Free pull added! Pull it from the machine."); try { renderGachaScreen(); } catch (e) {} }
+  }
+  function openSupporterSheet(plan) {
+    document.getElementById("supporter-sheet")?.remove();
+    let cur = SUPPORTER_PLANS[plan] ? plan : "month";
+    const ov = document.createElement("div");
+    ov.id = "supporter-sheet"; ov.className = "supporter-sheet";
+    ov.innerHTML = `<div class="ss-card" role="dialog" aria-modal="true" aria-labelledby="ss-title">
+      <div class="ss-top"><span id="ss-title">Supporter Pass</span><button type="button" class="ss-x" aria-label="Close">&times;</button></div>
+      <img class="ss-medal" src="icons/ach/supporter.webp" alt="">
+      <div class="ss-seg" role="group" aria-label="Billing period">
+        <button type="button" data-plan="month" aria-pressed="false">Monthly</button>
+        <button type="button" data-plan="year" aria-pressed="false">Yearly<span class="ss-save">SAVE 44%</span></button>
+      </div>
+      <div class="ss-price"><b id="ss-price"></b><p id="ss-price-sub"></p></div>
+      <div class="ss-perks">${spPerksHtml()}</div>
+      <button type="button" class="sp-btn" id="ss-buy"></button>
+    </div>`;
+    document.body.appendChild(ov);
+    const paint = () => {
+      const P = SUPPORTER_PLANS[cur];
+      ov.querySelectorAll("[data-plan]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.plan === cur ? "true" : "false"));
+      ov.querySelector("#ss-price").innerHTML = `${P.price}<small> / ${P.per}</small>`;
+      ov.querySelector("#ss-price-sub").textContent = `Lasts a ${P.per}. Buying again adds more time.`;
+      ov.querySelector("#ss-buy").textContent = isSupporter() ? "Add more time" : "Start Supporter Pass";
+    };
+    paint();
+    const close = () => ov.remove();
+    ov.addEventListener("click", async (e) => {
+      if (e.target === ov || e.target.closest(".ss-x")) return close();
+      const pick = e.target.closest("[data-plan]");
+      if (pick) { cur = pick.dataset.plan; return paint(); }
+      if (!e.target.closest("#ss-buy")) return;
+      const P = SUPPORTER_PLANS[cur];
+      const bought = await purchase({ icon: "icons/ach/supporter.webp", title: `Supporter Pass (${P.label})`, desc: "Double coins with no ad, a free capsule pull every day, and exclusive looks.", price: `${P.price} / ${P.per}` });
+      if (!bought) return;
+      await grantSupporterPass(cur);
+      close();
+      renderSupporterUi();
+      showAchToast("Welcome, Supporter! Thank you!");
+    });
+    ov.querySelector("[data-plan]").focus({ preventScroll: true });
+  }
+  document.getElementById("supporter-pass-box").addEventListener("click", (e) => {
+    const open = e.target.closest("[data-sp-open]");
+    if (open) return openSupporterSheet(open.dataset.spOpen);
+    if (e.target.closest("#sp-claim-btn")) void claimTodayPassPull();
+  });
+  document.getElementById("pass-pull-btn").addEventListener("click", () => void claimTodayPassPull());
   coinPackBtns.forEach((btn) => {
     // .coin-pack-buy-btn is also shared by the ad-reward and host-unlock
     // buttons, which have their own dedicated listeners elsewhere - only
@@ -17525,8 +17654,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (tab === "hosting") {
       renderThemedPackShop();
       renderStarterBundle();
+      renderSupporterUi();
     } else if (tab === "coins") { /* static packs: nothing to refresh */ }
-    else if (tab === "capsules") { renderGachaScreen(); renderWatchAdStatus(); }
+    else if (tab === "capsules") { renderGachaScreen(); renderWatchAdStatus(); renderSupporterUi(); }
     else if (tab === "avatars") renderCollectionScreen();
     else renderCosmeticsShop();
   }
@@ -25081,7 +25211,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function updateFinalButtons() {
     let adLive = false;
     try { adLive = !!finalAdOffer && (roomState.phase === "final" || roomState.closedAfterFinish === "final") && Date.now() - finalAdOffer.t < 30 * 60 * 1000 && String(finalAdOffer.key).replace(/[.#$\[\]/]/g, "_") === gameRewardKey(currentRoomCode, roomState); } catch (e) {}
-    if (adLive && !finalDoubleCoinsBtn.dataset.busy) finalDoubleCoinsBtn.innerHTML = `<span>Watch ad: double coins</span><span class="fbtn-sub">+${finalAdOffer.coins} bonus coins</span>`;
+    if (adLive && !finalDoubleCoinsBtn.dataset.busy) finalDoubleCoinsBtn.innerHTML = `<span>${isSupporter() ? "Double coins · Free" : "Watch ad: double coins"}</span><span class="fbtn-sub">+${finalAdOffer.coins} bonus coins</span>`;
     finalDoubleCoinsBtn.style.display = adLive ? 'flex' : 'none';
     const collected=!!currentPlayers[currentPlayerId]?.rewardCollected,party=!roomState.settings?.solo,closed=roomState.phase==="ended";
     playAgainBtn.style.display=party&&isHost&&collected&&!closed?'flex':'none';playAgainBtn.textContent='Play again with this party';

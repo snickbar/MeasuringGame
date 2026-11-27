@@ -24,6 +24,8 @@ The game is not live yet (only the owner and a friend or two are testing), so no
 ## Ads and the Supporter Pass (added November 27, 2026)
 - [ ] Real rewarded ads replace the fake ad (it is one function, `showFakeAd`). Decide what happens to a timed Quick Game question while a real ad plays (the fake ad is only 2 seconds, a real one is 15-30), for example pause the timer.
 - [ ] Log ads offered and ads watched per player, so the frequency of every ad spot can be tuned from real numbers.
+- [ ] Supporter Pass is built with a fake purchase. At launch make it a real Google Play subscription ($2.99 a month, $19.99 a year): renewals, cancel, restore on a new phone, and `supporterUntil` written from the verified receipt on a server, never by the app. Until then the debug tools can add or remove the pass.
+- [ ] Supporter extras (exclusive auras, borders, name colours and the medal beside the name) are still to build, so the pass card lists them as a perk before they exist: finish them before launch.
 
 ## Already decided to do at launch (from earlier notes)
 - [ ] Real billing behind the purchase flow (purchases are fake until launch).
