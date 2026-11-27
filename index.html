@@ -825,6 +825,16 @@ if (location.protocol === "file:") {
   /* Owned / Locked are filters: pale tan when off, bright yellow with a little x when on (tap again, or tap the other one, to clear). */
   .coll-chip { position: relative; flex: 0 0 auto; margin: 0; width: auto; padding: 0 13px; border: 2px solid #c9b088; border-radius: 12px; background: #ead9b8; color: #7a6342; font: inherit; font-weight: 700; font-size: 14px; cursor: pointer; }
   .coll-chip:active { filter: brightness(.93); }
+  /* Bot looks: one row above the avatar filters, a two-button switch plus a one-line hint. */
+  .bot-looks { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0 0 8px; }
+  .bot-looks-label { font-weight: 800; font-size: 14px; color: #5a4526; }
+  .bot-looks-seg { display: flex; border: 2px solid #c9b088; border-radius: 12px; background: #ead9b8; }
+  .bot-looks-opt:first-child { border-radius: 10px 0 0 10px; }
+  .bot-looks-opt:last-child { border-radius: 0 10px 10px 0; }
+  .bot-looks-opt { margin: 0; width: auto; min-height: 32px; padding: 0 14px; border: 0; background: transparent; color: #7a6342; font: inherit; font-weight: 700; font-size: 14px; cursor: pointer; }
+  .bot-looks-opt:active { filter: brightness(.93); }
+  .bot-looks-opt.on { background: linear-gradient(180deg, #ffe66d, #ffc928); color: #5a3a00; }
+  .bot-looks-help { flex: 1 0 100%; font-size: 12px; color: #7a6342; line-height: 1.25; }
   .coll-chip.on { background: linear-gradient(180deg, #ffe66d, #ffc928); border-color: #e0a100; color: #5a3a00; box-shadow: 0 2px 0 rgba(200,140,20,.4); }
   .coll-chip.on::after { content: "\00d7"; position: absolute; top: -7px; right: -6px; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 2px solid #e0a100; color: #8a5a00; font-size: 14px; font-weight: 700; line-height: 13px; text-align: center; box-sizing: border-box; }
   .items-stats { display: flex; gap: 10px; margin: 0 0 14px; }
@@ -5681,7 +5691,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { botDecisionScope, commitBotDecision } from "./anim/bot-decisions.mjs";
   import { personalityFor, shapeRatio, shapeDelay, shapeConfidence, shapeMiss, PERSONALITY_UNLOCK_ROUNDS } from "./anim/bot-personalities.mjs";
   import { factFor } from "./anim/avatar-facts.mjs";
-  import { colorChoices, colorHue, recoloredAvatar, makeRecoloredAvatar, colorKey } from "./anim/avatar-colors.mjs";
+  import { colorChoices, colorHue, recoloredAvatar, makeRecoloredAvatar, colorKey, randomStickerSpot} from "./anim/avatar-colors.mjs";
   import { HL_SHIELD_CHAIN, hlThemeDue, hlSurvivalOutcome } from "./anim/high-low-survival.mjs";
   import { mountHighLowReveal, HL_REVEAL_STEP_MS } from "./anim/high-low-reveal.mjs";
   import { HL_MESSAGE_BOTTLE, HL_EMPTY_BOTTLE, highLowBottlePieces } from "./anim/high-low-bottles.mjs";
@@ -6687,6 +6697,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       avatarFrames: {},
       avatarColors: {},
       avatarStickers: {},
+      botLooks: "saved",
       freePulls: 0,
       booster: 0,
       tipCount: 0,
@@ -6988,6 +6999,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         avatarFrames: { ...(data.avatarFrames || {}) },
         avatarColors: { ...(data.avatarColors || {}) },
         avatarStickers: { ...(data.avatarStickers || {}) },
+        botLooks: data.botLooks === "random" ? "random" : "saved",
         accountUpgrade: data.accountUpgrade || null,
         // Were missing from this normalization entirely until now - every real
         // profile update from the server was silently dropping them back to
@@ -12920,6 +12932,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   });
   collectionContentEl.addEventListener("click", (e) => {
     // Owned / Locked are filters: tapping one turns it on; tapping it again (or its counterpart) clears the filter.
+    const botBtn = e.target.closest("[data-bot-looks]");
+    if (botBtn) { setBotLooks(botBtn.dataset.botLooks); return; }
     const chip = e.target.closest("[data-avatar-filter]");
     if (chip) { collectionOwnership = collectionOwnership === "all" ? chip.dataset.avatarFilter : "all"; renderCollectionScreen(); return; }
     if (e.target.closest("#collection-hide-switch")) {
@@ -17668,12 +17682,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let collectionHideLocked = false;
   let stopCollectionLazy = () => {}; // stops waking the previous grid's pictures when the grid is drawn again
   try { collectionHideLocked = localStorage.getItem("mg_coll_hide") === "1"; } catch (e) {}
+  // How bots dress: "saved" = the look you set on that avatar's card, "random" = a random one made only of things you have unlocked.
+  const botLooksMode = () => (myProfile?.botLooks === "random" ? "random" : "saved");
+  function setBotLooks(mode) {
+    mode = mode === "random" ? "random" : "saved";
+    if (mode === botLooksMode()) return;
+    myProfile = { ...myProfile, botLooks: mode };
+    update(ref(db, `profiles/${deviceId}`), { botLooks: mode }).catch(() => showAchToast("Couldn\u2019t save that. Try again."));
+    renderCollectionScreen();
+  }
   function renderCollectionScreen() {
     const byTier = { default: [], common: [], rare: [], ultra: [] };
     AVATARS.forEach((a) => byTier[AVATAR_TIERS[a]].push(a));
     const totalUnlocked = AVATARS.filter(isAvatarUnlocked).length;
     const chip = (id, label) => `<button type="button" class="coll-chip${collectionOwnership === id ? " on" : ""}" data-avatar-filter="${id}" aria-pressed="${collectionOwnership === id}">${label}</button>`;
-    const head = `<div class="collection-head">${chip("owned", "Owned")}${chip("locked", "Locked")}
+    const botLooks = `<div class="bot-looks"><span class="bot-looks-label">Bot looks</span><div class="bot-looks-seg" role="radiogroup" aria-label="Bot looks">${[["saved", "Saved"], ["random", "Random"]].map(([v, t]) => `<button type="button" role="radio" class="bot-looks-opt${botLooksMode() === v ? " on" : ""}" data-bot-looks="${v}" aria-checked="${botLooksMode() === v}">${t}</button>`).join("")}</div><small class="bot-looks-help">${botLooksMode() === "random" ? "Bots get a random border, color and sticker you\u2019ve unlocked." : "Bots wear what you saved on each avatar."}</small></div>`;
+    const head = botLooks + `<div class="collection-head">${chip("owned", "Owned")}${chip("locked", "Locked")}
       <div class="items-stat-box"><div class="items-stat-value">${totalUnlocked} / ${AVATARS.length}</div><div class="items-stat-label">Discovered</div></div>
       <button type="button" id="collection-hide-switch" class="items-stat-box ach-hide-box${collectionHideLocked ? " on" : ""}" role="switch" aria-checked="${collectionHideLocked}" aria-label="Hide undiscovered"><span class="items-stat-label">Hide undiscovered</span><span class="ach-switch-mini"></span></button>
     </div>`;
@@ -20468,6 +20492,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
   }
 
+  // "Bot looks: Random": a random border, color and sticker, only from things this player has unlocked (some bots stay plain so the room is not
+  // all dressed up). A feature counts as unlocked once any of your avatars reached its level; the sticker comes from the reactions you own and
+  // the objects you found, placed by pickStickerSpot so it sits on the avatar's edge and never on its face.
+  async function randomBotLook(avatar) {
+    const pick = (list) => list[Math.floor(Math.random() * list.length)];
+    const reached = (level) => AVATARS.some((a) => avatarLevel(a) >= level), dress = () => Math.random() < 0.7;
+    const look = { playerFrame: 0, avatarColor: null, avatarSticker: null };
+    if (reached(FRAME_LEVEL) && dress()) look.playerFrame = 1 + Math.floor(Math.random() * (playerFrameCatalog.length - 1));
+    const shades = colorChoices(avatar);
+    if (reached(COLOR_LEVEL) && shades.length && dress()) look.avatarColor = pick(shades).name;
+    if (reached(STICKER_LEVEL) && dress()) {
+      const { reactions, objects } = stickerChoices(), pool = [...reactions, ...objects];
+      if (pool.length) {
+        const item = pick(pool), spot = await randomStickerSpot(avatar), value = stickerString(item.kind, item.name, spot.x, spot.y, spot.size, spot.rot);
+        if (stickerInfo(value)) look.avatarSticker = value;
+      }
+    }
+    return look;
+  }
   async function addBot(difficulty) {
     if (!isHost || !currentRoomCode) return;
     const playersSnap = await new Promise((resolve) => {
@@ -20498,11 +20541,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const themedName = BOT_NAME_BY_AVATAR[avatar];
     const name = (themedName && themedName.length <= 12 && !usedNames.has(themedName)) ? themedName : botNameFor(avatar, usedNames);
     const botId = "bot_" + Math.random().toString(36).slice(2, 10);
+    const look = botLooksMode() === "random" ? await randomBotLook(avatar) : { playerFrame: defaultFrameFor(avatar), avatarColor: defaultColorFor(avatar) || null, avatarSticker: defaultStickerFor(avatar) || null };
     const newPlayer = {
       name, avatar, isHost: false, score: 0, frameIndex, isBot: true, botDifficulty: difficulty,
       joinedAt: serverTimestamp(),
-      // A bot wearing one of your avatars uses what you set on that avatar's card (border style, color, sticker); frameIndex above is still the random slot color.
-      playerFrame: defaultFrameFor(avatar), avatarColor: defaultColorFor(avatar) || null, avatarSticker: defaultStickerFor(avatar) || null,
+      // Bot looks setting: "Saved" = what you set on that avatar's card (border style, color, sticker), "Random" = see randomBotLook. frameIndex above is the random slot color either way.
+      ...look,
     };
     // Team vs Team: auto-assign the new bot to the first team with fewer than 2
     // members, so a host can fill an uneven team without any extra bot-side UI.

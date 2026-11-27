@@ -111,3 +111,46 @@ export function makeRecoloredAvatar(id, name, sticker) {
   working.set(key, job);
   return job;
 }
+
+// ---- Where a random sticker goes. Not on the face: on the avatar's edge, like a badge stuck on its corner, leaning outward a little. ----
+const SPOT = 48;   // the avatar is looked at on a 48 x 48 grid
+// `alpha` is SPOT*SPOT flags (1 = the avatar is drawn there). Tries a ring of spots around the middle and keeps the ones where the sticker
+// is fully inside the picture and the avatar covers about a quarter of it (it overlaps the edge a little, never sits in the middle of the body).
+// Returns { x, y, size, rot } in percent of the picture and degrees, or null when nothing fits. `rand` is injectable for tests.
+export function pickStickerSpot(alpha, rand = Math.random) {
+  const size = 26 + rand() * 6, r = size / 2, cands = [];
+  const covered = (cx, cy, rad) => {
+    let n = 0, t = 0;
+    for (let y = 0; y < SPOT; y++) for (let x = 0; x < SPOT; x++) {
+      const dx = (x + 0.5) / SPOT * 100 - cx, dy = (y + 0.5) / SPOT * 100 - cy;
+      if (dx * dx + dy * dy <= rad * rad) { t++; n += alpha[y * SPOT + x]; }
+    }
+    return t ? n / t : 0;
+  };
+  for (let ang = 0; ang < 360; ang += 15) for (const ring of [30, 36, 42]) {
+    const x = 50 + ring * Math.cos(ang * Math.PI / 180), y = 50 + ring * Math.sin(ang * Math.PI / 180);
+    if (x - r < 2 || x + r > 98 || y - r < 2 || y + r > 98) continue;
+    cands.push({ x, y, ang, score: Math.abs(covered(x, y, r * 0.8) - 0.25) });
+  }
+  if (!cands.length) return null;
+  cands.sort((a, b) => a.score - b.score);
+  const c = cands[Math.floor(rand() * Math.min(6, cands.length))];
+  return { x: c.x, y: c.y, size, rot: (Math.cos(c.ang * Math.PI / 180) >= 0 ? 1 : -1) * (5 + rand() * 10) };
+}
+const alphaMaps = new Map();
+// The spot for a random sticker on avatar `id`, or a plain upper-right corner if the picture cannot be read.
+export async function randomStickerSpot(id) {
+  try {
+    if (!alphaMaps.has(id)) {
+      const im = new Image(); im.src = fullUrl("avatars/" + id + ".webp"); await im.decode();
+      const c = document.createElement("canvas"); c.width = c.height = SPOT;
+      const ctx = c.getContext("2d", { willReadFrequently: true }); ctx.drawImage(im, 0, 0, SPOT, SPOT);
+      const d = ctx.getImageData(0, 0, SPOT, SPOT).data, m = new Uint8Array(SPOT * SPOT);
+      for (let i = 0; i < m.length; i++) m[i] = d[i * 4 + 3] > 100 ? 1 : 0;
+      alphaMaps.set(id, m);
+    }
+    const spot = pickStickerSpot(alphaMaps.get(id));
+    if (spot) return spot;
+  } catch (e) { /* fall through */ }
+  return { x: 78, y: 20, size: 28, rot: 10 };
+}

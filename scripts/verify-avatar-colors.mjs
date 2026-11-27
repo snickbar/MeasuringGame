@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { AVATAR_COLOR_DATA, COLOR_MASK_CELL, COLOR_MASK_COLS } from '../anim/avatar-colors-data.mjs';
-import { COLOR_SHADES, recolorPixels } from '../anim/avatar-colors.mjs';
+import { COLOR_SHADES, recolorPixels, pickStickerSpot } from '../anim/avatar-colors.mjs';
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const tiers = html.slice(html.indexOf('const AVATAR_TIERS'));
 const ids = [...tiers.slice(0, tiers.indexOf('};')).matchAll(/(av\d+):\s*"/g)].map((m) => m[1]);
@@ -28,4 +28,14 @@ recolorPixels(px, [Float32Array.of(1, 0)], [{ kind: 'h', cen: 24 }], 215);
 const hue = (r, g, b) => { const mx = Math.max(r, g, b), d = mx - Math.min(r, g, b); return ((mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4) * 60 + 360) % 360; };
 assert.ok(Math.abs(hue(px[0], px[1], px[2]) - 215) < 6, `painted hue ${hue(px[0], px[1], px[2])}`);
 assert.deepEqual([...px.slice(4)], [10, 200, 90, 255], 'a pixel outside the mask changed');
+// Random sticker placement: always fully inside the picture, on the avatar's edge (not its middle), leaning 5-15 degrees.
+const disc = new Uint8Array(48 * 48);
+for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) disc[y * 48 + x] = Math.hypot((x + 0.5) / 48 * 100 - 50, (y + 0.5) / 48 * 100 - 50) <= 30 ? 1 : 0;
+for (let i = 0; i < 300; i++) {
+  const s = pickStickerSpot(disc), r = s.size / 2;
+  assert.ok(s.x - r >= 2 && s.x + r <= 98 && s.y - r >= 2 && s.y + r <= 98, 'sticker spills out of the picture');
+  assert.ok(Math.hypot(s.x - 50, s.y - 50) >= 28, 'sticker sits on the middle of the avatar');
+  assert.ok(s.size >= 26 && s.size <= 32 && Math.abs(s.rot) >= 5 && Math.abs(s.rot) <= 15, 'sticker size or tilt out of range');
+}
+assert.equal(pickStickerSpot(new Uint8Array(48 * 48), () => 0.5) !== null, true, 'empty picture still gets a spot');
 console.log(`Avatar colours check passed: ${n} avatars, mask sheet ${w}x${h}.`);
