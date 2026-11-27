@@ -28,6 +28,7 @@ srv.listen(0, async () => {
     await p.evaluate(() => { for (const c of [...document.body.children]) c.style.display = 'none'; });
     await p.addScriptTag({ type: 'module', content: `
       import { colorChoices, colorHue, recoloredAvatar, makeRecoloredAvatar, colorKey } from "${origin}/anim/avatar-colors.mjs";
+      import { AURAS, isAura, auraName } from "${origin}/anim/avatar-auras.mjs";
       const WORLDS = ${JSON.stringify(worlds)}; const OBJECT_BY_ID = new Map(); const seen = {}; const disc = {};
       WORLDS.forEach((wd, wi) => wd.ids.forEach((id, k) => { OBJECT_BY_ID.set(id, { id, name: id.replace(/-/g, " "), image: "items/" + id + ".webp" }); seen[id] = true; if (k % 5 === 0) disc[id] = { t: 1000 + wi * 10 + k }; }));
       const REACTIONS = {}; const REACTION_BY_ID = {}; for (const n of ${JSON.stringify(reactions)}) { REACTIONS[n] = { id: n, label: n }; REACTION_BY_ID[n] = { id: n }; }

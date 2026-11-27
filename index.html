@@ -1832,6 +1832,40 @@ if (location.protocol === "file:") {
   #sticker-editor-overlay .stk-empty { grid-column: 1 / -1; margin: 6px 0; color: #6b4a22; font-size: 13px; }
   #sticker-editor-overlay .stk-kbd { flex: none; margin: 0; padding: 6px 4px; gap: 4px; }
   #sticker-editor-overlay .stk-kbd button.kbd-key { height: 34px; min-height: 34px; font-size: 15px; }
+  /* ---- Avatar auras (Level 6): a layer behind the picture, set by anim/avatar-auras.mjs. Colour vars --c --cl --cd --rgb are the player's slot colour. ---- */
+  .aura-fx { position: absolute; z-index: auto; pointer-events: none; }
+  .aura-fx[hidden] { display: none; }
+  .aura-fx.calm { --rs: 1.2; }   /* smaller pictures: the effect stays closer to its card */
+  .aura-fx > * { position: absolute; }
+  @keyframes auraPulse { 0%, 100% { transform: scale(.9); opacity: .65; } 50% { transform: scale(1.1); opacity: 1; } }
+  @keyframes auraTwinkle { 0%, 100% { transform: scale(0) rotate(0deg); opacity: 0; } 50% { transform: scale(1) rotate(45deg); opacity: 1; } }
+  @keyframes auraRise { 0% { transform: translateY(0) scale(.5); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(-300%) scale(1); opacity: 0; } }
+  @keyframes auraFall { 0% { transform: translateY(0) rotate(0deg); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(380%) rotate(300deg); opacity: 0; } }
+  @keyframes auraSpin { to { transform: rotate(360deg); } }
+  @keyframes auraFlash { 0%, 62%, 100% { opacity: 0; } 66% { opacity: 1; } 72% { opacity: .1; } 76% { opacity: 1; } 84% { opacity: 0; } }
+  @keyframes auraSway { 0%, 100% { translate: -20% 0; } 50% { translate: 20% 0; } }
+  @keyframes auraRipple { 0% { transform: scale(.78); opacity: .9; } 100% { transform: scale(var(--rs, 1.45)); opacity: 0; } }
+  @keyframes auraBob { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-14%) rotate(4deg); } }
+  @keyframes auraBeam { 0%, 100% { opacity: .7; } 50% { opacity: 1; } }
+  .a-glow .g1 { inset: -26%; border-radius: 50%; background: radial-gradient(circle, rgb(var(--rgb) / .85) 0 38%, rgb(var(--rgb) / 0) 68%); animation: auraPulse 2.6s ease-in-out infinite; }
+  .a-sparkle .sp { width: 17%; height: 17%; margin: -8.5% 0 0 -8.5%; background: var(--cl); clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); animation: auraTwinkle 2s ease-in-out infinite; filter: drop-shadow(0 0 3px var(--c)); }
+  .a-flame .base { left: -4%; right: -4%; bottom: -10%; height: 48%; background: radial-gradient(ellipse at 50% 100%, rgb(var(--rgb) / .75), rgb(var(--rgb) / 0) 70%); animation: auraPulse 1.2s ease-in-out infinite; }
+  .a-flame .fl { width: 15%; height: 22%; margin-left: -7.5%; border-radius: 50% 50% 50% 50% / 68% 68% 32% 32%; background: linear-gradient(0deg, var(--cd), var(--c) 55%, var(--cl)); animation: auraRise 1.7s ease-out infinite, auraSway 1.1s ease-in-out infinite; }
+  .a-bolt svg { position: absolute; inset: -22%; width: 144%; height: 144%; overflow: visible; }
+  .a-bolt polyline { fill: none; stroke: var(--cl); stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; opacity: 0; animation: auraFlash 2.4s linear infinite; filter: drop-shadow(0 0 2.5px var(--c)); }
+  .a-bubble .bb { border-radius: 50%; border: 1.6px solid rgb(var(--rgb) / .9); background: radial-gradient(circle at 32% 30%, #fff 0 14%, rgb(var(--rgb) / .35) 42%, rgb(var(--rgb) / .15)); animation: auraRise 3s ease-in infinite; }
+  .a-orbit .ring { inset: -14%; animation: auraSpin 5s linear infinite; }
+  .a-orbit .ring.r2 { inset: -26%; animation-duration: 8s; animation-direction: reverse; }
+  .a-orbit .orb { position: absolute; width: 13%; height: 13%; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, var(--c) 60%); box-shadow: 0 0 8px var(--c); }
+  .a-orbit .ring.r2 .orb { width: 9%; height: 9%; }
+  .a-ring .rb { inset: -13%; border-radius: 50%; background: conic-gradient(var(--c), var(--cl), var(--cd), var(--cl), var(--c)); -webkit-mask: radial-gradient(circle, transparent 60%, #000 62%, #000 76%, transparent 79%); mask: radial-gradient(circle, transparent 60%, #000 62%, #000 76%, transparent 79%); animation: auraSpin 4s linear infinite; }
+  .a-ripple .rp { inset: -4%; border-radius: 50%; border: 3px solid var(--c); animation: auraRipple 2.7s ease-out infinite; }
+  .a-heart .ht { background: var(--c); --heart: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 21.5C5 16 2 12.4 2 8.6 2 5.7 4.2 3.5 7 3.5c2 0 3.8 1.1 5 3 1.2-1.9 3-3 5-3 2.8 0 5 2.2 5 5.1 0 3.8-3 7.4-10 12.9z'/%3E%3C/svg%3E"); -webkit-mask: var(--heart) center / contain no-repeat; mask: var(--heart) center / contain no-repeat; animation: auraRise 3.2s ease-in infinite, auraSway 1.8s ease-in-out infinite; }
+  .a-confetti .cf { border-radius: 1px; animation: auraFall 2.8s ease-in infinite; }
+  .a-spot .cone { left: -10%; width: 120%; top: -22%; height: 116%; clip-path: polygon(36% 0, 64% 0, 100% 100%, 0 100%); background: linear-gradient(180deg, rgb(var(--rgb) / .75), rgb(var(--rgb) / .08)); animation: auraBeam 3s ease-in-out infinite; }
+  .a-spot .pool { left: -8%; right: -8%; bottom: -8%; height: 26%; border-radius: 50%; background: radial-gradient(ellipse, rgb(var(--rgb) / .85), rgb(var(--rgb) / 0) 70%); }
+  .a-halo .hl { left: 24%; width: 52%; top: -15%; height: 15%; border-radius: 50%; border: 4px solid var(--cl); box-shadow: 0 0 8px var(--c), inset 0 0 6px var(--c); animation: auraBob 2.6s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) { .aura-fx, .aura-fx * { animation-play-state: paused !important; } }
   /* Favorites: heart badge on tiles, labels in the pickers, and the heart on the zoomed avatar. */
   .avatar-choice, .collection-tile { position: relative; }
   .fav-dot { position: absolute; top: -4px; right: -4px; width: 15px; height: 15px; pointer-events: none; display: block; }
@@ -5693,7 +5727,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { botDecisionScope, commitBotDecision } from "./anim/bot-decisions.mjs";
   import { personalityFor, shapeRatio, shapeDelay, shapeConfidence, shapeMiss, PERSONALITY_UNLOCK_ROUNDS } from "./anim/bot-personalities.mjs";
   import { factFor } from "./anim/avatar-facts.mjs";
-  import { colorChoices, colorHue, recoloredAvatar, makeRecoloredAvatar, colorKey, randomStickerSpot} from "./anim/avatar-colors.mjs";
+  import { colorChoices, colorHue, recoloredAvatar, makeRecoloredAvatar, colorKey, randomStickerSpot } from "./anim/avatar-colors.mjs";
+  import { AURAS, isAura, auraName, installAuras } from "./anim/avatar-auras.mjs";
   import { HL_SHIELD_CHAIN, hlThemeDue, hlSurvivalOutcome } from "./anim/high-low-survival.mjs";
   import { mountHighLowReveal, HL_REVEAL_STEP_MS } from "./anim/high-low-reveal.mjs";
   import { HL_MESSAGE_BOTTLE, HL_EMPTY_BOTTLE, highLowBottlePieces } from "./anim/high-low-bottles.mjs";
@@ -6414,7 +6449,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { lv: 3, name: "Borders", built: true },         // every border unlocks for this avatar; its default is picked here
     { lv: 4, name: "Colors", built: true },          // every color option, with arrows to flip between them (painted on the phone, see anim/avatar-colors.mjs)
     { lv: 5, name: "Stickers", built: true },
-    { lv: 6, name: "Aura", built: false },
+    { lv: 6, name: "Aura", built: true },       // one animated effect around the avatar, always in the player's card color (anim/avatar-auras.mjs)
   ];
   // Level 2 shows the play style (personality). Anyone who already earned it the old way (25 rounds against that avatar) keeps it.
   const personalityKnown = (id) => avatarLevel(id) >= 2 || botRoundsAgainst(id) >= PERSONALITY_UNLOCK_ROUNDS;
@@ -6699,6 +6734,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       avatarFrames: {},
       avatarColors: {},
       avatarStickers: {},
+      avatarAuras: {},
       botLooks: "saved",
       freePulls: 0,
       booster: 0,
@@ -7001,6 +7037,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         avatarFrames: { ...(data.avatarFrames || {}) },
         avatarColors: { ...(data.avatarColors || {}) },
         avatarStickers: { ...(data.avatarStickers || {}) },
+        avatarAuras: { ...(data.avatarAuras || {}) },
         botLooks: data.botLooks === "random" ? "random" : "saved",
         accountUpgrade: data.accountUpgrade || null,
         // Were missing from this normalization entirely until now - every real
@@ -8294,7 +8331,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (done) src = `src="${done}"`; else void ensureAvatarColor(id, look.color, look.stk); // the plain picture shows until the painted one is ready, then it swaps
       paint = ` data-recolor="${colorKey(id, look.color, look.stk)}"`;
     }
-    return id ? `<img class="avatar-icon${extraClass ? " " + extraClass : ""}" ${src}${paint}${face} alt="" draggable="false">` : "";
+    const aura = position === undefined && id ? resolveAura(id, colorOverride) : null;   // drawn behind the picture by anim/avatar-auras.mjs
+    const fx = aura ? ` data-aura="${aura.kind}" data-aura-slot="${aura.slot}"` : "";
+    return id ? `<img class="avatar-icon${extraClass ? " " + extraClass : ""}" ${src}${paint}${fx}${face} alt="" draggable="false">` : "";
   }
   // Escapes any free-text value (player names, above all) before it's dropped into
   // an innerHTML template — without this, a name like "<img src=x onerror=...>"
@@ -11974,9 +12013,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const av = currentAvatar;
     return gameSticker && gameSticker.avatar === av && stickerAllowed(av) && (gameSticker.value === "" || stickerInfo(gameSticker.value)) ? gameSticker.value : defaultStickerFor(av);
   }
-  const equippedAvatarLook = () => ({ color: equippedAvatarColor(), sticker: equippedAvatarSticker() });
-  const defaultAvatarLook = (avId) => ({ color: defaultColorFor(avId), sticker: defaultStickerFor(avId) });
-  const roomAvatarLooks = new Map();   // avatar id -> { color, sticker }, for the players in the room (avatars are unique in a room)
+  // Auras (Avatar Level 6): one animated effect behind the avatar, in the player's card color for the game (never chosen). The one picked on the
+  // avatar's card is its default (profile.avatarAuras; "" = none); Edit on Choose your avatar changes it for this game only (gameAura).
+  const AURA_LEVEL = 6;
+  let gameAura = null;
+  const auraAllowed = (avId, id) => id === "" || (isAura(id) && avatarLevel(avId) >= AURA_LEVEL);
+  const aurasFor = (avId) => avatarLevel(avId) >= AURA_LEVEL ? ["", ...AURAS.map((a) => a.id)] : [""];
+  function defaultAuraFor(avId, profile = myProfile) {
+    const saved = (profile.avatarAuras || {})[avId];
+    return isAura(saved) && auraAllowed(avId, saved) ? saved : "";
+  }
+  function equippedAvatarAura() {
+    const av = currentAvatar;
+    return gameAura && gameAura.avatar === av && auraAllowed(av, gameAura.id) ? gameAura.id : defaultAuraFor(av);
+  }
+  const equippedAvatarLook = () => ({ color: equippedAvatarColor(), sticker: equippedAvatarSticker(), aura: equippedAvatarAura() });
+  const defaultAvatarLook = (avId) => ({ color: defaultColorFor(avId), sticker: defaultStickerFor(avId), aura: defaultAuraFor(avId) });
+  const roomAvatarLooks = new Map();   // avatar id -> { color, sticker, aura, slot }, for the players in the room (avatars are unique in a room); slot is the player's card color number
   function avatarLookFor(id) {
     try { return currentRoomCode ? roomAvatarLooks.get(id) || {} : id === currentAvatar ? equippedAvatarLook() : {}; } catch { return {}; }   // (the try covers a call before these are set up)
   }
@@ -11986,6 +12039,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const color = look.color && colorHue(id, look.color) !== undefined ? look.color : "";
     const stk = look.sticker ? stickerInfo(look.sticker) : null;
     return color || stk ? { color, stk } : null;
+  }
+  // The aura to draw behind avatar `id` (same `override` rules as resolveLook): { kind, slot } or null.
+  function resolveAura(id, override) {
+    const look = override === undefined ? avatarLookFor(id) : typeof override === "string" ? {} : override || {};
+    return isAura(look.aura) ? { kind: look.aura, slot: Number(look.slot) || (id === currentAvatar ? myGameFrameIndex() : 0) } : null;
   }
   function ensureAvatarColor(id, color, stk) {
     return makeRecoloredAvatar(id, color, stk).then((url) => {
@@ -11998,15 +12056,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     roomAvatarLooks.clear();
     for (const p of Object.values(currentPlayers || {})) {
       if (typeof p?.avatar !== "string") continue;
-      const look = { color: typeof p.avatarColor === "string" ? p.avatarColor : "", sticker: typeof p.avatarSticker === "string" ? p.avatarSticker : "" };
+      const look = { color: typeof p.avatarColor === "string" ? p.avatarColor : "", sticker: typeof p.avatarSticker === "string" ? p.avatarSticker : "", aura: isAura(p.avatarAura) ? p.avatarAura : "", slot: Number(p.frameIndex) || 0 };
       const r = resolveLook(p.avatar, look);
-      if (r) { roomAvatarLooks.set(p.avatar, look); void ensureAvatarColor(p.avatar, r.color, r.stk); }
+      if (r || look.aura) roomAvatarLooks.set(p.avatar, look);
+      if (r) void ensureAvatarColor(p.avatar, r.color, r.stk);
     }
   }
   // Shows `look` ({ color, sticker }) on the avatar picture inside `pic` (the card, Edit) once it is painted.
   function paintZoomPic(pic, id, look) {
     const img = pic.querySelector("img.avatar-icon");
     if (!img) return;
+    const fx = resolveAura(id, look || "");
+    if (fx) { img.dataset.aura = fx.kind; img.dataset.auraSlot = fx.slot; } else { delete img.dataset.aura; delete img.dataset.auraSlot; }
     const r = resolveLook(id, look || "");
     img.dataset.recolor = r ? colorKey(id, r.color, r.stk) : "";
     if (!r) { img.src = "avatars/" + id + ".webp"; return; }
@@ -12019,8 +12080,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const all = colorsFor(avId);
     return all[(Math.max(0, all.indexOf(current)) + dir + all.length) % all.length];
   }
+  const auraArrowsHtml = (id) => `<span class="avatar-zoom-arr"><button type="button" data-zaura="-1" aria-label="Previous aura">‹</button><span class="avatar-zoom-bname" data-zaura-name>${escapeHtml(auraName(id))}</span><button type="button" data-zaura="1" aria-label="Next aura">›</button></span>`;
+  function stepAura(avId, current, dir) {
+    const all = aurasFor(avId);
+    return all[(Math.max(0, all.indexOf(current)) + dir + all.length) % all.length];
+  }
   // Each player's border is recoloured to the colour they were given for this game (the same slot colour as their card).
   const FRAME_TINTS = ["#d4825f", "#f0b98a", "#a8a0a0", "#4fb0e0", "#3a9d90", "#4cc035", "#f26fa0", "#8fd98a", "#e84a55", "#f4b94a"];
+  installAuras(FRAME_TINTS);   // draws each avatar's aura (the picture's data-aura) behind it, in the player's card color
   const tintedFrames = new Map(), tintingFrames = new Set();
   const fullFrameUrl = (path) => new URL(path, document.baseURI).href;
   function frameArtVar(id, fi) {
@@ -12130,6 +12197,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!stickerAllowed(avId) || (value && !stickerInfo(value))) return;
     myProfile = { ...myProfile, avatarStickers: { ...(myProfile.avatarStickers || {}), [avId]: value } };
     update(ref(db, `profiles/${deviceId}`), { [`avatarStickers/${avId}`]: value || null }).catch(() => showAchToast("Couldn’t save that sticker. Try again."));
+    renderSettingsAvatarGrid();
+  }
+  function setGameAura(id) {
+    const av = currentAvatar;
+    if (!auraAllowed(av, id)) return;
+    gameAura = { avatar: av, id };
+    renderPlayerFramePicker();   // shown at once; the room update goes out in the background
+    if (currentRoomCode && currentPlayerId && roomState?.players?.[currentPlayerId]) {
+      runTransaction(ref(db, "rooms/" + currentRoomCode + "/players/" + currentPlayerId), (player) => player ? { ...player, avatarAura: id || null } : undefined)
+        .catch(() => showAchToast("Couldn’t update your aura. Try again."));
+    }
+  }
+  function setDefaultAura(avId, id) {
+    if (!auraAllowed(avId, id)) return;
+    myProfile = { ...myProfile, avatarAuras: { ...(myProfile.avatarAuras || {}), [avId]: id } };
+    update(ref(db, `profiles/${deviceId}`), { [`avatarAuras/${avId}`]: id || null }).catch(() => showAchToast("Couldn’t save that aura. Try again."));
     renderSettingsAvatarGrid();
   }
   // ---- The sticker editor: a sheet with the avatar on top and the tray below. `onSave(value)` gets the new sticker string ("" = none) on Done. ----
@@ -12262,6 +12345,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (perk.name === "Borders") return `<li class="avatar-zoom-perk has-arr"><b>L${perk.lv}</b><span><em>Borders:</em><span class="avatar-zoom-arr"><button type="button" data-zframe="-1" aria-label="Previous border">‹</button><span class="avatar-zoom-bname">${escapeHtml(playerFrameCatalog[equippedPlayerFrame()].name)}</span><button type="button" data-zframe="1" aria-label="Next border">›</button></span></span></li>`;
       if (perk.name === "Colors") return `<li class="avatar-zoom-perk has-arr"><b>L${perk.lv}</b><span><em>Colors:</em>${colorArrowsHtml(equippedAvatarColor())}</span></li>`;
       if (perk.name === "Stickers") return `<li class="avatar-zoom-perk has-arr"><b>L${perk.lv}</b><span><em>Sticker:</em>${stickerRowHtml(equippedAvatarSticker())}</span></li>`;
+      if (perk.name === "Aura") return `<li class="avatar-zoom-perk has-arr"><b>L${perk.lv}</b><span><em>Aura:</em>${auraArrowsHtml(equippedAvatarAura())}</span></li>`;
       return `<li class="avatar-zoom-perk"><b>L${perk.lv}</b><span><em>${perk.name}:</em> ${perk.built ? "" : "Coming soon"}</span></li>`;
     }).join("");
   }
@@ -12280,6 +12364,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           paintZoomPic(pic, av, equippedAvatarLook());
           const row = ov.querySelector(".stk-row"); if (row) row.outerHTML = stickerRowHtml(equippedAvatarSticker());
         } });
+        return;
+      }
+      const auraBtn = e.target.closest("[data-zaura]");
+      if (auraBtn) {   // flips the aura for this game only
+        const next = stepAura(av, equippedAvatarAura(), Number(auraBtn.dataset.zaura));
+        setGameAura(next);
+        paintZoomPic(pic, av, equippedAvatarLook());
+        const label = ov.querySelector("[data-zaura-name]"); if (label) label.textContent = auraName(next);
         return;
       }
       const colorBtn = e.target.closest("[data-zcolor]");
@@ -14526,7 +14618,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const rw = hs.seatsAll.includes(me) ? HS.hsRewardFor(hs, me) : null;
     const players = data.players || {};
     const name = id => escapeHtml(players[id]?.name || 'Gone');
-    const sig = JSON.stringify([data.gameId, me, isHost, winners, rw, order.map(id => [id, hs.chips[id], players[id]?.name, players[id]?.avatar, players[id]?.playerFrame, players[id]?.frameIndex, players[id]?.avatarColor, players[id]?.avatarSticker])]);
+    const sig = JSON.stringify([data.gameId, me, isHost, winners, rw, order.map(id => [id, hs.chips[id], players[id]?.name, players[id]?.avatar, players[id]?.playerFrame, players[id]?.frameIndex, players[id]?.avatarColor, players[id]?.avatarSticker, players[id]?.avatarAura])]);
     if (hsFinalSig === sig && hsContentEl.querySelector('.hs-end-hero')) return;
     hsFinalSig = sig;
     document.getElementById('hs-turn-toast')?.remove();
@@ -17699,7 +17791,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     AVATARS.forEach((a) => byTier[AVATAR_TIERS[a]].push(a));
     const totalUnlocked = AVATARS.filter(isAvatarUnlocked).length;
     const chip = (id, label) => `<button type="button" class="coll-chip${collectionOwnership === id ? " on" : ""}" data-avatar-filter="${id}" aria-pressed="${collectionOwnership === id}">${label}</button>`;
-    const botLooks = `<div class="bot-looks"><span class="bot-looks-label">Bot looks</span><div class="bot-looks-seg" role="radiogroup" aria-label="Bot looks">${[["saved", "Saved"], ["random", "Random"]].map(([v, t]) => `<button type="button" role="radio" class="bot-looks-opt${botLooksMode() === v ? " on" : ""}" data-bot-looks="${v}" aria-checked="${botLooksMode() === v}">${t}</button>`).join("")}</div><small class="bot-looks-help">${botLooksMode() === "random" ? "Bots get a random border, color and sticker you\u2019ve unlocked." : "Bots wear what you saved on each avatar."}</small></div>`;
+    const botLooks = `<div class="bot-looks"><span class="bot-looks-label">Bot looks</span><div class="bot-looks-seg" role="radiogroup" aria-label="Bot looks">${[["saved", "Saved"], ["random", "Random"]].map(([v, t]) => `<button type="button" role="radio" class="bot-looks-opt${botLooksMode() === v ? " on" : ""}" data-bot-looks="${v}" aria-checked="${botLooksMode() === v}">${t}</button>`).join("")}</div><small class="bot-looks-help">${botLooksMode() === "random" ? "Bots get a random look from what you\u2019ve unlocked." : "Bots wear what you saved on each avatar."}</small></div>`;
     const head = botLooks + `<div class="collection-head">${chip("owned", "Owned")}${chip("locked", "Locked")}
       <div class="items-stat-box"><div class="items-stat-value">${totalUnlocked} / ${AVATARS.length}</div><div class="items-stat-label">Discovered</div></div>
       <button type="button" id="collection-hide-switch" class="items-stat-box ach-hide-box${collectionHideLocked ? " on" : ""}" role="switch" aria-checked="${collectionHideLocked}" aria-label="Hide undiscovered"><span class="items-stat-label">Hide undiscovered</span><span class="ach-switch-mini"></span></button>
@@ -18434,11 +18526,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
       if (perk.name === "Colors") return canEdit ? colorArrowsHtml(defaultColorFor(id)) : "All unlocked";
       if (perk.name === "Stickers") return canEdit ? stickerRowHtml(defaultStickerFor(id)) : "Unlocked";
+      if (perk.name === "Aura") return canEdit ? auraArrowsHtml(defaultAuraFor(id)) : "Unlocked";
       return perk.built ? "" : "Coming soon";
     };
     const rows = AVATAR_PERKS.map((perk) => {
       const open = perk.lv <= lv || (perk.name === "Play style" && personalityKnown(id));
-      return `<li class="avatar-zoom-perk ${open ? "open" : "locked"}${perk.lv === lv + 1 ? " next" : ""}${open && canEdit && (perk.name === "Borders" || perk.name === "Colors" || perk.name === "Stickers") ? " has-arr" : ""}"><b>L${perk.lv}</b><span>${open ? `<em>${perk.name}:</em> ${value(perk)}` : "???"}</span></li>`;
+      return `<li class="avatar-zoom-perk ${open ? "open" : "locked"}${perk.lv === lv + 1 ? " next" : ""}${open && canEdit && (perk.name === "Borders" || perk.name === "Colors" || perk.name === "Stickers" || perk.name === "Aura") ? " has-arr" : ""}"><b>L${perk.lv}</b><span>${open ? `<em>${perk.name}:</em> ${value(perk)}` : "???"}</span></li>`;
     }).join("");
     return `<span class="avatar-zoom-ap"><b>Level ${lv}</b><span class="avatar-zoom-apbar" aria-hidden="true"><i style="width:${lv >= maxLv ? 100 : Math.round(into / AP_PER_LEVEL * 100)}%"></i></span><small>${lv >= maxLv ? "Top of the ladder for now" : `${into} / ${AP_PER_LEVEL} AP to Level ${lv + 1}`}</small></span><ul class="avatar-zoom-perks">${rows}</ul>`;
   }
@@ -18460,6 +18553,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           paintZoomPic(pic, id, defaultAvatarLook(id));
           const row = ov.querySelector(".stk-row"); if (row) row.outerHTML = stickerRowHtml(defaultStickerFor(id));
         } });
+        return;
+      }
+      const auraBtn = e.target.closest("[data-zaura]");
+      if (auraBtn) {   // flips this avatar's default aura; the card stays open
+        const next = stepAura(id, defaultAuraFor(id), Number(auraBtn.dataset.zaura));
+        setDefaultAura(id, next);
+        paintZoomPic(pic, id, defaultAvatarLook(id));
+        const label = ov.querySelector("[data-zaura-name]"); if (label) label.textContent = auraName(next);
         return;
       }
       const colorBtn = e.target.closest("[data-zcolor]");
@@ -19860,6 +19961,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     player.playerFrame = equippedPlayerFrame();
     player.avatarColor = equippedAvatarColor() || null;
     player.avatarSticker = equippedAvatarSticker() || null;
+    player.avatarAura = equippedAvatarAura() || null;
     if (isHsSettings(roomData?.settings)) player.hsSidePots = true;
     const joined = await runTransaction(ref(db, `rooms/${roomCode}`), cur => admitPlayer(cur, id, player, ownSeat ? "own" : !!staleOwnId));
     if (!joined.committed || !joined.snapshot.val()?.players?.[id]) {
@@ -20006,7 +20108,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   homeJoinBtn.addEventListener("click", () => activateButton(homeJoinBtn, showJoinScreen));
   // Back on the home screen = the game is over: the next game starts from your default avatar again, even where there is no avatar screen.
-  new MutationObserver(() => { if (homeScreen.classList.contains("active")) { gameFrame = null; gameColor = null; gameSticker = null; } if (homeScreen.classList.contains("active") && currentAvatar !== defaultAvatarId()) { currentAvatar = defaultAvatarId(); renderSettingsAvatarGrid(); } }).observe(homeScreen, { attributes: true, attributeFilter: ["class"] });
+  new MutationObserver(() => { if (homeScreen.classList.contains("active")) { gameFrame = null; gameColor = null; gameAura = null; gameSticker = null; } if (homeScreen.classList.contains("active") && currentAvatar !== defaultAvatarId()) { currentAvatar = defaultAvatarId(); renderSettingsAvatarGrid(); } }).observe(homeScreen, { attributes: true, attributeFilter: ["class"] });
   joinBackBtn.addEventListener("click", () => {
     pendingQrInvite.clear();
     joinScreen.classList.remove("active");
@@ -20020,7 +20122,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     setFlowBanner(document.getElementById("na-banner"), pendingSettings || flowBannerSettings || roomState?.settings);
     // Quick Game also goes through a lobby, so the button always says Join Lobby.
     joinLobbyBtn.textContent = "Join Lobby";
-    if (cameFrom !== "lobby") { currentAvatar = defaultAvatarId(); gameFrame = null; gameColor = null; gameSticker = null; } // every new game starts from your default avatar with its default border and color
+    if (cameFrom !== "lobby") { currentAvatar = defaultAvatarId(); gameFrame = null; gameColor = null; gameAura = null; gameSticker = null; } // every new game starts from your default avatar with its default border and color
     watchTakenAvatarsForCode(pendingRoomCode);
     ALL_SCREEN_ELS.forEach(el=>el.classList.remove('active'));
     nameAvatarScreenEl.classList.add("active");
@@ -20261,7 +20363,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // create a new player or reclaim a DISCONNECTED one) would leave this
       // still-connected player behind as an orphan AND create a duplicate.
       lastSyncedFlair = myEquippedFlair();
-      await update(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`), { name, avatar: currentAvatar, flair: lastSyncedFlair, playerFrame: equippedPlayerFrame(), avatarColor: equippedAvatarColor() || null, avatarSticker: equippedAvatarSticker() || null });
+      await update(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`), { name, avatar: currentAvatar, flair: lastSyncedFlair, playerFrame: equippedPlayerFrame(), avatarColor: equippedAvatarColor() || null, avatarSticker: equippedAvatarSticker() || null, avatarAura: equippedAvatarAura() || null });
       currentName = name;
       localStorage.setItem("mg_name", name);
       editingFromLobby = false;
@@ -20495,13 +20597,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
   }
 
-  // "Bot looks: Random": a random border, color and sticker, only from things this player has unlocked (some bots stay plain so the room is not
+  // "Bot looks: Random": a random border, color, sticker and aura, only from things this player has unlocked (some bots stay plain so the room is not
   // all dressed up). A feature counts as unlocked once any of your avatars reached its level; the sticker comes from the reactions you own and
   // the objects you found, placed by pickStickerSpot so it sits on the avatar's edge and never on its face.
   async function randomBotLook(avatar) {
     const pick = (list) => list[Math.floor(Math.random() * list.length)];
     const reached = (level) => AVATARS.some((a) => avatarLevel(a) >= level), dress = () => Math.random() < 0.7;
-    const look = { playerFrame: 0, avatarColor: null, avatarSticker: null };
+    const look = { playerFrame: 0, avatarColor: null, avatarSticker: null, avatarAura: null };
     if (reached(FRAME_LEVEL) && dress()) look.playerFrame = 1 + Math.floor(Math.random() * (playerFrameCatalog.length - 1));
     const shades = colorChoices(avatar);
     if (reached(COLOR_LEVEL) && shades.length && dress()) look.avatarColor = pick(shades).name;
@@ -20512,6 +20614,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (stickerInfo(value)) look.avatarSticker = value;
       }
     }
+    if (reached(AURA_LEVEL) && dress()) look.avatarAura = pick(AURAS).id;
     return look;
   }
   async function addBot(difficulty) {
@@ -20544,7 +20647,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const themedName = BOT_NAME_BY_AVATAR[avatar];
     const name = (themedName && themedName.length <= 12 && !usedNames.has(themedName)) ? themedName : botNameFor(avatar, usedNames);
     const botId = "bot_" + Math.random().toString(36).slice(2, 10);
-    const look = botLooksMode() === "random" ? await randomBotLook(avatar) : { playerFrame: defaultFrameFor(avatar), avatarColor: defaultColorFor(avatar) || null, avatarSticker: defaultStickerFor(avatar) || null };
+    const look = botLooksMode() === "random" ? await randomBotLook(avatar) : { playerFrame: defaultFrameFor(avatar), avatarColor: defaultColorFor(avatar) || null, avatarSticker: defaultStickerFor(avatar) || null, avatarAura: defaultAuraFor(avatar) || null };
     const newPlayer = {
       name, avatar, isHost: false, score: 0, frameIndex, isBot: true, botDifficulty: difficulty,
       joinedAt: serverTimestamp(),
@@ -23833,7 +23936,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const signature = gameMotionKey + ":" + round + (liveLayout ? ":live:" : ":results:") + teams.map((team) => {
       const members = teamOf[team];
       const score = overrideScores ? (overrideScores[members[0]] || 0) : (currentPlayers[members[0]].score || 0);
-      return `${team}:${score}:${members.map((id) => currentPlayers[id].avatar + currentPlayers[id].name + ":" + currentPlayers[id].playerFrame + ":" + currentPlayers[id].avatarColor + ":" + currentPlayers[id].avatarSticker + ":" + currentPlayers[id].frameIndex + ":" + scoreColumnAverage(id, !!overrideScores) + ":" + (lockedIn(id) ? 1 : 0)).join(",")}`;
+      return `${team}:${score}:${members.map((id) => currentPlayers[id].avatar + currentPlayers[id].name + ":" + currentPlayers[id].playerFrame + ":" + currentPlayers[id].avatarColor + ":" + currentPlayers[id].avatarSticker + ":" + currentPlayers[id].avatarAura + ":" + currentPlayers[id].frameIndex + ":" + scoreColumnAverage(id, !!overrideScores) + ":" + (lockedIn(id) ? 1 : 0)).join(",")}`;
     }).sort().join("|");
     if (signature === lastScoreColumnSignature) return;
     lastScoreColumnSignature = signature;
