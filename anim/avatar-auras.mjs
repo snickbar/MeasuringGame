@@ -13,8 +13,20 @@ export const AURA_DEFAULT_COLOUR = {
   glow: "#f4b94a", sparkle: "#ffd84a", flame: "#ff4b2b", bolt: "#ffe14a", bubble: "#4fb0e0", orbit: "#9b6bff",
   ring: "#f26fa0", ripple: "#3ab5a6", heart: "#ff5a7a", confetti: "#ff9f1c", spot: "#ffe9a8", halo: "#ffd34a",
 };
-export const isAura = (id) => typeof id === "string" && AURA_IDS.includes(id);
-export const auraName = (id) => AURAS.find((a) => a.id === id)?.name || "None";
+// Supporter Pass auras: made from the same effects as above, but in their own fixed colour (never the card colour), so a supporter's look stays
+// theirs and two supporters in one room never match by accident. Only supporters can pick them (index.html checks that); everyone sees them.
+export const SUPPORTER_AURAS = [
+  { id: "golden", name: "Golden glow", colour: "#ffc83a", parts: ["glow", "sparkle"] },
+  { id: "starlight", name: "Starlight", colour: "#bfe0ff", parts: ["sparkle"] },
+  { id: "ember", name: "Ember", colour: "#ff7a2a", parts: ["flame"] },
+  { id: "aurora", name: "Aurora", colour: "#5ee8c0", parts: ["ripple", "sparkle"] },
+  { id: "meadow", name: "Meadow", colour: "#7bd957", parts: ["bubble"] },
+  { id: "moonlight", name: "Moonlight", colour: "#c9c4ff", parts: ["halo", "glow"] },
+];
+export const SUPPORTER_AURA_IDS = SUPPORTER_AURAS.map((a) => a.id);
+export const isSupporterAura = (id) => SUPPORTER_AURA_IDS.includes(id);
+export const isAura = (id) => typeof id === "string" && (AURA_IDS.includes(id) || SUPPORTER_AURA_IDS.includes(id));
+export const auraName = (id) => AURAS.find((a) => a.id === id)?.name || SUPPORTER_AURAS.find((a) => a.id === id)?.name || "None";
 
 const MIN_SIZE = 36;   // narrower pictures (the small stamps in lists) get no aura
 const FULL_SIZE = 64;  // pictures this wide get the full effect; narrower ones a calmer one with fewer pieces
@@ -23,6 +35,8 @@ const d = (v) => v.toFixed(2);
 
 // The pieces of one effect as HTML. Everything moves by transform or opacity only, so ten players in a room stay smooth.
 export function auraPieces(kind, calm) {
+  const sup = SUPPORTER_AURAS.find((x) => x.id === kind);
+  if (sup) return sup.parts.map((part) => `<span class="part a-${part}">${auraPieces(part, calm)}</span>`).join("");
   let h = "";
   if (kind === "glow") h = '<span class="g1"></span>';
   if (kind === "sparkle") { const n = calm ? 4 : 7; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 + 0.4, r = 54 + (i % 2) * 7; h += `<span class="sp" style="left:${d(50 + Math.cos(a) * r)}%;top:${d(50 + Math.sin(a) * r)}%;animation-delay:-${d(i * 0.37)}s;animation-duration:${d(1.7 + i % 3 * 0.35)}s"></span>`; } }
@@ -57,7 +71,8 @@ export function installAuras(tints, fallback = "#f4b94a") {
   const live = new Set();
   const sizeObserver = typeof ResizeObserver === "function" ? new ResizeObserver((entries) => { for (const e of entries) place(e.target); }) : null;
   function colourOf(img) {
-    const slot = Number(img.dataset.auraSlot) || 0;
+    const slot = Number(img.dataset.auraSlot) || 0, fixed = SUPPORTER_AURAS.find((x) => x.id === img.dataset.aura);
+    if (fixed) return fixed.colour;
     const hex = /^#[0-9a-f]{6}$/i.test(tints[slot - 1] || "") ? tints[slot - 1] : AURA_DEFAULT_COLOUR[img.dataset.aura] || fallback;
     return hex;
   }

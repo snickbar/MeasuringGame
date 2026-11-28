@@ -22,7 +22,7 @@ srv.listen(0, async () => {
   await p.evaluate(() => { for (const c of [...document.body.children]) c.style.display = 'none'; });
   await p.addScriptTag({ type: 'module', content: `
     import { colorChoices, colorHue, recoloredAvatar, makeRecoloredAvatar, colorKey } from "${origin}/anim/avatar-colors.mjs";
-    import { AURAS, isAura, auraName, installAuras } from "${origin}/anim/avatar-auras.mjs";
+    import { AURAS, SUPPORTER_AURAS, isAura, auraName, installAuras } from "${origin}/anim/avatar-auras.mjs";
     const AVATARS = ["av01", "av02"], AVATAR_TIERS = { av01: "default", av02: "default" }, AVATAR_FACE = {};
     let currentAvatar = "av01", currentRoomCode = null, currentPlayers = {}, currentPlayerId = "me";
     let myProfile = { avatarPoints: { av01: 200 }, avatarColors: {}, avatarStickers: {}, avatarAuras: {} };
@@ -31,7 +31,7 @@ srv.listen(0, async () => {
     const myGameFrameIndex = () => 0;
     const REACTION_BY_ID = {}, OBJECT_BY_ID = new Map(), REACTIONS = {}, reactionPic = () => '', ownsEmoji = () => false;
     ${code}
-    window.T = { avatarHtml, roomAvatarLooks, setRoom: (on) => { currentRoomCode = on ? "ROOM" : null; }, installAuras, AURAS };` });
+    window.T = { avatarHtml, roomAvatarLooks, setRoom: (on) => { currentRoomCode = on ? "ROOM" : null; }, installAuras, AURAS, SUPPORTER_AURAS };` });
   await p.waitForFunction(() => window.T, null, { timeout: 8000 }).catch((e) => { console.error('page errors:', errors.join('; ')); throw e; });
 
   // ---- avatarHtml asks for an aura only when one is set, and only on the full-size picture ----
@@ -102,6 +102,21 @@ srv.listen(0, async () => {
   });
   const bad = Object.entries(kinds).filter(([, v]) => !v).map(([k]) => k);
   bad.length === 0 ? ok('all 12 effects build when the aura is changed') : fail('effects that did not build: ' + bad.join(', '));
+  // Supporter Pass auras: built from the same effects, in their own fixed colour even when the picture has a card slot colour
+  const sup = await p.evaluate(async () => {
+    const out = {}, img = document.querySelector('#fx img[data-aura]');
+    img.dataset.auraSlot = '3';
+    for (const a of window.T.SUPPORTER_AURAS) {
+      img.dataset.aura = a.id; await new Promise((r) => setTimeout(r, 120));
+      const fx = img.previousElementSibling, parts = fx.querySelectorAll(':scope > .part');
+      const box = fx.getBoundingClientRect(), kid = fx.querySelector('.part > *').getBoundingClientRect();
+      out[a.id] = { built: fx.classList.contains('a-' + a.id) && parts.length === a.parts.length && fx.querySelectorAll('.part > *').length > 0, colour: fx.style.getPropertyValue('--c') === a.colour, sized: kid.width > 0 && kid.height > 0 && box.width > 0 };
+    }
+    img.dataset.aura = 'glow'; delete img.dataset.auraSlot;
+    return out;
+  });
+  const supBad = Object.entries(sup).filter(([, v]) => !(v.built && v.colour && v.sized)).map(([k, v]) => k + ' ' + JSON.stringify(v));
+  Object.keys(sup).length === 6 && supBad.length === 0 ? ok('all 6 supporter auras build from their effects, keep their own colour and have a size') : fail('supporter auras: ' + supBad.join('; '));
   const gone = await p.evaluate(async () => {
     const img = document.querySelector('#fx img[data-aura]'), row = img.closest('.row');
     delete img.dataset.aura; await new Promise((r) => setTimeout(r, 150));

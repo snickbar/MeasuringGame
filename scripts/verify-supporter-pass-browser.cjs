@@ -30,13 +30,19 @@ const js = `
 let store = { coins: 40, freePulls: 0, hostUnlocked: false }; let myProfile = { ...store }; const deviceId = 'me'; const db = {}; const ref = (d, p) => p;
 let offset = 0; const nowMs = () => Date.now() + offset;
 const defaultProfile = () => ({ coins: 0, freePulls: 0, supporterUntil: 0, supporterPlan: null, passPullDate: null });
+import { isSupporterAura, SUPPORTER_AURAS, installAuras } from '/anim/avatar-auras.mjs';
+installAuras(['#e04e4e', '#4e8ce0', '#4ec06e', '#e0b84e', '#a14ee0', '#e07a4e', '#4ee0d2', '#e04ea6', '#8a8a8a', '#4e4ee0']);
+const escapeHtml = (t) => String(t).replace(/[&<>"']/g, (c) => '&#' + c.charCodeAt(0) + ';'); let currentName = 'Maya'; const defaultAvatarId = () => 'av01';
+const avatarHtml = (id, cls, pos, ov) => '<img src="avatars/' + id + '.webp" alt="" data-aura="' + ((ov && ov.aura) || '') + '">';
+const update = async (_r, patch) => { store = { ...store, ...Object.fromEntries(Object.entries(patch).map(([k, v]) => [k, v == null ? '' : v])) }; myProfile = { ...store }; };
+let currentRoomCode = null, currentPlayerId = null, roomState = null; const equippedAvatarAura = () => supporterAuraNow(); const supporterAuraNow = () => isSupporter() && isSupporterAura(myProfile.supporterAura) ? myProfile.supporterAura : ''; const renderSettingsAvatarGrid = () => {};
 const toasts = []; const showAchToast = (t) => toasts.push(t); let galleryRenders = 0; const renderGachaScreen = () => { galleryRenders++; };
 let ads = 0; const showFakeAd = () => { ads++; return Promise.resolve(true); };
 let buyAnswer = true; const bought = []; const purchase = async (d) => { bought.push(d); return buyAnswer; };
 const runTransaction = async (_r, fn) => { const out = fn(store ? JSON.parse(JSON.stringify(store)) : null); if (out === undefined) return { committed: false }; store = out; myProfile = { ...store }; return { committed: true }; };
 ${code}
 window.T = { store: () => store, set: (o) => { store = { ...store, ...o }; myProfile = { ...store }; }, toasts: () => toasts, bought: () => bought, ads: () => ads, galleries: () => galleryRenders, render: renderSupporterUi,
-  isSupporter: () => isSupporter(), days: () => supporterDaysLeft(), adOrPass: () => adOrPass(), setBuy: (v) => { buyAnswer = v; }, setOffset: (ms) => { offset = ms; }, claim: () => claimPassPull() };
+  isSupporter: () => isSupporter(), days: () => supporterDaysLeft(), adOrPass: () => adOrPass(), setBuy: (v) => { buyAnswer = v; }, setOffset: (ms) => { offset = ms; }, claim: () => claimPassPull(), nameHtml: (p, f) => nameHtml(p, f), setExtras: (x) => setSupporterExtras(x), roomLook: () => supporterRoomLook(), colours: NAME_COLOURS.length, auras: SUPPORTER_AURAS.length };
 renderSupporterUi();`;
 const page = `<!doctype html><html><head><meta charset="utf8"><meta name="viewport" content="width=device-width,initial-scale=1"><base href="/">${links.map((l) => `<link rel="stylesheet" href="${l}">`).join('')}<style>${inlineCss}</style></head><body>
 <div id="shop-tab-hosting" class="shop-tab-panel active" style="display:block;padding:0 12px"><div class="shop-subpanel" id="sub">${passBox}${hostBox}</div></div>
@@ -92,6 +98,36 @@ srv.listen(0, async () => {
     check((await T('claim')) === '' && (await T('store')).freePulls === 1, `${tag}: a second claim the same day (even a direct call) adds nothing`);
     await T('set', { passPullDate: '2000-01-01' }); await T('render');
     await click('#sp-claim-btn'); check((await T('store')).freePulls === 2, `${tag}: the next day it can be claimed again`);
+    // 5b) supporter extras: auras and name colours
+    check(/Choose your extras/.test(await p.textContent('#supporter-pass-box')), `${tag}: the active card has a Choose your extras button`);
+    await click('#supporter-pass-box [data-sp-extras]');
+    check((await p.locator('#supporter-extras').count()) === 1 && (await p.locator('#se-grid .se-tile').count()) === 7 && (await p.locator('#se-grid .se-tile.on').textContent()).trim() === '\u2205None', `${tag}: the extras sheet opens on Auras with None plus six auras, None selected`);
+    check((await p.$eval('#se-equip', (e) => e.disabled)), `${tag}: nothing to equip until something else is picked`);
+    await click('#se-grid [data-pick="golden"]');
+    check(/Equip Golden glow/.test(await p.textContent('#se-equip')) && (await p.getAttribute('#se-av img', 'data-aura')) === 'golden', `${tag}: picking Golden glow previews it and offers Equip Golden glow`);
+    const gridFit = await p.evaluate(() => { const g = document.getElementById('se-grid').getBoundingClientRect(), b = document.getElementById('se-equip').getBoundingClientRect(); return { inside: g.left >= 0 && g.right <= innerWidth + 0.5, btn: b.bottom <= innerHeight + 0.5 || document.querySelector('#supporter-extras .ss-card').scrollHeight > document.querySelector('#supporter-extras .ss-card').clientHeight }; });
+    check(gridFit.inside && gridFit.btn, `${tag}: the tiles fit the width and the Equip button is reachable`);
+    await click('#se-equip');
+    await p.waitForTimeout(400); if (process.env.SHOT && w === 360) await p.screenshot({ path: process.env.SHOT + '/pass-extras.png' });
+    check((await T('store')).supporterAura === 'golden' && /Equipped/.test(await p.textContent('#se-equip')) && (await p.$eval('#se-equip', (e) => e.disabled)), `${tag}: Equip saves the aura and the button says Equipped`);
+    await click('[data-tab="names"]');
+    check((await p.locator('#se-grid .se-tile').count()) === 7 && (await p.locator('#se-name .nc').count()) === 0 && (await p.locator('#se-name .sup-medal').count()) === 1, `${tag}: the Name color tab shows six colours, and the preview already has the medal`);
+    await click('#se-grid [data-pick="golden"]'); await click('#se-equip');
+    if (process.env.SHOT && w === 360) await p.screenshot({ path: process.env.SHOT + '/pass-extras-names.png' });
+    check((await T('store')).supporterNameColor === 'golden' && (await p.locator('#se-name .nc-golden').count()) === 1, `${tag}: equipping the golden name colour saves it and the preview glows`);
+    const nameFit = await p.evaluate(() => { const r = document.querySelector('#se-name').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 0.5; });
+    check(nameFit, `${tag}: the preview name fits the screen`);
+    // the look that goes into the room
+    const look = await T('roomLook');
+    check(look.supporter === true && look.nameColor === 'golden' && look.avatarAura === 'golden', `${tag}: the room entry carries the medal, name colour and aura`);
+    // nameHtml for everyone else
+    const html = await p.evaluate(() => ({ plain: window.T.nameHtml({ name: '<b>Bo</b>' }), medal: window.T.nameHtml({ name: 'Al', supporter: true }), full: window.T.nameHtml({ name: 'Al', supporter: true, nameColor: 'golden' }), spoof: window.T.nameHtml({ name: 'Al', supporter: true, nameColor: '"><script>' }), colourOnly: window.T.nameHtml({ name: 'Al', nameColor: 'golden' }), none: window.T.nameHtml(undefined, 'Gone') }));
+    check(html.plain === '&#60;b&#62;Bo&#60;/b&#62;', `${tag}: a plain name is escaped and unchanged`);
+    check(/^<span class="nmw"><img class="sup-medal"[^>]*><span class="nt">Al<\/span><\/span>$/.test(html.medal) && /sup-medal[^>]*><span class="nt nc nc-golden">Al<\/span><\/span>$/.test(html.full), `${tag}: the medal comes before the name, and the colour wraps the name`);
+    check(!/script/.test(html.spoof) && /^<span class="nmw"><img class="sup-medal"[^>]*><span class="nt">Al<\/span><\/span>$/.test(html.spoof), `${tag}: a made-up colour id is ignored`);
+    check(html.colourOnly === 'Al' && html.none === 'Gone', `${tag}: a colour without the pass flag shows nothing, and a missing player shows the fallback`);
+    await click('#supporter-extras .ss-x');
+    check((await p.locator('#supporter-extras').count()) === 0, `${tag}: the sheet closes`);
     // 6) buy again adds time on top
     const before = await T('days'); await click('#supporter-pass-box [data-sp-open]'); await click('#ss-buy');
     const after = await T('days'); check(after >= before + 360, `${tag}: buying again adds time on top (${before} -> ${after} days)`);
@@ -99,6 +135,7 @@ srv.listen(0, async () => {
     const ads0 = await T('ads'); check((await T('adOrPass')) === true && (await T('ads')) === ads0, `${tag}: a supporter's double coins plays no ad`);
     // 8) expired pass
     await T('setOffset', 800 * 86400000); await T('render');
+    check((await T('setExtras', { supporterAura: 'golden' })) === false && (await T('roomLook')).supporter === null && (await T('roomLook')).nameColor === null && (await T('roomLook')).avatarAura === null, `${tag}: after the pass runs out the extras are refused and the room entry is empty`);
     check(!(await T('isSupporter')) && (await T('adOrPass')) === true && (await T('ads')) === ads0 + 1, `${tag}: after the pass runs out the ad comes back`);
     check((await p.$eval('#pass-pull-card', (e) => e.hidden)) && (await T('claim')) === '' && /Get the pass/.test(await p.textContent('#supporter-pass-box')), `${tag}: an expired pass gets no pull and the card offers the pass again`);
     check(!errors.length, `${tag}: no page errors${errors.length ? ' - ' + errors[0] : ''}`);

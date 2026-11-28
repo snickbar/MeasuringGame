@@ -25,7 +25,8 @@ The game is not live yet (only the owner and a friend or two are testing), so no
 - [ ] Real rewarded ads replace the fake ad (it is one function, `showFakeAd`). Decide what happens to a timed Quick Game question while a real ad plays (the fake ad is only 2 seconds, a real one is 15-30), for example pause the timer.
 - [ ] Log ads offered and ads watched per player, so the frequency of every ad spot can be tuned from real numbers.
 - [ ] Supporter Pass is built with a fake purchase. At launch make it a real Google Play subscription ($2.99 a month, $19.99 a year): renewals, cancel, restore on a new phone, and `supporterUntil` written from the verified receipt on a server, never by the app. Until then the debug tools can add or remove the pass.
-- [ ] Supporter extras (exclusive auras, borders, name colours and the medal beside the name) are still to build, so the pass card lists them as a perk before they exist: finish them before launch.
+- [ ] Supporter extras: exclusive auras, name colours and the medal beside the name are built (docs/supporter-pass.md). Exclusive borders still need frame art and a third tab in the extras sheet; the pass card says "auras, borders and name colors", so add the borders or change the wording before launch.
+- [ ] A supporter's medal and name colour come from fields in their room entry, so a hacked phone could show them without the pass. Cosmetic only, but at launch have the server confirm the pass before it shows.
 
 ## Already decided to do at launch (from earlier notes)
 - [ ] Real billing behind the purchase flow (purchases are fake until launch).

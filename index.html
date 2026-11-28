@@ -1882,6 +1882,9 @@ if (location.protocol === "file:") {
   .aura-fx[hidden] { display: none; }
   .aura-fx.calm { --rs: 1.2; }   /* smaller pictures: the effect stays closer to its card */
   .aura-fx > * { position: absolute; }
+  /* Supporter auras are built from the effects below, one layer each, stacked on the same box. */
+  .aura-fx > .part { inset: 0; }
+  .aura-fx .part > * { position: absolute; }
   @keyframes auraPulse { 0%, 100% { transform: scale(.9); opacity: .65; } 50% { transform: scale(1.1); opacity: 1; } }
   @keyframes auraTwinkle { 0%, 100% { transform: scale(0) rotate(0deg); opacity: 0; } 50% { transform: scale(1) rotate(45deg); opacity: 1; } }
   @keyframes auraRise { 0% { transform: translateY(0) scale(.5); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(-300%) scale(1); opacity: 0; } }
@@ -5778,7 +5781,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { personalityFor, shapeRatio, shapeDelay, shapeConfidence, shapeMiss, PERSONALITY_UNLOCK_ROUNDS } from "./anim/bot-personalities.mjs";
   import { factFor } from "./anim/avatar-facts.mjs";
   import { colorChoices, colorHue, recoloredAvatar, makeRecoloredAvatar, colorKey, randomStickerSpot } from "./anim/avatar-colors.mjs";
-  import { AURAS, isAura, auraName, installAuras } from "./anim/avatar-auras.mjs";
+  import { AURAS, SUPPORTER_AURAS, isAura, isSupporterAura, auraName, installAuras } from "./anim/avatar-auras.mjs";
   import { avatarAwardStats } from "./anim/avatar-awards.mjs";
   import { avatarLevelFor, avatarLevelProgress } from "./anim/avatar-levels.mjs";
   import { installPhysicalKeyboard } from "./anim/physical-keyboard.mjs";
@@ -6799,6 +6802,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       supporterUntil: 0,
       supporterPlan: null,
       passPullDate: null,
+      supporterAura: "",
+      supporterNameColor: "",
       hostFreeDates: {},
       redeemedCodes: {},
       adsWatchedDate: null,
@@ -6988,7 +6993,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (settingsScreen.classList.contains("active") || settingsOverGameOpen()) renderSettingsAvatarGrid();
     if (gachaScreen.classList.contains("active")) renderShopTab(shopGroupWasCosm ? lastCosmTab : lastShopTab);
     renderHostUnlockUi();
-    try { renderSupporterUi(); } catch (e) {}
+    try { renderSupporterUi(); syncSupporterLookToRoom(); } catch (e) {}
     try { updateDailyBadge(); } catch (e) { /* daily module not ready yet */ }
     // The random background is picked from what you own: if that changed (e.g. the profile just finished loading), pick again.
     { const k = allBackgrounds().filter(ownsBackground).length; if (k !== rndBgOwnedCount) { rndBgOwnedCount = k; rndPick.backgrounds = undefined; } }
@@ -7041,6 +7046,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         supporterUntil: Math.max(0, +data.supporterUntil || 0),
         supporterPlan: data.supporterPlan === "year" || data.supporterPlan === "month" ? data.supporterPlan : null,
         passPullDate: data.passPullDate || null,
+        supporterAura: isSupporterAura(data.supporterAura) ? data.supporterAura : "",
+        supporterNameColor: typeof data.supporterNameColor === "string" ? data.supporterNameColor : "",
         hostFreeDates: data.hostFreeDates || {},
         redeemedCodes: data.redeemedCodes || {},
         adsWatchedDate: data.adsWatchedDate || null,
@@ -7262,6 +7269,30 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return { ...profile, supporterUntil: from + P.days * SUPPORTER_DAY_MS, supporterPlan: plan };
     });
     return true;
+  }
+  // Supporter name colours and the medal: a supporter's room entry carries { supporter: true, nameColor: id }, so everyone in the room sees them.
+  // nameHtml(player) is the escaped name with that look; the medal goes BEFORE the name so a long name that gets cut off never hides it.
+  const NAME_COLOURS = [{ id: "golden", name: "Golden glow" }, { id: "sky", name: "Sky" }, { id: "rose", name: "Rose" }, { id: "mint", name: "Mint" }, { id: "violet", name: "Violet" }, { id: "sunset", name: "Sunset" }];
+  const isNameColour = (id) => NAME_COLOURS.some((c) => c.id === id);
+  function nameHtml(p, fallback = "") {
+    const text = escapeHtml((p && p.name) || fallback);
+    if (!p || (!p.supporter && !isNameColour(p.nameColor))) return text;
+    if (!p.supporter) return text;
+    // The medal never shrinks; the name part is the one that gets cut with "..." in a narrow card, so it can never push past the card.
+    return `<span class="nmw"><img class="sup-medal" src="icons/ach/supporter.webp" alt="Supporter" draggable="false"><span class="nt${isNameColour(p.nameColor) ? ` nc nc-${p.nameColor}` : ""}">${text}</span></span>`;
+  }
+  const equippedNameColor = () => isSupporter() && isNameColour(myProfile.supporterNameColor) ? myProfile.supporterNameColor : "";
+  // What a supporter's room entry says about them (all empty for everyone else, so nothing is written for non-supporters).
+  const supporterRoomLook = () => ({ supporter: isSupporter() || null, nameColor: equippedNameColor() || null, avatarAura: equippedAvatarAura() || null });
+  let lastSyncedSupporterLook = "";
+  function syncSupporterLookToRoom() {
+    if (!currentRoomCode || !currentPlayerId) return;
+    const mine = roomState && roomState.players && roomState.players[currentPlayerId];
+    if (!mine) return; // not in the room: don't create a stray entry
+    const look = supporterRoomLook(), sig = JSON.stringify(look);
+    if (sig === lastSyncedSupporterLook) return;
+    lastSyncedSupporterLook = sig;
+    update(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`), look).catch(() => { lastSyncedSupporterLook = ""; });
   }
   // One free random capsule pull a day for supporters (a general, random-only free pull, same as the ad meter's).
   async function claimPassPull() {
@@ -12118,7 +12149,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // avatar's card is its default (profile.avatarAuras; "" = none); Edit on Choose your avatar changes it for this game only (gameAura).
   const AURA_LEVEL = 6;
   let gameAura = null;
-  const auraAllowed = (avId, id) => id === "" || (isAura(id) && avatarLevel(avId) >= AURA_LEVEL);
+  // A supporter's own extra aura (Supporter Pass) comes first unless an aura was picked for this one game; it needs no avatar level.
+  const supporterAuraNow = (profile = myProfile) => isSupporter(profile) && isSupporterAura(profile.supporterAura) ? profile.supporterAura : "";
+  const auraAllowed = (avId, id) => id === "" || (isAura(id) && !isSupporterAura(id) && avatarLevel(avId) >= AURA_LEVEL);
   const aurasFor = (avId) => avatarLevel(avId) >= AURA_LEVEL ? ["", ...AURAS.map((a) => a.id)] : [""];
   function defaultAuraFor(avId, profile = myProfile) {
     const saved = (profile.avatarAuras || {})[avId];
@@ -12126,10 +12159,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function equippedAvatarAura() {
     const av = currentAvatar;
-    return gameAura && gameAura.avatar === av && auraAllowed(av, gameAura.id) ? gameAura.id : defaultAuraFor(av);
+    return gameAura && gameAura.avatar === av && auraAllowed(av, gameAura.id) ? gameAura.id : supporterAuraNow() || defaultAuraFor(av);
   }
   const equippedAvatarLook = () => ({ color: equippedAvatarColor(), sticker: equippedAvatarSticker(), aura: equippedAvatarAura() });
-  const defaultAvatarLook = (avId) => ({ color: defaultColorFor(avId), sticker: defaultStickerFor(avId), aura: defaultAuraFor(avId) });
+  const defaultAvatarLook = (avId) => ({ color: defaultColorFor(avId), sticker: defaultStickerFor(avId), aura: supporterAuraNow() || defaultAuraFor(avId) });
   const roomAvatarLooks = new Map();   // avatar id -> { color, sticker, aura, slot }, for the players in the room (avatars are unique in a room); slot is the player's card color number
   function avatarLookFor(id) {
     try { return currentRoomCode ? roomAvatarLooks.get(id) || {} : id === currentAvatar ? equippedAvatarLook() : {}; } catch { return {}; }   // (the try covers a call before these are set up)
@@ -14633,7 +14666,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const p = (roomState.players || {})[id];
     const out = !!hs.out?.[id];
     const coins = hs.chips[id] ?? 0;
-    return `<div class="hs-pl${out ? " out" : ""}${extra.cls || ""}${hsFrameCls(p)}" data-hs-pl="${id}"${hsNeonStyle(id)}><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-pl-name">${escapeHtml(p?.name || "Gone")}${id === currentPlayerId ? " (you)" : ""}</b><span class="hs-pl-coins">${out ? "Out" : hsFmt(coins) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span>${extra.tag ? `<span class="hs-tag ${extra.tagCls || ""}">${extra.tag}</span>` : ""}${hsFrameArt(p)}</div>`;
+    return `<div class="hs-pl${out ? " out" : ""}${extra.cls || ""}${hsFrameCls(p)}" data-hs-pl="${id}"${hsNeonStyle(id)}><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-pl-name">${nameHtml(p, "Gone")}${id === currentPlayerId ? " (you)" : ""}</b><span class="hs-pl-coins">${out ? "Out" : hsFmt(coins) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span>${extra.tag ? `<span class="hs-tag ${extra.tagCls || ""}">${extra.tag}</span>` : ""}${hsFrameArt(p)}</div>`;
   }
   // Standings rows slide from their old place into the new order: measure one row step so CSS can offset each by its rank change.
   function hsSlideStand() {
@@ -14648,7 +14681,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const p = data.players?.[r.id];
         const mv = r.rankMove > 0 ? `<span class="hs-mv up">&#9650;${r.rankMove}</span>` : r.rankMove < 0 ? `<span class="hs-mv down">&#9660;${-r.rankMove}</span>` : `<span class="hs-mv same" aria-label="Same place">&ndash;</span>`;
         const dl = r.delta > 0 ? `<span class="hs-delta up">+${hsFmt(r.delta)}</span>` : r.delta < 0 ? `<span class="hs-delta down">${hsFmt(r.delta)}</span>` : `<span class="hs-delta">&mdash;</span>`;
-        return `<div class="hs-srow${r.delta > 0 ? " up" : r.delta < 0 ? " down" : ""}${r.out ? " out" : ""}${r.id === me ? " me" : ""}${r.shift > 0 ? " hs-climb" : ""}" style="--shift:${r.shift || 0};animation-delay:${i * 70}ms,650ms"><span class="hs-srank place-medallion" data-rank="${r.rank}">${r.rank}</span><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-sname">${escapeHtml(p?.name || "Gone")}${r.id === me ? " (you)" : ""}</b>${mv}<span class="hs-scoins">${r.out ? "Out" : hsFmt(r.coins) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span>${dl}</div>`;
+        return `<div class="hs-srow${r.delta > 0 ? " up" : r.delta < 0 ? " down" : ""}${r.out ? " out" : ""}${r.id === me ? " me" : ""}${r.shift > 0 ? " hs-climb" : ""}" style="--shift:${r.shift || 0};animation-delay:${i * 70}ms,650ms"><span class="hs-srank place-medallion" data-rank="${r.rank}">${r.rank}</span><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-sname">${nameHtml(p, "Gone")}${r.id === me ? " (you)" : ""}</b>${mv}<span class="hs-scoins">${r.out ? "Out" : hsFmt(r.coins) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span>${dl}</div>`;
       }).join("")}</div>`;
   }
   // The round result rolls up: the real answer first, then the winner's payout. Keyed to the round so a redraw carries on instead of restarting.
@@ -14719,8 +14752,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const iWon = winners.includes(me), tied = winners.length > 1;
     const rw = hs.seatsAll.includes(me) ? HS.hsRewardFor(hs, me) : null;
     const players = data.players || {};
-    const name = id => escapeHtml(players[id]?.name || 'Gone');
-    const sig = JSON.stringify([data.gameId, me, isHost, winners, rw, order.map(id => [id, hs.chips[id], players[id]?.name, players[id]?.avatar, players[id]?.playerFrame, players[id]?.frameIndex, players[id]?.avatarColor, players[id]?.avatarSticker, players[id]?.avatarAura])]);
+    const name = id => nameHtml(players[id], 'Gone');
+    const sig = JSON.stringify([data.gameId, me, isHost, winners, rw, order.map(id => [id, hs.chips[id], players[id]?.name, players[id]?.avatar, players[id]?.playerFrame, players[id]?.frameIndex, players[id]?.avatarColor, players[id]?.avatarSticker, players[id]?.avatarAura, players[id]?.supporter, players[id]?.nameColor])]);
     if (hsFinalSig === sig && hsContentEl.querySelector('.hs-end-hero')) return;
     hsFinalSig = sig;
     document.getElementById('hs-turn-toast')?.remove();
@@ -14892,7 +14925,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           }
         }
       }
-      return `<div class="hs-pl${out ? " out" : ""}${cls}${hsFrameCls(p)}" data-hs-pl="${id}" data-hs-side="${side}"${hsNeonStyle(id)}><span class="avatar${cls === " win" ? " hs-dance" : ""}">${avatarHtml(p?.avatar)}</span><b class="hs-pl-name">${escapeHtml(p?.name || "Gone")}${id === me ? " (you)" : ""}</b><span class="hs-pl-coins">${out ? "Out" : hsFmt(shown[id] ?? 0) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span>${allIn ? '<span class="hs-tag all-in">All in</span>' : ""}${tag ? `<span class="hs-tag ${tagCls}">${tag}</span>` : ""}${hsFrameArt(p)}</div>`;
+      return `<div class="hs-pl${out ? " out" : ""}${cls}${hsFrameCls(p)}" data-hs-pl="${id}" data-hs-side="${side}"${hsNeonStyle(id)}><span class="avatar${cls === " win" ? " hs-dance" : ""}">${avatarHtml(p?.avatar)}</span><b class="hs-pl-name">${nameHtml(p, "Gone")}${id === me ? " (you)" : ""}</b><span class="hs-pl-coins">${out ? "Out" : hsFmt(shown[id] ?? 0) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span>${allIn ? '<span class="hs-tag all-in">All in</span>' : ""}${tag ? `<span class="hs-tag ${tagCls}">${tag}</span>` : ""}${hsFrameArt(p)}</div>`;
     };
     const colL = [], colR = [];
     hs.seatsAll.forEach((id, i) => (i % 2 ? colR : colL).push(cardFor(id, i % 2 ? "r" : "l")));
@@ -17471,6 +17504,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="sp-status"><span class="sp-pill">ACTIVE</span><span>${d} day${d === 1 ? "" : "s"} left</span></div>
         ${spPerksHtml()}
         <button type="button" class="sp-btn green" id="sp-claim-btn"${claimed ? " disabled" : ""}>${claimed ? "Today's pull claimed" : "Claim today's free pull"}</button>
+        <button type="button" class="sp-btn" data-sp-extras>Choose your extras<small>Auras and name colours, just for supporters</small></button>
         <button type="button" class="sp-btn" data-sp-open="${myProfile.supporterPlan || "month"}">Add more time<small>${plan.price} a ${plan.per}</small></button>`;
     }
     const card = document.getElementById("pass-pull-card");
@@ -17484,6 +17518,60 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const res = await claimPassPull();
     renderSupporterUi();
     if (res === "pull") { showAchToast("Free pull added! Pull it from the machine."); try { renderGachaScreen(); } catch (e) {} }
+  }
+  // Saves a supporter's picked extras (aura and/or name colour): at once on this phone, then to the profile and to the room they are in.
+  function setSupporterExtras(patch) {
+    if (!isSupporter()) return false;
+    const next = {};
+    if ("supporterAura" in patch) { if (patch.supporterAura !== "" && !isSupporterAura(patch.supporterAura)) return false; next.supporterAura = patch.supporterAura; }
+    if ("supporterNameColor" in patch) { if (patch.supporterNameColor !== "" && !isNameColour(patch.supporterNameColor)) return false; next.supporterNameColor = patch.supporterNameColor; }
+    myProfile = { ...myProfile, ...next };
+    update(ref(db, `profiles/${deviceId}`), Object.fromEntries(Object.entries(next).map(([k, v]) => [k, v || null]))).catch(() => showAchToast("Couldn’t save that. Try again."));
+    syncSupporterLookToRoom();
+    try { renderSettingsAvatarGrid(); } catch (e) {}
+    return true;
+  }
+  function openSupporterExtras() {
+    if (!isSupporter()) return;
+    document.getElementById("supporter-extras")?.remove();
+    let tab = "auras";
+    const picks = { auras: isSupporterAura(myProfile.supporterAura) ? myProfile.supporterAura : "", names: isNameColour(myProfile.supporterNameColor) ? myProfile.supporterNameColor : "" };
+    const ov = document.createElement("div");
+    ov.id = "supporter-extras"; ov.className = "supporter-sheet";
+    ov.innerHTML = `<div class="ss-card" role="dialog" aria-modal="true" aria-labelledby="se-title">
+      <div class="ss-top"><span id="se-title">Supporter extras</span><button type="button" class="ss-x" aria-label="Close">&times;</button></div>
+      <div class="se-prev"><div class="se-av" id="se-av"></div><div class="se-who"><div class="se-name" id="se-name"></div><span class="sp-pill">SUPPORTER</span></div></div>
+      <div class="ss-seg" role="group" aria-label="Kind"><button type="button" data-tab="auras" aria-pressed="true">Auras</button><button type="button" data-tab="names" aria-pressed="false">Name color</button></div>
+      <div class="se-grid" id="se-grid"></div>
+      <button type="button" class="sp-btn" id="se-equip"></button>
+      <p class="se-note">Only pass holders can pick these. Everyone in your game sees them.</p>
+    </div>`;
+    document.body.appendChild(ov);
+    const nm = () => currentName || "You";
+    const list = () => tab === "auras" ? SUPPORTER_AURAS.map((a) => ({ id: a.id, name: a.name })) : NAME_COLOURS;
+    const current = () => tab === "auras" ? (isSupporterAura(myProfile.supporterAura) ? myProfile.supporterAura : "") : (isNameColour(myProfile.supporterNameColor) ? myProfile.supporterNameColor : "");
+    const paint = () => {
+      ov.querySelectorAll("[data-tab]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.tab === tab ? "true" : "false"));
+      const av = defaultAvatarId();
+      ov.querySelector("#se-av").innerHTML = avatarHtml(av, "", undefined, { aura: picks.auras || "" });
+      ov.querySelector("#se-name").innerHTML = nameHtml({ name: nm(), supporter: true, nameColor: picks.names || "" });
+      const none = `<button type="button" class="se-tile${picks[tab] === "" ? " on" : ""}" data-pick=""><span class="se-sw se-none">&#8709;</span>None</button>`;
+      ov.querySelector("#se-grid").innerHTML = none + list().map((o) => `<button type="button" class="se-tile${picks[tab] === o.id ? " on" : ""}" data-pick="${o.id}"><span class="se-sw ${tab === "names" ? `se-name-sw"><span class="nc nc-${o.id}">Aa</span></span>` : `se-aura-sw">${avatarHtml(av, "", undefined, { aura: o.id })}</span>`}${o.name}</button>`).join("");
+      const sel = picks[tab], same = sel === current(), label = sel ? list().find((o) => o.id === sel)?.name : "none";
+      const eq = ov.querySelector("#se-equip");
+      eq.disabled = same;
+      eq.textContent = same ? (sel ? "Equipped" : "Nothing equipped") : sel ? `Equip ${label}` : "Take it off";
+    };
+    paint();
+    ov.addEventListener("click", (e) => {
+      if (e.target === ov || e.target.closest(".ss-x")) return ov.remove();
+      const t = e.target.closest("[data-tab]"); if (t) { tab = t.dataset.tab; return paint(); }
+      const pick = e.target.closest("[data-pick]"); if (pick) { picks[tab] = pick.dataset.pick; return paint(); }
+      if (e.target.closest("#se-equip")) {
+        const ok = setSupporterExtras(tab === "auras" ? { supporterAura: picks.auras } : { supporterNameColor: picks.names });
+        if (ok) showAchToast(picks[tab] ? "Equipped!" : "Taken off."); paint();
+      }
+    });
   }
   function openSupporterSheet(plan) {
     document.getElementById("supporter-sheet")?.remove();
@@ -17529,6 +17617,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   document.getElementById("supporter-pass-box").addEventListener("click", (e) => {
     const open = e.target.closest("[data-sp-open]");
     if (open) return openSupporterSheet(open.dataset.spOpen);
+    if (e.target.closest("[data-sp-extras]")) return openSupporterExtras();
     if (e.target.closest("#sp-claim-btn")) void claimTodayPassPull();
   });
   document.getElementById("pass-pull-btn").addEventListener("click", () => void claimTodayPassPull());
@@ -19793,7 +19882,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (p.isHost) li.classList.add("lobby-player-host");
       const teamDot = (roomState.settings?.mode === "teamvteam" && p.team) ? `<span class="team-dot" style="--tc:${TEAM_COLOR_HEX[p.team]}"></span>` : "";
       const dragOn = canMoveToTeam(id);
-      nameSpan.innerHTML = `<span class="player-avatar${dragOn ? " lobby-drag" : ""}"${dragOn ? ` data-drag-pid="${escapeHtml(id)}"` : ""}>${mystery ? mysteryAvatarHtml(p.frameIndex) : avatarHtml(p.avatar)}</span><span class="lobby-player-name">${teamDot}${escapeHtml(shownName)}${p.isHost ? ' <span class="lobby-host-tag">Host</span>' : ""}${(!p.isBot && Number.isInteger(p.lvl) && p.lvl > 0) ? `<span class="lobby-rank" title="${Number.isInteger(p.rank) && CAREER_RANKS[p.rank] ? escapeHtml(CAREER_RANKS[p.rank][1]) : ""}">Lv ${p.lvl}</span>` : ""}${!p.isBot&&p.connected===false?`<span class="connection-badge">${isPlayerAway(p)?'Away':'Reconnecting'}</span>`:''}${p.isBot && !botRowsOn ? `<span class="bot-tag"><span class="bot-tag-icon"></span>${escapeHtml(p.botDifficulty || "")}</span>` : ""}</span>`;
+      nameSpan.innerHTML = `<span class="player-avatar${dragOn ? " lobby-drag" : ""}"${dragOn ? ` data-drag-pid="${escapeHtml(id)}"` : ""}>${mystery ? mysteryAvatarHtml(p.frameIndex) : avatarHtml(p.avatar)}</span><span class="lobby-player-name">${teamDot}${mystery ? escapeHtml(shownName) : nameHtml({ ...p, name: shownName })}${p.isHost ? ' <span class="lobby-host-tag">Host</span>' : ""}${(!p.isBot && Number.isInteger(p.lvl) && p.lvl > 0) ? `<span class="lobby-rank" title="${Number.isInteger(p.rank) && CAREER_RANKS[p.rank] ? escapeHtml(CAREER_RANKS[p.rank][1]) : ""}">Lv ${p.lvl}</span>` : ""}${!p.isBot&&p.connected===false?`<span class="connection-badge">${isPlayerAway(p)?'Away':'Reconnecting'}</span>`:''}${p.isBot && !botRowsOn ? `<span class="bot-tag"><span class="bot-tag-icon"></span>${escapeHtml(p.botDifficulty || "")}</span>` : ""}</span>`;
       li.appendChild(nameSpan);
       showPlayerFrame(li, p.playerFrame, p.frameIndex);
       if (botRowsOn) {
@@ -20175,6 +20264,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     player.avatarColor = equippedAvatarColor() || null;
     player.avatarSticker = equippedAvatarSticker() || null;
     player.avatarAura = equippedAvatarAura() || null;
+    { const sl = supporterRoomLook(); player.supporter = sl.supporter; player.nameColor = sl.nameColor; lastSyncedSupporterLook = JSON.stringify(sl); }
     if (isHsSettings(roomData?.settings)) player.hsSidePots = true;
     const joined = await runTransaction(ref(db, `rooms/${roomCode}`), cur => admitPlayer(cur, id, player, ownSeat ? "own" : !!staleOwnId));
     if (!joined.committed || !joined.snapshot.val()?.players?.[id]) {
@@ -20577,7 +20667,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // create a new player or reclaim a DISCONNECTED one) would leave this
       // still-connected player behind as an orphan AND create a duplicate.
       lastSyncedFlair = myEquippedFlair();
-      await update(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`), { name, avatar: currentAvatar, flair: lastSyncedFlair, playerFrame: equippedPlayerFrame(), avatarColor: equippedAvatarColor() || null, avatarSticker: equippedAvatarSticker() || null, avatarAura: equippedAvatarAura() || null });
+      await update(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`), { name, avatar: currentAvatar, flair: lastSyncedFlair, playerFrame: equippedPlayerFrame(), avatarColor: equippedAvatarColor() || null, avatarSticker: equippedAvatarSticker() || null, avatarAura: equippedAvatarAura() || null, ...(() => { const sl = supporterRoomLook(); lastSyncedSupporterLook = JSON.stringify(sl); return { supporter: sl.supporter, nameColor: sl.nameColor }; })() });
       currentName = name;
       localStorage.setItem("mg_name", name);
       editingFromLobby = false;
@@ -22725,7 +22815,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderQuestionMarkup(twQuestionStatsEl, ids.map((id) => {
       const p = currentPlayers[id];
       const acc = p.individualRoundsCounted ? formatAccuracy(p.individualAccuracySum / p.individualRoundsCounted) + "%" : "--";
-      return `<div class="tw-qs-pair"${hl ? ` style="order:${hlRoles[id] === "high" ? 0 : 1}"` : ""}><div class="tw-qs-gutter"></div><div class="tw-qs-half${hl && hlRoles[id] && id === currentPlayerId ? ` hl-mine hl-mine-${hlRoles[id]}` : ""}${hsFrameCls(p)}" data-id="${id}"><span class="avatar">${avatarHtml(p.avatar)}${lockedIn(id) ? '<span class="sc-lock" aria-label="Locked in"></span>' : ""}</span><span class="name">${escapeHtml(p.name)}</span>${hl && hlRoles[id] ? hlChipHtml(hlRoles[id]) + `<span class="tw-qs-ask">${hlRoles[id] === "high" ? "Get close without going under." : "Get close without going over."}</span>` : `<span class="tw-qs-acc">${acc}</span>`}${hsFrameArt(p)}</div></div>`;
+      return `<div class="tw-qs-pair"${hl ? ` style="order:${hlRoles[id] === "high" ? 0 : 1}"` : ""}><div class="tw-qs-gutter"></div><div class="tw-qs-half${hl && hlRoles[id] && id === currentPlayerId ? ` hl-mine hl-mine-${hlRoles[id]}` : ""}${hsFrameCls(p)}" data-id="${id}"><span class="avatar">${avatarHtml(p.avatar)}${lockedIn(id) ? '<span class="sc-lock" aria-label="Locked in"></span>' : ""}</span><span class="name">${nameHtml(p)}</span>${hl && hlRoles[id] ? hlChipHtml(hlRoles[id]) + `<span class="tw-qs-ask">${hlRoles[id] === "high" ? "Get close without going under." : "Get close without going over."}</span>` : `<span class="tw-qs-acc">${acc}</span>`}${hsFrameArt(p)}</div></div>`;
     }).join(""));
   }
 
@@ -23217,7 +23307,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (away && who) {
         const tag = document.createElement("div");
         tag.className = "rx-from" + (away === "up" ? " above" : "");
-        tag.innerHTML = (away === "up" ? "▲ " : "") + avatarHtml(who.avatar) + `<b>${escapeHtml(who.name || "Player")}</b>` + (away === "down" ? " ▼" : "");
+        tag.innerHTML = (away === "up" ? "▲ " : "") + avatarHtml(who.avatar) + `<b>${nameHtml(who, "Player")}</b>` + (away === "down" ? " ▼" : "");
         stage.appendChild(tag);
       }
     }
@@ -23581,7 +23671,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const roleChip = e.role ? hlChipHtml(e.role) : "";
     const off = e.role && roomState.currentQuestion ? hlOffInfo(e.role, e.guess, roomState.currentQuestion.answer) : null;
     const pctHtml = off ? `<b class="tw-sumrow-pct hl-off${off.ok ? "" : " bad"}">${off.text}</b>${markSvg(off.ok ? 100 : 0)}` : `<b class="tw-sumrow-pct">${Math.round(acc)}%</b>${markSvg(acc)}`;
-    return `<div class="dc-card dc-hot tw-sumrow tw-rr${anim ? " anim" : ""}" data-id="${e.playerId}"><span class="avatar">${avatarHtml(p?.avatar)}</span><span class="name${roleChip ? " hl-has-chip" : ""}"><span class="hl-nm">${escapeHtml(e.name || "")}</span>${roleChip}</span><span class="tw-sumrow-said">said <b>${twFmt(e.guess)}</b></span>${pctHtml}</div>`;
+    return `<div class="dc-card dc-hot tw-sumrow tw-rr${anim ? " anim" : ""}" data-id="${e.playerId}"><span class="avatar">${avatarHtml(p?.avatar)}</span><span class="name${roleChip ? " hl-has-chip" : ""}"><span class="hl-nm">${nameHtml({ ...currentPlayers[e.playerId], name: e.name || "" })}</span>${roleChip}</span><span class="tw-sumrow-said">said <b>${twFmt(e.guess)}</b></span>${pctHtml}</div>`;
   }
   const twHeadHtml = (t) => `<div class="tw-head">${t}</div>`;
   // High/Low Survival measures a pick by how far OFF it was, and whether it landed on its side of the answer
@@ -24134,7 +24224,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const lock = lockedIn(id) ? '<span class="sc-lock" aria-label="Locked in"></span>' : "";
         box.innerHTML = `
           <span class="avatar">${avatarHtml(p.avatar)}${lock}</span>${crown}
-          <div class="sc-top"><span class="name">${escapeHtml(p.name)}</span></div>
+          <div class="sc-top"><span class="name">${nameHtml(p)}</span></div>
           <div class="sc-bot">${medal}<span class="sc-div"></span><span class="pts">${score}</span>${accHtml}${arrow}</div>
         `;
         showPlayerFrame(box, p.playerFrame, p.frameIndex);
@@ -24217,7 +24307,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         box.dataset.id = team;
         box.dataset.members = members.join(" ");
         if (members.includes(roundWinnerId)) box.classList.add("round-winner");
-        const names = members.map((id) => `<span class="name">${escapeHtml(currentPlayers[id].name)}</span>`).join("");
+        const names = members.map((id) => `<span class="name">${nameHtml(currentPlayers[id])}</span>`).join("");
         const avatars = members.map((id) => `<span class="avatar">${avatarHtml(currentPlayers[id].avatar)}${lockedIn(id) ? '<span class="sc-lock" aria-label="Locked in"></span>' : ""}</span>`).join("");
         const crown = (rank === 1 && score > 0 && roomState.phase !== "waiting") ? '<span class="sc-crown" aria-label="Leading"></span>' : "";
         box.innerHTML = `
@@ -24230,7 +24320,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           const membersHtml = members.map((id) => {
             const player = currentPlayers[id];
             const lock = lockedIn(id) ? '<span class="sc-lock" aria-label="Locked in"></span>' : "";
-            return `<div class="team-card-live-member"><span class="avatar">${avatarHtml(player.avatar)}${lock}</span><span class="name">${escapeHtml(player.name)}</span></div>`;
+            return `<div class="team-card-live-member"><span class="avatar">${avatarHtml(player.avatar)}${lock}</span><span class="name">${nameHtml(player)}</span></div>`;
           }).join("");
           box.innerHTML = `${crown}<div class="team-card-live-members">${membersHtml}</div>
             <div class="team-card-live-metrics">
@@ -24459,7 +24549,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ).join("");
       const lineCount = Math.max(chips.length, 1);
       li.innerHTML = `
-        <div class="summary-row-top"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span></div>
+        <div class="summary-row-top"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${nameHtml(p)}</span></div>
         ${bufferedEntry ? bufferResultNote(data.currentQuestion, bufferedEntry.guess, id, roundPts) : ""}
         <div class="summary-row-body lines-${Math.min(lineCount, 3)}">
           <div class="breakdown">${chipHtml}${zeroNote ? `<span class="round-zero-note">${escapeHtml(zeroNote)}</span>` : ""}</div>
@@ -24539,7 +24629,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (roundPts > 0 && idx === 0 && members.some((id) => (data.revealOrder || []).some((e) => e.playerId === id && e.isClosest))) li.classList.add("round-winner");
       const membersHtml = members.map((id) => {
         const player = currentPlayers[id];
-        return `<div class="team-summary-member"><span class="avatar">${avatarHtml(player.avatar)}</span><span class="name">${escapeHtml(player.name)}</span></div>`;
+        return `<div class="team-summary-member"><span class="avatar">${avatarHtml(player.avatar)}</span><span class="name">${nameHtml(player)}</span></div>`;
       }).join("");
       li.innerHTML = `
         <div class="summary-row-top">${membersHtml}</div>
@@ -24569,7 +24659,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Team Worlds has no points/chips to break down - just this round's team accuracy, shown
   // once (not per player), since there's always exactly one team in this mode.
   function twSumRowHtml(e, p) {
-    return `<div class="dc-card dc-hot tw-sumrow"><span class="avatar">${avatarHtml(p?.avatar)}</span><span class="name">${escapeHtml(e.name || "")}</span><span class="tw-sumrow-said">said <b>${twFmt(e.guess)}</b></span><b class="tw-sumrow-pct">${Math.round(e.accuracyPercent)}%</b>${markSvg(e.accuracyPercent)}</div>`;
+    return `<div class="dc-card dc-hot tw-sumrow"><span class="avatar">${avatarHtml(p?.avatar)}</span><span class="name">${nameHtml({ ...currentPlayers[e.playerId], name: e.name || "" })}</span><span class="tw-sumrow-said">said <b>${twFmt(e.guess)}</b></span><b class="tw-sumrow-pct">${Math.round(e.accuracyPercent)}%</b>${markSvg(e.accuracyPercent)}</div>`;
   }
   // One summary row per teammate in fixed order; someone who timed out gets a 0% "No answer" row instead of vanishing.
   function twSumSlot(entries, slot, data) {
@@ -24579,7 +24669,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const e = entries.find((x) => x.playerId === id);
     if (e) return twSumRowHtml(e, currentPlayers[id] || {});
     const p = currentPlayers[id] || {};
-    return `<div class="dc-card dc-hot tw-sumrow"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name || "Player")}</span><span class="tw-sumrow-said">no answer</span><b class="tw-sumrow-pct">0%</b>${markSvg(0)}</div>`;
+    return `<div class="dc-card dc-hot tw-sumrow"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${nameHtml(p, "Player")}</span><span class="tw-sumrow-said">no answer</span><b class="tw-sumrow-pct">0%</b>${markSvg(0)}</div>`;
   }
   function twSpaceHtml(mood, reduced, final = false, reactionKey = "") {
     const pose = mood === "up" ? "happy" : mood === "down" ? "sad" : "calm";
@@ -24673,7 +24763,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (highOk === lowOk) return "lose";
         return (role === "high" ? highOk : lowOk) ? "soso" : "lose";
       };
-      const hlPlayer = (e) => e ? `<div class="dc-card dc-hot tw-sumrow hl-sumplayer"><span class="avatar">${avatarHtml((currentPlayers[e.playerId] || {}).avatar)}</span><span class="name hl-has-chip"><span class="hl-nm">${escapeHtml(e.name || "")}</span>${e.role ? hlChipHtml(e.role) : ""}</span>${e.role ? `<span class="solo-bubble solo-bubble-down hl-say">${escapeHtml(hlMascotSaying(data, e.role, hlMascotMood(data, e.role)))}</span>` : ""}${e.role ? `<span class="hl-sum-mascot hl-sum-${e.role === "high" ? "bird" : "shark"}">${mascotMarkup(e.role === "high" ? "hlbird" : "hlshark", hlMascotMood(data, e.role), { key: data.gameId + ":" + data.round + ":" + e.role, delay: 500, still: prefersReducedMotion() })}</span>` : ""}</div>` : "";
+      const hlPlayer = (e) => e ? `<div class="dc-card dc-hot tw-sumrow hl-sumplayer"><span class="avatar">${avatarHtml((currentPlayers[e.playerId] || {}).avatar)}</span><span class="name hl-has-chip"><span class="hl-nm">${nameHtml({ ...currentPlayers[e.playerId], name: e.name || "" })}</span>${e.role ? hlChipHtml(e.role) : ""}</span>${e.role ? `<span class="solo-bubble solo-bubble-down hl-say">${escapeHtml(hlMascotSaying(data, e.role, hlMascotMood(data, e.role)))}</span>` : ""}${e.role ? `<span class="hl-sum-mascot hl-sum-${e.role === "high" ? "bird" : "shark"}">${mascotMarkup(e.role === "high" ? "hlbird" : "hlshark", hlMascotMood(data, e.role), { key: data.gameId + ":" + data.round + ":" + e.role, delay: 500, still: prefersReducedMotion() })}</span>` : ""}</div>` : "";
       const bottlesNow = data.hlLives ?? (data.settings?.lives || HL_LIVES);
       const lostOne = (data.hlLast?.previousLives ?? bottlesNow) > bottlesNow;
       sLi.innerHTML = hlPlayer(entries[0])
@@ -25006,12 +25096,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const medal = medalType ? `<span class="medal ${medalType}"></span>` : `<span class="medal rank-num">${rank}</span>`;
         const avg = teamAvgFn(team);
         const avgPctHtml = avg == null ? "" : `<span class="final-avg-pct">${formatAccuracy(avg)}%</span>`;
-        const names = members.map((id) => `<span>${escapeHtml(currentPlayers[id].name)}</span>`).join("");
+        const names = members.map((id) => `<span>${nameHtml(currentPlayers[id])}</span>`).join("");
         const avatars = members.map((id) => `<span class="avatar">${avatarHtml(currentPlayers[id].avatar)}</span>`).join("");
         const memberRows = members.map((id) => {
           const p = currentPlayers[id];
           const acc = p.roundsCounted ? formatAccuracy(p.accuracySum / p.roundsCounted) : null;
-          return `<div class="team-final-member"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span><span class="member-pts">+${p.individualPoints || 0}</span><span class="member-acc">${acc == null ? "&ndash;" : acc + "%"}</span></div>`;
+          return `<div class="team-final-member"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${nameHtml(p)}</span><span class="member-pts">+${p.individualPoints || 0}</span><span class="member-acc">${acc == null ? "&ndash;" : acc + "%"}</span></div>`;
         }).join("");
         const li = document.createElement("li");
         li.className = "final-row team-final-row" + (rank === 1 ? " rank-1" : rank === 2 ? " rank-2" : rank === 3 ? " rank-3" : "");
@@ -25063,7 +25153,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       li.innerHTML = `
         ${winnerStars}
         ${rank === 1 ? finalWinnerHeading("Winner!") : ""}
-        <div class="final-row-top">${medal}<span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span><div class="final-metrics">${avgPctHtml}<span class="pts">${score}</span></div></div>
+        <div class="final-row-top">${medal}<span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${nameHtml(p)}</span><div class="final-metrics">${avgPctHtml}<span class="pts">${score}</span></div></div>
         ${statsHtml}
       `;
       showPlayerFrame(li, p.playerFrame, p.frameIndex);
@@ -25114,7 +25204,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const names = ids.map((id) => escapeHtml(currentPlayers[id].name)).join(" &amp; ");
     const memberRows = ids.map((id) => {
       const p = currentPlayers[id], a = p.individualRoundsCounted ? p.individualAccuracySum / p.individualRoundsCounted : null;
-      return `<div class="tw-fin-member"><span class="tw-mvp-slot"></span><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span><span class="member-acc">${a == null ? "" : formatAccuracy(a) + "%"}</span></div>`;
+      return `<div class="tw-fin-member"><span class="tw-mvp-slot"></span><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${nameHtml(p)}</span><span class="member-acc">${a == null ? "" : formatAccuracy(a) + "%"}</span></div>`;
     }).join("");
     const bestRuns = topScores(historyRows(myProfile.hlHistory || {}), 3).map((r) =>
       `<div class="hl-best-row"><span class="avatar">${avatarHtml(r.partnerAvatar)}</span><span class="name">with ${escapeHtml(r.partnerName || "Partner")}</span><b>${r.s}</b></div>`).join("");
@@ -25170,7 +25260,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     finalListEl.innerHTML = "";
     const previousRecap = document.getElementById("final-session-recap"); if (previousRecap) previousRecap.remove();
-    const playerTile = (p) => `<div class="tw-fin-player">${p ? `<span class="avatar">${avatarHtml(p.avatar)}</span><span>${escapeHtml(p.name || "Player")}</span>` : ""}</div>`;
+    const playerTile = (p) => `<div class="tw-fin-player">${p ? `<span class="avatar">${avatarHtml(p.avatar)}</span><span>${nameHtml(p, "Player")}</span>` : ""}</div>`;
     const li = document.createElement("li");
     li.className = "final-row team-final-row tw-final-row";
     li.style.setProperty("--tc", "#8e7cf2");
