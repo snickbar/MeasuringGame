@@ -1069,7 +1069,8 @@ if (location.protocol === "file:") {
   .hs-board { display: grid; grid-template-columns: 84px minmax(0, 1fr) 84px; gap: 6px; align-items: start; margin: 6px 0; }
   .hs-col { display: flex; flex-direction: column; gap: 6px; }
   .hs-col .hs-pl { min-width: 0; max-width: none; width: 100%; padding: 6px 2px 7px; }
-  .hs-col .hs-pl-name { max-width: 78px; font-size: 11px; }
+  /* In the side columns the name may use the whole card and wrap, so the "(you)" drops under a long name instead of hiding the end of it. */
+  .hs-col .hs-pl-name { max-width: 100%; font-size: 11px; white-space: normal; overflow: visible; text-overflow: clip; text-align: center; line-height: 1.15; }
   .hs-col .hs-pl .avatar { font-size: 30px; }
   .hs-board.dense .hs-col { gap: 4px; }
   .hs-board.dense .hs-pl { padding: 3px 2px 4px; }
@@ -3572,6 +3573,11 @@ if (location.protocol === "file:") {
     flex: 1 1 auto; min-width: 0; font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.15; text-align: center;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
+  /* The name gets its own full-width row on top, so it is never squeezed into the little space beside the picture; the picture sits under it
+     with the medal and points beside it. (Team cards keep their own layout.) */
+  .score-card:not(.team-card):not(.team-card-live) .sc-top { grid-row: 1; grid-column: 1 / -1; }
+  .score-card:not(.team-card):not(.team-card-live) .avatar { grid-row: 2; }
+  .score-card:not(.team-card):not(.team-card-live) .sc-bot { grid-row: 2; }
   /* Team vs Team's combined box: both teammates' avatars stacked in the same
      slot a single avatar normally fills, with a solid team-color border
      instead of the usual 9-slice frame artwork. */
@@ -14685,7 +14691,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const p = (roomState.players || {})[id];
     const out = !!hs.out?.[id];
     const coins = hs.chips[id] ?? 0;
-    return `<div class="hs-pl${out ? " out" : ""}${extra.cls || ""}${hsFrameCls(p)}" data-hs-pl="${id}"${hsNeonStyle(id)}><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-pl-name">${nameHtml(p, "Gone")}${id === currentPlayerId ? " (you)" : ""}</b><span class="hs-pl-coins">${out ? "Out" : hsFmt(coins) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span>${extra.tag ? `<span class="hs-tag ${extra.tagCls || ""}">${extra.tag}</span>` : ""}${hsFrameArt(p)}</div>`;
+    return `<div class="hs-pl${out ? " out" : ""}${extra.cls || ""}${hsFrameCls(p)}" data-hs-pl="${id}"${hsNeonStyle(id)}><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-pl-name">${nameHtml(p, "Gone")}${id === currentPlayerId ? ' <span class="hs-you">(you)</span>' : ""}</b><span class="hs-pl-coins">${out ? "Out" : hsFmt(coins) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span>${extra.tag ? `<span class="hs-tag ${extra.tagCls || ""}">${extra.tag}</span>` : ""}${hsFrameArt(p)}</div>`;
   }
   // Standings rows slide from their old place into the new order: measure one row step so CSS can offset each by its rank change.
   function hsSlideStand() {
@@ -14944,7 +14950,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           }
         }
       }
-      return `<div class="hs-pl${out ? " out" : ""}${cls}${hsFrameCls(p)}" data-hs-pl="${id}" data-hs-side="${side}"${hsNeonStyle(id)}><span class="avatar${cls === " win" ? " hs-dance" : ""}">${avatarHtml(p?.avatar)}</span><b class="hs-pl-name">${nameHtml(p, "Gone")}${id === me ? " (you)" : ""}</b><span class="hs-pl-coins">${out ? "Out" : hsFmt(shown[id] ?? 0) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span>${allIn ? '<span class="hs-tag all-in">All in</span>' : ""}${tag ? `<span class="hs-tag ${tagCls}">${tag}</span>` : ""}${hsFrameArt(p)}</div>`;
+      return `<div class="hs-pl${out ? " out" : ""}${cls}${hsFrameCls(p)}" data-hs-pl="${id}" data-hs-side="${side}"${hsNeonStyle(id)}><span class="avatar${cls === " win" ? " hs-dance" : ""}">${avatarHtml(p?.avatar)}</span><b class="hs-pl-name">${nameHtml(p, "Gone")}${id === me ? ' <span class="hs-you">(you)</span>' : ""}</b><span class="hs-pl-coins">${out ? "Out" : hsFmt(shown[id] ?? 0) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span>${allIn ? '<span class="hs-tag all-in">All in</span>' : ""}${tag ? `<span class="hs-tag ${tagCls}">${tag}</span>` : ""}${hsFrameArt(p)}</div>`;
     };
     const colL = [], colR = [];
     hs.seatsAll.forEach((id, i) => (i % 2 ? colR : colL).push(cardFor(id, i % 2 ? "r" : "l")));
