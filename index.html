@@ -7224,6 +7224,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // The one place a real store purchase will plug in later. Resolves true once the purchase went through.
   const purchase = (details) => showFakePurchase(details);
   function showFakePurchase({ icon, iconHtml, title, price, desc }) {
+    // One purchase pop-up at a time: tapping a buy button again while one is open must not stack another (each could buy again).
+    if (document.getElementById("fake-purchase-overlay")) return Promise.resolve(false);
     return new Promise((resolve) => {
       const ov = document.createElement("div");
       ov.id = "fake-purchase-overlay";
@@ -17575,7 +17577,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function openSupporterSheet(plan) {
     document.getElementById("supporter-sheet")?.remove();
-    let cur = SUPPORTER_PLANS[plan] ? plan : "month";
+    let cur = SUPPORTER_PLANS[plan] ? plan : "month", busy = false;
     const ov = document.createElement("div");
     ov.id = "supporter-sheet"; ov.className = "supporter-sheet";
     ov.innerHTML = `<div class="ss-card" role="dialog" aria-modal="true" aria-labelledby="ss-title">
@@ -17603,10 +17605,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (e.target === ov || e.target.closest(".ss-x")) return close();
       const pick = e.target.closest("[data-plan]");
       if (pick) { cur = pick.dataset.plan; return paint(); }
-      if (!e.target.closest("#ss-buy")) return;
+      if (!e.target.closest("#ss-buy") || busy) return;
+      busy = true;
+      const buyBtn = ov.querySelector("#ss-buy"); buyBtn.disabled = true;
       const P = SUPPORTER_PLANS[cur];
       const bought = await purchase({ icon: "icons/ach/supporter.webp", title: `Supporter Pass (${P.label})`, desc: "Double coins with no ad, a free capsule pull every day, and exclusive looks.", price: `${P.price} / ${P.per}` });
-      if (!bought) return;
+      if (!bought) { busy = false; buyBtn.disabled = false; return; }
       await grantSupporterPass(cur);
       close();
       renderSupporterUi();

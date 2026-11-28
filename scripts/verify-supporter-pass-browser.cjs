@@ -24,6 +24,7 @@ check(/supporterUntil: Math\.max\(0, \+data\.supporterUntil \|\| 0\)/.test(src) 
 const passBox = '<div id="supporter-pass-box" class="supporter-pass-box"></div>';
 const hostBox = '<div id="host-unlock-shop-box" class="host-unlock-shop-box"><h3>Party Mode</h3></div>';
 const pullCard = between('<div id="pass-pull-card"', '<p id="gacha-status">');
+const purchaseCode = between('  function showFakePurchase(', '  // ---- Supporter Pass ($2.99').replace(/^[\s\S]*?(?=  function showFakePurchase)/, '');
 const code = [between('  const SUPPORTER_DAY_MS', '  // ---- "Watch an ad to double your coins"'), between('  // ---- Supporter Pass UI', '  coinPackBtns.forEach((btn) => {'),
   between('  function todayDateStr()', '  // TEMP stand-in for a real rewarded ad')].join('\n');
 const js = `
@@ -38,11 +39,12 @@ const update = async (_r, patch) => { store = { ...store, ...Object.fromEntries(
 let currentRoomCode = null, currentPlayerId = null, roomState = null; const equippedAvatarAura = () => supporterAuraNow(); const supporterAuraNow = () => isSupporter() && isSupporterAura(myProfile.supporterAura) ? myProfile.supporterAura : ''; const renderSettingsAvatarGrid = () => {};
 const toasts = []; const showAchToast = (t) => toasts.push(t); let galleryRenders = 0; const renderGachaScreen = () => { galleryRenders++; };
 let ads = 0; const showFakeAd = () => { ads++; return Promise.resolve(true); };
-let buyAnswer = true; const bought = []; const purchase = async (d) => { bought.push(d); return buyAnswer; };
+let buyAnswer = true, buyDelay = 0; const bought = []; const purchase = async (d) => { bought.push(d); if (buyDelay) await new Promise((r) => setTimeout(r, buyDelay)); return buyAnswer; };
+${purchaseCode}
 const runTransaction = async (_r, fn) => { const out = fn(store ? JSON.parse(JSON.stringify(store)) : null); if (out === undefined) return { committed: false }; store = out; myProfile = { ...store }; return { committed: true }; };
 ${code}
 window.T = { store: () => store, set: (o) => { store = { ...store, ...o }; myProfile = { ...store }; }, toasts: () => toasts, bought: () => bought, ads: () => ads, galleries: () => galleryRenders, render: renderSupporterUi,
-  isSupporter: () => isSupporter(), days: () => supporterDaysLeft(), adOrPass: () => adOrPass(), setBuy: (v) => { buyAnswer = v; }, setOffset: (ms) => { offset = ms; }, claim: () => claimPassPull(), nameHtml: (p, f) => nameHtml(p, f), setExtras: (x) => setSupporterExtras(x), roomLook: () => supporterRoomLook(), colours: NAME_COLOURS.length, auras: SUPPORTER_AURAS.length };
+  isSupporter: () => isSupporter(), days: () => supporterDaysLeft(), adOrPass: () => adOrPass(), setBuy: (v) => { buyAnswer = v; }, setOffset: (ms) => { offset = ms; }, claim: () => claimPassPull(), setDelay: (v) => { buyDelay = v; }, realPurchase: (d) => showFakePurchase(d), nameHtml: (p, f) => nameHtml(p, f), setExtras: (x) => setSupporterExtras(x), roomLook: () => supporterRoomLook(), colours: NAME_COLOURS.length, auras: SUPPORTER_AURAS.length };
 renderSupporterUi();`;
 const page = `<!doctype html><html><head><meta charset="utf8"><meta name="viewport" content="width=device-width,initial-scale=1"><base href="/">${links.map((l) => `<link rel="stylesheet" href="${l}">`).join('')}<style>${inlineCss}</style></head><body>
 <div id="shop-tab-hosting" class="shop-tab-panel active" style="display:block;padding:0 12px"><div class="shop-subpanel" id="sub">${passBox}${hostBox}</div></div>
@@ -77,11 +79,22 @@ srv.listen(0, async () => {
     // 3) cancel the purchase: nothing changes
     await T('setBuy', false); await click('#ss-buy');
     check(!(await T('isSupporter')) && (await p.locator('#supporter-sheet').count()) === 1, `${tag}: cancelling the purchase grants nothing and keeps the sheet`);
+    // 3b) tapping Start again and again while the purchase is open buys once
+    await T('setBuy', true); await T('setDelay', 400);
+    const n0 = (await T('bought')).length;
+    for (let i = 0; i < 6; i++) { await p.locator('#ss-buy').click({ force: true, noWaitAfter: true }).catch(() => {}); await p.waitForTimeout(40); }
+    await p.waitForTimeout(700);
+    check((await T('bought')).length === n0 + 1, `${tag}: six quick taps on Start Supporter Pass open one purchase, not six`);
+    await T('setDelay', 0);
+    check((await T('isSupporter')) && (await T('days')) >= 364 && (await T('days')) <= 366, `${tag}: the pass was granted once (about 365 days, not stacked)`);
+    check((await p.locator('#supporter-sheet').count()) === 0, `${tag}: the sheet closed after the purchase`);
+    await T('set', { supporterUntil: 0, supporterPlan: null }); await T('render');
+    await click('#supporter-pass-box [data-sp-open]'); await click('[data-plan="year"]');
     // 4) buy yearly
     if (process.env.SHOT && w === 360) await p.screenshot({ path: process.env.SHOT + '/pass-sheet.png' });
     await T('setBuy', true); await click('#ss-buy');
     const bought = await T('bought');
-    check(bought.length === 2 && /Yearly/.test(bought[1].title) && /19\.99/.test(bought[1].price), `${tag}: the purchase asks for the yearly price`);
+    check(/Yearly/.test(bought[bought.length - 1].title) && /19\.99/.test(bought[bought.length - 1].price), `${tag}: the purchase asks for the yearly price`);
     check((await T('isSupporter')) && (await T('days')) >= 364 && (await T('days')) <= 366 && (await T('store')).supporterPlan === 'year', `${tag}: the yearly pass lasts about 365 days`);
     check((await p.locator('#supporter-sheet').count()) === 0 && /ACTIVE/.test(await p.textContent('#supporter-pass-box')) && /36[4-6] days left/.test(await p.textContent('#supporter-pass-box')), `${tag}: the sheet closes and the card shows ACTIVE with the days left`);
     check((await p.$eval('#sub', (e) => e.firstElementChild.id)) === 'host-unlock-shop-box', `${tag}: the pass still sits under an unowned Party Mode`);
@@ -128,6 +141,17 @@ srv.listen(0, async () => {
     check(html.colourOnly === 'Al' && html.none === 'Gone', `${tag}: a colour without the pass flag shows nothing, and a missing player shows the fallback`);
     await click('#supporter-extras .ss-x');
     check((await p.locator('#supporter-extras').count()) === 0, `${tag}: the sheet closes`);
+    // 5c) the real purchase pop-up: a second tap while it is open does not stack another, and Buy Now only counts once
+    const rp = await p.evaluate(async () => {
+      const first = window.T.realPurchase({ title: 'X', price: '$1' });
+      const second = await window.T.realPurchase({ title: 'X', price: '$1' });
+      const open = document.querySelectorAll('#fake-purchase-overlay').length;
+      const buy = document.querySelector('.fake-purchase-buy-btn');
+      for (let i = 0; i < 5; i++) buy.click();
+      const result = await first;
+      return { second, open, result, left: document.querySelectorAll('#fake-purchase-overlay').length };
+    });
+    check(rp.second === false && rp.open === 1 && rp.result === true && rp.left === 0, `${tag}: a second purchase pop-up never stacks, and five taps on Buy Now complete it once`);
     // 6) buy again adds time on top
     const before = await T('days'); await click('#supporter-pass-box [data-sp-open]'); await click('#ss-buy');
     const after = await T('days'); check(after >= before + 360, `${tag}: buying again adds time on top (${before} -> ${after} days)`);
