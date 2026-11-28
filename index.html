@@ -1913,6 +1913,23 @@ if (location.protocol === "file:") {
   .a-spot .pool { left: -8%; right: -8%; bottom: -8%; height: 26%; border-radius: 50%; background: radial-gradient(ellipse, rgb(var(--rgb) / .85), rgb(var(--rgb) / 0) 70%); }
   /* A solid, glowing ring resting on top of the head: a thick band (a masked ellipse, so it scales with the picture), a thin dark edge so it reads on any card colour. */
   .a-halo .hl { left: 20%; width: 60%; top: -11%; height: 20%; background: linear-gradient(180deg, var(--cl), var(--c) 55%, var(--cd)); -webkit-mask: radial-gradient(closest-side, transparent 54%, #000 58%, #000 94%, transparent 100%); mask: radial-gradient(closest-side, transparent 54%, #000 58%, #000 94%, transparent 100%); filter: drop-shadow(0 0 1px rgb(70 35 0 / .85)) drop-shadow(0 0 5px rgb(var(--rgb) / .9)); animation: auraBob 2.6s ease-in-out infinite; }
+  /* Eclipse (Founders): a dark disc behind the head with a bright rim, and a slowly turning crown of golden rays (two layers turning opposite ways) with a flare on top. */
+  @keyframes auraFade { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+  .a-eclipse .disc { inset: -12%; border-radius: 50%; background: radial-gradient(circle, #2a1636 0, #0d0714 70%); box-shadow: 0 0 0 1.5px var(--cl), 0 0 7px 2px rgb(var(--rgb) / .9), 0 0 16px 4px rgb(var(--rgb) / .5); }
+  .a-eclipse .cor { inset: -50%; border-radius: 50%; -webkit-mask: radial-gradient(closest-side, transparent 62%, #000 67%, transparent 90%); mask: radial-gradient(closest-side, transparent 62%, #000 67%, transparent 90%); }
+  .a-eclipse .c1 { background: repeating-conic-gradient(rgb(var(--rgb) / .95) 0 2.5deg, transparent 2.5deg 11deg); animation: auraSpin 38s linear infinite; }
+  .a-eclipse .c2 { background: repeating-conic-gradient(from 5deg, var(--cl) 0 1.5deg, transparent 1.5deg 7deg); opacity: .9; animation: auraSpin 55s linear infinite reverse; }
+  .a-eclipse .flare { left: 40%; top: -14%; width: 20%; height: 20%; border-radius: 50%; background: radial-gradient(circle, #fff 0, var(--cl) 30%, rgb(var(--rgb) / 0) 70%); animation: auraFade 2.4s ease-in-out infinite; }
+  /* Gyroscope: thin rings tilted on different axes, each turning around its own axis and carrying a bead of light. It takes the player's card colour. */
+  @keyframes auraGyro { from { transform: translate(-50%, -50%) rotateZ(var(--t)) rotateY(0deg); } to { transform: translate(-50%, -50%) rotateZ(var(--t)) rotateY(360deg); } }
+  .a-gyro { perspective: 620px; }
+  .a-gyro .gy { left: 50%; top: 50%; border-radius: 50%; border: 2.5px solid var(--cl); transform-style: preserve-3d; box-shadow: 0 0 7px rgb(var(--rgb) / .75), inset 0 0 5px rgb(var(--rgb) / .5); animation: auraGyro 7s linear infinite; }
+  .a-gyro .gy::after { content: ""; position: absolute; left: -7px; top: 50%; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, var(--c) 55%, var(--cd)); box-shadow: 0 0 7px var(--c); }
+  .a-gyro .gy1 { width: 176%; height: 176%; --t: -28deg; }
+  .a-gyro .gy2 { width: 148%; height: 148%; --t: 34deg; animation-duration: 9s; animation-direction: reverse; border-color: #fff; border-color: color-mix(in srgb, var(--cl) 60%, #fff); }
+  .a-gyro .gy3 { width: 122%; height: 122%; --t: 92deg; animation-duration: 5.5s; border-color: var(--c); }
+  .a-gyro.calm .gy { border-width: 2px; }
+  .a-gyro.calm .gy::after { left: -5px; width: 7px; height: 7px; margin-top: -3.5px; }
   @media (prefers-reduced-motion: reduce) { .aura-fx, .aura-fx * { animation-play-state: paused !important; } }
   /* Favorites: heart badge on tiles, labels in the pickers, and the heart on the zoomed avatar. */
   .avatar-choice, .collection-tile { position: relative; }

@@ -12,11 +12,12 @@ Decided with the owner on November 27, 2026. Prices and limits are a proposal th
 - Nothing the pass gives changes how a game is won, so it is never pay-to-win. No gold player card (yellow is already a player colour).
 
 ## Exclusive looks
-- Six auras (Golden glow, Starlight, Ember, Aurora, Meadow, Moonlight) in `SUPPORTER_AURAS` (anim/avatar-auras.mjs): the same effects as the level-6 auras, but in their own fixed colour, never the card colour. A supporter's aura needs no avatar level and applies to whatever avatar they play (`profile.supporterAura`); an aura picked in Edit for one game still wins for that game.
+- One Founders aura, **Eclipse** (`SUPPORTER_AURAS`, anim/avatar-auras.mjs): a dark disc behind the head with a bright gold rim and a slowly turning crown of golden rays, in its own fixed gold, never the card colour. The first six supporter auras were all the same colour effects as the level-6 auras, so they were replaced by this one. A supporter's aura needs no avatar level and applies to whatever avatar they play (`profile.supporterAura`); an aura picked in Edit for one game still wins for that game. A saved id that no longer exists is cleared on load.
+- **Gyroscope** (three tilted rings turning in 3D, each with a bead of light) is a normal aura for everyone, in the card colour (`AURAS`).
 - Six name colours in `NAME_COLOURS` (index.html), with a glowing golden one (`profile.supporterNameColor`). They keep a dark outline so they read on any card colour.
 - Chosen in the pass card > Choose your extras (`openSupporterExtras`).
 - Everyone sees them: a supporter's room entry carries `supporter`, `nameColor` and `avatarAura` (`supporterRoomLook`, kept in step by `syncSupporterLookToRoom`). `nameHtml(player)` draws the medal (before the name, so a long name never hides it) and the colour on the player cards.
-- **Borders are not built yet**: they need new frame art. Add them to the extras sheet (a third tab) when the art exists, through the existing player frame system (see CLAUDE.md, equipped player frames).
+- **Borders are not built yet** (chosen: **Jewel Setting**, a thick gold bezel with a faceted gem at each corner and pearls along the edges, drawn so the gems stand out past the corners): it needs new frame art, held until Saturday 2026-11-28 3pm. Add them to the extras sheet (a third tab) when the art exists, through the existing player frame system (see CLAUDE.md, equipped player frames).
 
 ## Ad spots (rewarded ads only, nobody is forced to watch)
 - Ad meter on the Capsules tab: watch 3 ads, get 1 random pull, once a day. This is the only capped spot.

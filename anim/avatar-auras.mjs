@@ -5,23 +5,20 @@ export const AURAS = [
   { id: "glow", name: "Glow" }, { id: "sparkle", name: "Sparkles" }, { id: "flame", name: "Flames" }, { id: "bolt", name: "Lightning" },
   { id: "bubble", name: "Bubbles" }, { id: "orbit", name: "Orbit" }, { id: "ring", name: "Ring" }, { id: "ripple", name: "Ripples" },
   { id: "heart", name: "Hearts" }, { id: "confetti", name: "Confetti" }, { id: "spot", name: "Spotlight" }, { id: "halo", name: "Halo" },
+  { id: "gyro", name: "Gyroscope" },
 ];
 export const AURA_IDS = AURAS.map((a) => a.id);
 // Each effect's own colour, shown wherever there is no game card colour yet (the avatar card, Edit, the pickers). In a game the effect
 // takes the player's card colour instead, so it always matches the border.
 export const AURA_DEFAULT_COLOUR = {
   glow: "#f4b94a", sparkle: "#ffd84a", flame: "#ff4b2b", bolt: "#ffe14a", bubble: "#4fb0e0", orbit: "#9b6bff",
-  ring: "#f26fa0", ripple: "#3ab5a6", heart: "#ff5a7a", confetti: "#ff9f1c", spot: "#ffe9a8", halo: "#ffd34a",
+  ring: "#f26fa0", ripple: "#3ab5a6", heart: "#ff5a7a", confetti: "#ff9f1c", spot: "#ffe9a8", halo: "#ffd34a", gyro: "#ffd35a",
 };
-// Supporter Pass auras: made from the same effects as above, but in their own fixed colour (never the card colour), so a supporter's look stays
-// theirs and two supporters in one room never match by accident. Only supporters can pick them (index.html checks that); everyone sees them.
+// Supporter Pass aura (Founders): Eclipse, a dark disc behind the head with a bright rim and a slowly turning crown of golden rays. It has its own fixed
+// gold colour (never the card colour), so a supporter's look stays theirs. `own` means it draws its own pieces below; an entry with `parts` is instead
+// built from the effects above. Only supporters can pick it (index.html checks that); everyone sees it.
 export const SUPPORTER_AURAS = [
-  { id: "golden", name: "Golden glow", colour: "#ffc83a", parts: ["glow", "sparkle"] },
-  { id: "starlight", name: "Starlight", colour: "#bfe0ff", parts: ["sparkle"] },
-  { id: "ember", name: "Ember", colour: "#ff7a2a", parts: ["flame"] },
-  { id: "aurora", name: "Aurora", colour: "#5ee8c0", parts: ["ripple", "sparkle"] },
-  { id: "meadow", name: "Meadow", colour: "#7bd957", parts: ["bubble"] },
-  { id: "moonlight", name: "Moonlight", colour: "#c9c4ff", parts: ["halo", "glow"] },
+  { id: "eclipse", name: "Eclipse", colour: "#ffc83a", own: true },
 ];
 export const SUPPORTER_AURA_IDS = SUPPORTER_AURAS.map((a) => a.id);
 export const isSupporterAura = (id) => SUPPORTER_AURA_IDS.includes(id);
@@ -36,7 +33,7 @@ const d = (v) => v.toFixed(2);
 // The pieces of one effect as HTML. Everything moves by transform or opacity only, so ten players in a room stay smooth.
 export function auraPieces(kind, calm) {
   const sup = SUPPORTER_AURAS.find((x) => x.id === kind);
-  if (sup) return sup.parts.map((part) => `<span class="part a-${part}">${auraPieces(part, calm)}</span>`).join("");
+  if (sup && !sup.own) return sup.parts.map((part) => `<span class="part a-${part}">${auraPieces(part, calm)}</span>`).join("");
   let h = "";
   if (kind === "glow") h = '<span class="g1"></span>';
   if (kind === "sparkle") { const n = calm ? 4 : 7; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 + 0.4, r = 54 + (i % 2) * 7; h += `<span class="sp" style="left:${d(50 + Math.cos(a) * r)}%;top:${d(50 + Math.sin(a) * r)}%;animation-delay:-${d(i * 0.37)}s;animation-duration:${d(1.7 + i % 3 * 0.35)}s"></span>`; } }
@@ -59,6 +56,9 @@ export function auraPieces(kind, calm) {
   if (kind === "confetti") { const n = calm ? 5 : 10, cols = ["var(--c)", "var(--cl)", "var(--cd)"]; for (let i = 0; i < n; i++) { const w = 7 + (i * 3) % 5; h += `<span class="cf" style="left:${i % 2 ? -8 + (i % 4) * 5 : 90 - (i % 4) * 5}%;top:${-4 + (i % 3) * 10}%;width:${w}%;height:${d(w * 0.55)}%;background:${cols[i % 3]};animation-delay:-${d(i * 0.33)}s;animation-duration:${d(2.4 + i % 3 * 0.4)}s"></span>`; } }
   if (kind === "spot") h = '<span class="cone"></span><span class="pool"></span>';
   if (kind === "halo") h = '<span class="hl"></span>';
+  if (kind === "eclipse") h = '<span class="cor c1"></span><span class="cor c2"></span><span class="disc"></span><span class="flare"></span>';
+  // Three thin rings tilted on different axes, each turning on its own, each carrying one bead of light (two rings on small pictures).
+  if (kind === "gyro") h = (calm ? [1, 2] : [1, 2, 3]).map((n) => `<span class="gy gy${n}"></span>`).join("");
   return h;
 }
 

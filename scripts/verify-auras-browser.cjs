@@ -101,22 +101,29 @@ srv.listen(0, async () => {
     return out;
   });
   const bad = Object.entries(kinds).filter(([, v]) => !v).map(([k]) => k);
-  bad.length === 0 ? ok('all 12 effects build when the aura is changed') : fail('effects that did not build: ' + bad.join(', '));
-  // Supporter Pass auras: built from the same effects, in their own fixed colour even when the picture has a card slot colour
+  bad.length === 0 ? ok('all ' + Object.keys(kinds).length + ' effects build when the aura is changed') : fail('effects that did not build: ' + bad.join(', '));
+  // Supporter aura (Eclipse): drawn by its own pieces, in its own fixed colour even when the picture has a card slot colour
   const sup = await p.evaluate(async () => {
     const out = {}, img = document.querySelector('#fx img[data-aura]');
     img.dataset.auraSlot = '3';
     for (const a of window.T.SUPPORTER_AURAS) {
       img.dataset.aura = a.id; await new Promise((r) => setTimeout(r, 120));
-      const fx = img.previousElementSibling, parts = fx.querySelectorAll(':scope > .part');
-      const box = fx.getBoundingClientRect(), kid = fx.querySelector('.part > *').getBoundingClientRect();
-      out[a.id] = { built: fx.classList.contains('a-' + a.id) && parts.length === a.parts.length && fx.querySelectorAll('.part > *').length > 0, colour: fx.style.getPropertyValue('--c') === a.colour, sized: kid.width > 0 && kid.height > 0 && box.width > 0 };
+      const fx = img.previousElementSibling, box = fx.getBoundingClientRect();
+      const disc = fx.querySelector('.disc'), cor = fx.querySelectorAll('.cor'), dr = disc && disc.getBoundingClientRect();
+      out[a.id] = { built: fx.classList.contains('a-' + a.id) && !!disc && cor.length === 2 && !!fx.querySelector('.flare'), colour: fx.style.getPropertyValue('--c') === a.colour, sized: !!dr && dr.width > box.width && box.width > 0 };
     }
     img.dataset.aura = 'glow'; delete img.dataset.auraSlot;
     return out;
   });
   const supBad = Object.entries(sup).filter(([, v]) => !(v.built && v.colour && v.sized)).map(([k, v]) => k + ' ' + JSON.stringify(v));
-  Object.keys(sup).length === 6 && supBad.length === 0 ? ok('all 6 supporter auras build from their effects, keep their own colour and have a size') : fail('supporter auras: ' + supBad.join('; '));
+  Object.keys(sup).length === 1 && supBad.length === 0 ? ok('the Eclipse supporter aura builds a disc, two ray layers and a flare, keeps its own colour and has a size') : fail('supporter aura: ' + supBad.join('; '));
+  // Gyroscope: three rings on a full-size picture, two on a small one, each really turning in 3D
+  const gy = await p.evaluate(async () => {
+    const img = document.querySelector('#fx img[data-aura]'); img.dataset.aura = 'gyro'; await new Promise((r) => setTimeout(r, 150));
+    const fx = img.previousElementSibling, rings = [...fx.querySelectorAll('.gy')];
+    return { n: rings.length, persp: getComputedStyle(fx).perspective, anim: rings.every((r) => /auraGyro/.test(getComputedStyle(r).animationName)), bead: getComputedStyle(rings[0], '::after').width };
+  });
+  gy.n >= 2 && gy.persp !== 'none' && gy.anim ? ok('Gyroscope builds its tilted rings with a 3D spin (' + gy.n + ' rings)') : fail('Gyroscope: ' + JSON.stringify(gy));
   const gone = await p.evaluate(async () => {
     const img = document.querySelector('#fx img[data-aura]'), row = img.closest('.row');
     delete img.dataset.aura; await new Promise((r) => setTimeout(r, 150));

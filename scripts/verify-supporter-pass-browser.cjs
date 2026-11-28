@@ -114,15 +114,15 @@ srv.listen(0, async () => {
     // 5b) supporter extras: auras and name colours
     check(/Choose your extras/.test(await p.textContent('#supporter-pass-box')), `${tag}: the active card has a Choose your extras button`);
     await click('#supporter-pass-box [data-sp-extras]');
-    check((await p.locator('#supporter-extras').count()) === 1 && (await p.locator('#se-grid .se-tile').count()) === 7 && (await p.locator('#se-grid .se-tile.on').textContent()).trim() === '\u2205None', `${tag}: the extras sheet opens on Auras with None plus six auras, None selected`);
+    check((await p.locator('#supporter-extras').count()) === 1 && (await p.locator('#se-grid .se-tile').count()) === 2 && (await p.locator('#se-grid .se-tile.on').textContent()).trim() === '\u2205None', `${tag}: the extras sheet opens on Auras with None plus the Eclipse aura, None selected`);
     check((await p.$eval('#se-equip', (e) => e.disabled)), `${tag}: nothing to equip until something else is picked`);
-    await click('#se-grid [data-pick="golden"]');
-    check(/Equip Golden glow/.test(await p.textContent('#se-equip')) && (await p.getAttribute('#se-av img', 'data-aura')) === 'golden', `${tag}: picking Golden glow previews it and offers Equip Golden glow`);
+    await click('#se-grid [data-pick="eclipse"]');
+    check(/Equip Eclipse/.test(await p.textContent('#se-equip')) && (await p.getAttribute('#se-av img', 'data-aura')) === 'eclipse', `${tag}: picking Eclipse previews it and offers Equip Eclipse`);
     const gridFit = await p.evaluate(() => { const g = document.getElementById('se-grid').getBoundingClientRect(), b = document.getElementById('se-equip').getBoundingClientRect(); return { inside: g.left >= 0 && g.right <= innerWidth + 0.5, btn: b.bottom <= innerHeight + 0.5 || document.querySelector('#supporter-extras .ss-card').scrollHeight > document.querySelector('#supporter-extras .ss-card').clientHeight }; });
     check(gridFit.inside && gridFit.btn, `${tag}: the tiles fit the width and the Equip button is reachable`);
     await click('#se-equip');
     await p.waitForTimeout(400); if (process.env.SHOT && w === 360) await p.screenshot({ path: process.env.SHOT + '/pass-extras.png' });
-    check((await T('store')).supporterAura === 'golden' && /Equipped/.test(await p.textContent('#se-equip')) && (await p.$eval('#se-equip', (e) => e.disabled)), `${tag}: Equip saves the aura and the button says Equipped`);
+    check((await T('store')).supporterAura === 'eclipse' && /Equipped/.test(await p.textContent('#se-equip')) && (await p.$eval('#se-equip', (e) => e.disabled)), `${tag}: Equip saves the aura and the button says Equipped`);
     await click('[data-tab="names"]');
     check((await p.locator('#se-grid .se-tile').count()) === 7 && (await p.locator('#se-name .nc').count()) === 0 && (await p.locator('#se-name .sup-medal').count()) === 1, `${tag}: the Name color tab shows six colours, and the preview already has the medal`);
     await click('#se-grid [data-pick="golden"]'); await click('#se-equip');
@@ -132,7 +132,7 @@ srv.listen(0, async () => {
     check(nameFit, `${tag}: the preview name fits the screen`);
     // the look that goes into the room
     const look = await T('roomLook');
-    check(look.supporter === true && look.nameColor === 'golden' && look.avatarAura === 'golden', `${tag}: the room entry carries the medal, name colour and aura`);
+    check(look.supporter === true && look.nameColor === 'golden' && look.avatarAura === 'eclipse', `${tag}: the room entry carries the medal, name colour and aura`);
     // nameHtml for everyone else
     const html = await p.evaluate(() => ({ plain: window.T.nameHtml({ name: '<b>Bo</b>' }), medal: window.T.nameHtml({ name: 'Al', supporter: true }), full: window.T.nameHtml({ name: 'Al', supporter: true, nameColor: 'golden' }), spoof: window.T.nameHtml({ name: 'Al', supporter: true, nameColor: '"><script>' }), colourOnly: window.T.nameHtml({ name: 'Al', nameColor: 'golden' }), none: window.T.nameHtml(undefined, 'Gone') }));
     check(html.plain === '&#60;b&#62;Bo&#60;/b&#62;', `${tag}: a plain name is escaped and unchanged`);
@@ -159,7 +159,7 @@ srv.listen(0, async () => {
     const ads0 = await T('ads'); check((await T('adOrPass')) === true && (await T('ads')) === ads0, `${tag}: a supporter's double coins plays no ad`);
     // 8) expired pass
     await T('setOffset', 800 * 86400000); await T('render');
-    check((await T('setExtras', { supporterAura: 'golden' })) === false && (await T('roomLook')).supporter === null && (await T('roomLook')).nameColor === null && (await T('roomLook')).avatarAura === null, `${tag}: after the pass runs out the extras are refused and the room entry is empty`);
+    check((await T('setExtras', { supporterAura: 'eclipse' })) === false && (await T('roomLook')).supporter === null && (await T('roomLook')).nameColor === null && (await T('roomLook')).avatarAura === null, `${tag}: after the pass runs out the extras are refused and the room entry is empty`);
     check(!(await T('isSupporter')) && (await T('adOrPass')) === true && (await T('ads')) === ads0 + 1, `${tag}: after the pass runs out the ad comes back`);
     check((await p.$eval('#pass-pull-card', (e) => e.hidden)) && (await T('claim')) === '' && /Get the pass/.test(await p.textContent('#supporter-pass-box')), `${tag}: an expired pass gets no pull and the card offers the pass again`);
     check(!errors.length, `${tag}: no page errors${errors.length ? ' - ' + errors[0] : ''}`);
